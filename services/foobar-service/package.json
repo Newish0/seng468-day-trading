@@ -1,0 +1,14 @@
+{
+  "name": "foobar-service",
+  "module": "index.ts",
+  "type": "module",
+  "dependencies": {
+    "foobar-package": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

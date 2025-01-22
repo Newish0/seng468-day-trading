@@ -9,7 +9,7 @@ seng468-day-trading/
 │   ├── user-api/          # TypeScript service
 │   ├── auth/              # TypeScript service
 │   ├── matching-engine/   # Rust service
-│   ├── nginx/             # Nginx configuration and assets
+│   ├── gateway/           # Nginx configuration and assets
 │   ├── web-ui/            # Single page web UI
 ├── packages/              # Shared Typescript libraries
 │   ├── foobar-package/    # A test to make sure Bun workspace is correctly setup
@@ -20,7 +20,7 @@ seng468-day-trading/
 ├── package.json           # For managing shared TypeScript dependencies
 ├── tsconfig.base.json     # Shared TypeScript configuration
 ├── README.md              # Documentation
-├── package.json           # Manages Typescript workspaces/shared packages
+├── package.json           # Manages Typescript workspaces/shared packages and project scripts
 ├── tsconfig.base.json     # Global Typescript config for all Typescript services
 ├── README.md              # Documentation
 
@@ -32,12 +32,18 @@ seng468-day-trading/
 
 This outlines how to use workspaces.
 
-1. The root `package.json` details where each workspaces are. 
-2. `foobar-package` exports the `somePackageFunc` function (in `foobar-package/index.ts`). 
-3. `service/foobar-service/package.json` has `"foobar-package": "workspace:*"` in it's dependencies. 
-4. In `index.ts` of `foobar-service`, we can call the `somePackageFunc` function from `foobar-package`. 
-5. If everything is setup corrrectly, when we run `bun run index.ts` inside of `foobar-service`, we should get 
+1. The root `package.json` details where each workspaces are.
+2. `foobar-package` exports the `somePackageFunc` function (in `foobar-package/index.ts`).
+3. `service/foobar-service/package.json` has `"foobar-package": "workspace:*"` in it's dependencies.
+4. In `index.ts` of `foobar-service`, we can call the `somePackageFunc` function from `foobar-package`.
+5. If everything is setup corrrectly, when we run `bun run index.ts` inside of `foobar-service`, we should get
     ```
     Hello from foobar SERVICE!
     Hello from foobar PACKAGE!
     ```
+
+## Prerequisites
+
+-   Bun v1.1.x (To be upgraded to v1.2 prior to starting the project)
+-   Rust v1.84.0
+-   Docker

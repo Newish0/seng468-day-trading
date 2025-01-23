@@ -1,13 +1,20 @@
 <script lang="ts">
-  import Counter from "./lib/Counter.svelte";
+  import "simpledotcss";
+  import StockPortfolio from "./lib/StockPortfolio/StockPortfolio.svelte";
+  import Stocks from "./lib/Stocks/Stocks.svelte";
+  import Wallet from "./lib/Wallet/Wallet.svelte";
+  import StockTransactions from "./lib/StockTransactions/StockTransactions.svelte";
+  import WalletTransactions from "./lib/WalletTransactions/WalletTransactions.svelte";
 </script>
 
-<main>
-  <h1>Trade Simple</h1>
+<main class="container">
+  <h1>TradeSimple</h1>
 
-  <div class="card">
-    <Counter />
-  </div>
+  <Wallet />
+  <WalletTransactions />
+  <StockPortfolio />
+  <StockTransactions />
+  <Stocks />
 </main>
 
 <style>
@@ -15,6 +22,6 @@
     max-width: 1200px;
     display: flex;
     flex-direction: column;
-    margin: 0 auto;
+    margin: 100px auto;
   }
 </style>

@@ -1,8 +1,9 @@
 # TradeSimple Web UI - Svelte + TS + Vite
 
-## Recommended IDE Setup
+## Development
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+1. `npm i`
+2. `npm run dev`
 
 ## Technical considerations
 

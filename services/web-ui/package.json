@@ -16,5 +16,8 @@
     "svelte-check": "^4.1.1",
     "typescript": "~5.6.2",
     "vite": "^6.0.5"
+  },
+  "dependencies": {
+    "simpledotcss": "^2.3.3"
   }
 }

@@ -17,9 +17,6 @@ seng468-day-trading/
 │   ├── shared-types/      # Typescript Shared types/interfaces
 │   ├── shared-models/     # Typescript database models/schemes
 ├── docker-compose.yml     # Orchestrates services
-├── package.json           # For managing shared TypeScript dependencies
-├── tsconfig.base.json     # Shared TypeScript configuration
-├── README.md              # Documentation
 ├── package.json           # Manages Typescript workspaces/shared packages and project scripts
 ├── tsconfig.base.json     # Global Typescript config for all Typescript services
 ├── README.md              # Documentation

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { authRoutes } from './routes/authRoutes'
+import authRoutes from './routes/authRoutes'
 
 const port =  Bun.env.PORT || 3000
 const app = new Hono()

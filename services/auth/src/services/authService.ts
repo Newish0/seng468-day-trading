@@ -1,5 +1,5 @@
 
-const authService = {
+const service = {
 
   register: async (username: string, password: string, name: string) => {
   
@@ -11,4 +11,4 @@ const authService = {
 
 };
 
-export default authService;
+export default service;

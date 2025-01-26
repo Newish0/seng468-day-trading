@@ -1,4 +1,3 @@
-// controller.ts
 import service from '../services/authService';
 import type { Context } from 'hono';
 
@@ -8,7 +7,6 @@ const controller = {
     // REVIEW: How to distinguish from company/user registration
     const { username, password, name } = await c.req.json();
     try {
-      // REVIEW: Do we need to return user info/JWT here
       await service.register(username, password, name);
       return c.json({ success: true, data: null });
     } catch (error) {

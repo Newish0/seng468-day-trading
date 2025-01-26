@@ -1,5 +1,23 @@
 # Matching Engine
 
+## Quicks Start
+
+```bash
+cargo run
+```
+
+or with hot reload
+
+```bash
+cargo watch -x run
+```
+
+## Building for release 
+
+```bash
+cargo build --release
+```
+
 ## API Specs
 
 The API endpoints are intentionally named slight different from the endpoints that will be exposed to the client to differentiate between them. These internal API endpoints are meant to be used by the Order Service (and maybe the Main User API for `/stockPrices`).

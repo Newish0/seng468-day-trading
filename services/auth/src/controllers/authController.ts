@@ -2,24 +2,20 @@ import service from '../services/authService';
 import type { Context } from 'hono';
 
 const controller = {
+  // REVIEW: how to distinguish b/w user/company for register/login
 
   register: async (c: Context) => {
-    // REVIEW: How to distinguish from company/user registration
     const { username, password, name } = await c.req.json();
 
     if (!username || !password || !name) {
-        return c.json({ success: false, data: {"error": 'Username, password, and name are required' }}, 400);
-      }
+      return c.json({ success: false, data: { error: 'Username, password, and name are required' } }, 400);
+    }
 
     try {
       await service.register(username, password, name);
       return c.json({ success: true, data: null });
     } catch (error) {
-      if (error instanceof Error) {
-        return c.json({ success: false, data: { error: error.message } }, 400);
-      } else {
-        return c.json({ success: false, data: { error: "An unknown error has occurred" } }, 400);
-      }
+      return c.json(handleError(error), 400);
     }
   },
 
@@ -27,22 +23,23 @@ const controller = {
     const { username, password } = await c.req.json();
 
     if (!username || !password) {
-        return c.json({ success: false, data: {error: 'Username and password are required' }}, 400);
+      return c.json({ success: false, data: { error: 'Username and password are required' } }, 400);
     }
 
     try {
-      // REVIEW: How to distinguish from company/user login
       const token = await service.login(username, password);
-      return c.json({ success: true, data: { token: token } });
+      return c.json({ success: true, data: { token } });
     } catch (error) {
-      if (error instanceof Error) {
-        return c.json({ success: false, data: { error: error.message } }, 400);
-      } else {
-        return c.json({ success: false, data: { error: "An unknown error has occurred" } }, 400);
-      }
+      return c.json(handleError(error), 400);
     }
   }
 };
 
-export default controller;
+const handleError = (error: unknown) => {
+    if (error instanceof Error) {
+      return { success: false, data: { error: error.message } };
+    }
+    return { success: false, data: { error: 'An unknown error has occurred' } };
+  };
 
+export default controller;

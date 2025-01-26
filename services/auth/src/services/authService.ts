@@ -44,7 +44,6 @@ const service = {
       exp: Math.floor(Date.now() / 1000) + 3600, // 1h expiry
     }
     
-
     try {
       token = await sign(payload, JWT_SECRET);
     } catch (error) {

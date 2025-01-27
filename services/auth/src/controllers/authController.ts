@@ -5,14 +5,14 @@ const controller = {
   // REVIEW: how to distinguish b/w user/company for register/login
 
   register: async (c: Context) => {
-    const { username, password, name } = await c.req.json();
+    const { user_name, password, name } = await c.req.json();
 
-    if (!username || !password || !name) {
+    if (!user_name || !password || !name) {
       return c.json({ success: false, data: { error: 'Username, password, and name are required' } }, 400);
     }
 
     try {
-      await service.register(username, password, name);
+      await service.register(user_name, password, name);
       return c.json({ success: true, data: null });
     } catch (error) {
       return c.json(handleError(error), 400);
@@ -20,14 +20,14 @@ const controller = {
   },
 
   login: async (c: Context) => {
-    const { username, password } = await c.req.json();
+    const { user_name, password } = await c.req.json();
 
-    if (!username || !password) {
+    if (!user_name || !password) {
       return c.json({ success: false, data: { error: 'Username and password are required' } }, 400);
     }
 
     try {
-      const token = await service.login(username, password);
+      const token = await service.login(user_name, password);
       return c.json({ success: true, data: { token } });
     } catch (error) {
       return c.json(handleError(error), 400);

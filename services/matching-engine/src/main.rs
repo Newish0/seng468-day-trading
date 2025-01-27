@@ -9,6 +9,7 @@ mod handlers;
 mod matching_pq;
 mod models;
 mod state;
+mod order_service;
 
 use handlers::{cancel_limit_sell, get_stock_prices, limit_sell, market_buy};
 use state::AppState;

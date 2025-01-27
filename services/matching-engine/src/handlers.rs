@@ -21,7 +21,7 @@ pub async fn get_stock_prices(
         .iter()
         // Only include stocks that have a price (which should be all of them)
         .filter_map(|stock_id| {
-            let price = state.get_stock_price(stock_id)?;
+            let price = state.matching_pq.peek(stock_id).map(|order| order.price)?; // try to get stock price
 
             // DEBUG: Output the full stock order in the PQ for debugging
             #[cfg(debug_assertions)]
@@ -139,13 +139,12 @@ pub async fn cancel_limit_sell(
 ) -> Json<LimitSellCancelResponse> {
     // TODO: Implement payload validation with serde_validate?
 
-    let some_sell_order;
-    {
+    let some_sell_order = {
         let mut state = state.write().await;
-        some_sell_order = state
+        state
             .matching_pq
-            .remove_order(&payload.stock_id, &payload.stock_tx_id);
-    } // Drop lock
+            .remove_order(&payload.stock_id, &payload.stock_tx_id)
+    }; // minimize lock time
 
     match some_sell_order {
         Some(sell_order) => Json(LimitSellCancelResponse {

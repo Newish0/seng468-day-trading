@@ -4,9 +4,9 @@ export type StockTransaction = {
   stock_tx_id: string;
   stock_id: string;
   wallet_tx_id: string;
-  order_status: string;
+  order_status: ORDER_STATUS;
   is_buy: boolean;
-  order_type: string;
+  order_type: ORDER_TYPE;
   stock_price: number;
   quantity: number;
   parent_tx_id: string;
@@ -22,11 +22,11 @@ export function isStockTransaction(obj: any): obj is StockTransaction {
     "wallet_tx_id" in obj &&
     typeof obj.wallet_tx_id === "string" &&
     "order_status" in obj &&
-    typeof obj.order_status === "string" &&
+    isValidOrderStatus(obj.order_status) &&
     "is_buy" in obj &&
     typeof obj.is_buy === "boolean" &&
     "order_type" in obj &&
-    typeof obj.order_type === "string" &&
+    isValidOrderType(obj.order_type) &&
     "stock_price" in obj &&
     typeof obj.stock_price === "number" &&
     "quantity" in obj &&
@@ -59,4 +59,25 @@ export function isWalletTransaction(obj: any): obj is WalletTransaction {
     "time_stamp" in obj &&
     typeof obj.time_stamp === "string"
   );
+}
+
+export enum ORDER_STATUS {
+  PENDING = "PENDING",
+  PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED",
+  COMPLETED = "COMPLETED",
+}
+export function isValidOrderStatus(obj: any): obj is ORDER_STATUS {
+  return (
+    obj === ORDER_STATUS.PENDING ||
+    obj === ORDER_STATUS.PARTIALLY_COMPLETED ||
+    obj === ORDER_STATUS.COMPLETED
+  );
+}
+
+export enum ORDER_TYPE {
+  MARKET = "MARKET",
+  LIMIT = "LIMIT",
+}
+export function isValidOrderType(obj: any): obj is ORDER_TYPE {
+  return obj === ORDER_TYPE.MARKET || obj === ORDER_TYPE.LIMIT;
 }

@@ -1,10 +1,11 @@
 import { isValidReturnType, type ReturnType } from "../..";
 import { isObject } from "../../..";
+import { isValidOrderType, type ORDER_TYPE } from "../../../transactions";
 
 export type PlaceStockOrderRequest = {
   stock_id: string;
   is_buy: boolean;
-  order_type: string;
+  order_type: ORDER_TYPE;
   quantity: number;
   price: number;
 };
@@ -18,7 +19,7 @@ export function isPlaceStockOrderRequest(
     "is_buy" in obj &&
     typeof obj.is_buy === "boolean" &&
     "order_type" in obj &&
-    typeof obj.order_type === "string" &&
+    isValidOrderType(obj.order_type) &&
     "quantity" in obj &&
     typeof obj.quantity === "number" &&
     "price" in obj &&

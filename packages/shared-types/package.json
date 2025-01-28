@@ -1,5 +1,5 @@
 {
-  "name": "user-api",
+  "name": "shared-types",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -7,9 +7,5 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "hono": "^4.6.19",
-    "shared-types": "workspace:*"
   }
 }

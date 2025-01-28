@@ -1,8 +1,15 @@
-import { Hono } from 'hono';
-import controller from '../controllers/orderController'
+import { Hono } from "hono";
+import controller from "../controllers/orderController";
 
-const orderRoutes = new Hono()
+const orderRoutes = new Hono();
 
-orderRoutes.post('/placeStockOrder', controller.placeStockOrder);
+// API requests from user-api
+orderRoutes.post("/placeStockOrder", controller.placeStockOrder);
+orderRoutes.post("/getStockPrices", controller.getStockPrices);
+orderRoutes.post("/cancelStockTransaction", controller.cancelStockTransaction);
+
+// API requests from matching engine
+orderRoutes.post("/partialSell", controller.partialSell);
+orderRoutes.post("/completeSell", controller.completeSell);
 
 export default orderRoutes;

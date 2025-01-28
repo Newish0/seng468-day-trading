@@ -1,0 +1,55 @@
+{
+    "folders": [
+        {
+            "name": "Root",
+            "path": "../"
+        },
+        {
+            "name": "packages/foobar-package",
+            "path": "../packages/foobar-package"
+        },
+        {
+            "name": "packages/shared-models",
+            "path": "../packages/shared-models"
+        },
+        {
+            "name": "packages/shared-types",
+            "path": "../packages/shared-types"
+        },
+        {
+            "name": "packages/shared-utils",
+            "path": "../packages/shared-utils"
+        },
+        {
+            "name": "services/auth",
+            "path": "../services/auth"
+        },
+        {
+            "name": "services/foobar-service",
+            "path": "../services/foobar-service"
+        },
+        {
+            "name": "services/gateway",
+            "path": "../services/gateway"
+        },
+        {
+            "name": "services/matching-engine",
+            "path": "../services/matching-engine"
+        },
+        {
+            "name": "services/user-api",
+            "path": "../services/user-api"
+        },
+        {
+            "name": "services/web-ui",
+            "path": "../services/web-ui"
+        },
+    ],
+    "settings": {
+        "files.exclude": {
+            "node_modules/": true,
+            "packages/": true,
+            "services/": true,
+        },
+    }
+}

@@ -1,0 +1,92 @@
+version: "3.8"
+
+services:
+    # Redis Database
+    redis:
+        image: redis/redis-stack:latest
+        ports:
+            - "6379:6379"
+            - "8001:8001" # REVIEW: For RedisInsight I think... We can remove this for production maybe?
+        networks:
+            - day-trading-network
+        volumes:
+            - redis-data:/data
+
+    # API Gateway (Nginx)
+    gateway:
+        build:
+            context: ./services/gateway
+            dockerfile: Dockerfile
+        image: seng468-gateway
+        ports:
+            - "80:80"
+        depends_on:
+            - web-ui
+            - user-api
+            - auth
+        networks:
+            - day-trading-network
+
+    # User API Service
+    user-api:
+        build:
+            context: ./services/user-api
+            dockerfile: Dockerfile
+        environment:
+            - PORT=3000
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - ORDER_SERVICE_URL=http://order:3002
+        depends_on:
+            - redis
+            - order
+        networks:
+            - day-trading-network
+
+    # Authentication Service
+    auth:
+        build:
+            context: ./services/auth
+            dockerfile: Dockerfile
+        environment:
+            - PORT=3001
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+        depends_on:
+            - redis
+        networks:
+            - day-trading-network
+
+    # Order Service
+    order:
+        build:
+            context: ./services/order
+            dockerfile: Dockerfile
+        environment:
+            - PORT=3002
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+            - MATCHING_ENGINE_URL=http://matching-engine:3003
+        depends_on:
+            - redis
+            - matching-engine
+        networks:
+            - day-trading-network
+
+    # Matching Engine (Rust)
+    matching-engine:
+        build:
+            context: ./services/matching-engine
+            dockerfile: Dockerfile
+        environment:
+            - PORT=3003
+            - ORDER_SERVICE_URL=http://order:3002
+        networks:
+            - day-trading-network
+
+volumes:
+    redis-data:
+
+networks:
+    day-trading-network:
+        driver: bridge

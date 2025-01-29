@@ -11,9 +11,13 @@
   let loggedIn = true;
 </script>
 
-<main class="container">
-  <div class="pb-10">
-    <h1>TradeSimple</h1>
+<main class="max-w-[1200px] flex flex-col my-[100px] mx-auto gap-8">
+  <div class="pb-4 flex justify-between">
+    <h1 class="font-bold text-3xl">TradeSimple</h1>
+    <div class="text-right font-mono">
+      <p>SENG468</p>
+      <p>Spring 2025</p>
+    </div>
   </div>
 
   {#if !loggedIn}
@@ -26,12 +30,3 @@
     <Stocks />
   {/if}
 </main>
-
-<style>
-  main {
-    max-width: 1200px;
-    display: flex;
-    flex-direction: column;
-    margin: 100px auto;
-  }
-</style>

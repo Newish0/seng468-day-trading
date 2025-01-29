@@ -33,7 +33,7 @@
   });
 </script>
 
-<div class="flex flex-col w-full">
+<div class="flex flex-col w-full gap-4">
   <h3>Wallet transactions</h3>
 
   <table>

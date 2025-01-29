@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let stocks: any;
+  let portfolio: any;
 
-  const getStocks = () => {
+  const getPortfolio = () => {
     // to be implemented
 
     return [
@@ -19,11 +19,11 @@
   };
 
   onMount(() => {
-    stocks = getStocks();
+    portfolio = getPortfolio();
   });
 </script>
 
-<div class="flex flex-col w-full">
+<div class="flex flex-col w-full gap-4">
   <h3>Holdings</h3>
 
   <table>
@@ -35,10 +35,10 @@
       </tr>
     </thead>
     <tbody>
-      {#each stocks as transaction}
+      {#each portfolio as stock}
         <tr>
-          <td>{transaction.stock}</td>
-          <td>{transaction.quantity}</td>
+          <td>{stock.stock}</td>
+          <td>{stock.quantity}</td>
           <td><button>Sell stock</button></td>
         </tr>
       {/each}

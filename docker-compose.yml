@@ -17,11 +17,9 @@ services:
         build:
             context: ./services/gateway
             dockerfile: Dockerfile
-        image: seng468-gateway
         ports:
             - "80:80"
         depends_on:
-            - web-ui
             - user-api
             - auth
         networks:

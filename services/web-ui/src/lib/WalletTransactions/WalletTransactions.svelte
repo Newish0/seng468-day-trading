@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  let transactions;
+  let transactions: any;
 
-  const getTransactions = () => {
+  const getWalletTransactions = () => {
     // to be implemented
 
     return [
@@ -29,7 +29,7 @@
   };
 
   onMount(() => {
-    transactions = getTransactions();
+    transactions = getWalletTransactions();
   });
 </script>
 

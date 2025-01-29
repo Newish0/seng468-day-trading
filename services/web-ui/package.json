@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "npm run dev",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
@@ -18,6 +19,8 @@
     "vite": "^6.0.5"
   },
   "dependencies": {
-    "simpledotcss": "^2.3.3"
+    "@tailwindcss/vite": "^4.0.0",
+    "simpledotcss": "^2.3.3",
+    "tailwindcss": "^4.0.0"
   }
 }

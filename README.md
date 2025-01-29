@@ -7,6 +7,7 @@ seng468-day-trading/
 ├── services/
 │   ├── foobar-service/    # A test to make sure Bun workspace is correctly setup
 │   ├── user-api/          # TypeScript service
+│   ├── order/             # TypeScript service
 │   ├── auth/              # TypeScript service
 │   ├── matching-engine/   # Rust service
 │   ├── gateway/           # Nginx configuration and assets

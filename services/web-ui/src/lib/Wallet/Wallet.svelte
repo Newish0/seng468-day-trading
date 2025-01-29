@@ -8,6 +8,8 @@
   });
 
   const getBalance = (): number => {
+    // to be implemented
+
     return 12345;
   };
 

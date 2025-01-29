@@ -49,7 +49,7 @@
       {#each transactions as transaction}
         <tr>
           <td>{transaction.stock}</td>
-          <td>{transaction.debit}</td>
+          <td>{transaction.usedDebit}</td>
           <td>${transaction.amount}</td>
           <td>{transaction.time}</td>
         </tr>

@@ -11,7 +11,7 @@
   let loggedIn = true;
 </script>
 
-<main class="max-w-[1200px] flex flex-col my-[100px] mx-auto gap-12">
+<main class="max-w-[1200px] flex flex-col my-[60px] mx-auto gap-12">
   <div class="pb-4 flex justify-between">
     <h1 class="font-bold text-3xl">TradeSimple</h1>
     <div class="text-right font-mono">

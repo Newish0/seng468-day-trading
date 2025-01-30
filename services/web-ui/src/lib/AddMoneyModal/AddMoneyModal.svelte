@@ -27,7 +27,7 @@
     </div>
 
     <form method="dialog" class="self-end">
-      <button class="ghost">Close</button>
+      <button class="ghost">Cancel</button>
       <button on:click={handleAddMoney}>Add money</button>
     </form>
   </div>

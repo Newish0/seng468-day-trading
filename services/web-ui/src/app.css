@@ -16,6 +16,7 @@ dialog {
   border-radius: 20px;
   width: 91%;
   max-width: 512px;
+  padding: 24px 28px;
 }
 
 button {

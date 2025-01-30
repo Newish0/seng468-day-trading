@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
   import { onMount } from "svelte";
 
   let stocks: any;
@@ -39,7 +40,7 @@
         <tr>
           <td>{stock.name}</td>
           <td>{stock.price}</td>
-          <td><button>Buy stock</button></td>
+          <td><BuyStockModal stockName={stock.name} /></td>
         </tr>
       {/each}
     </tbody>

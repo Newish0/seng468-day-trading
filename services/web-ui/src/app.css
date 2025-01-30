@@ -10,3 +10,9 @@ h6,
 table {
   margin: 0;
 }
+
+dialog {
+  border-radius: 20px;
+  width: 91%;
+  max-width: 512px;
+}

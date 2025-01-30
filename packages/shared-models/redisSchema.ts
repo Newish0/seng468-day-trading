@@ -1,27 +1,4 @@
-import { createClient } from 'redis';
 import {Schema} from 'redis-om';
-
-const redisClient = createClient({
-  url: 'redis://localhost:6379', // Default Redis URL
-});
-
-redisClient.on('error', (err) => {
-  console.error('Redis Client Error:', err);
-});
-
-const connectRedis = async () => {
-  try {
-    await redisClient.connect();
-    console.log('Connected to Redis');
-  } catch (error) {
-    console.error('Could not connect to Redis:', error);
-  }
-};
-
-export { redisClient, connectRedis };
-
-
-// All of the above code was generated with CHAT GPT.
 
 const stockSchema = new Schema('stocks', {
   stock_id: { type: 'string' }, // We need a id for our stocks.
@@ -67,3 +44,5 @@ const userSchema = new Schema('users', {
   transaction_history: { type: 'string[]'},
   wallet_balence: { type: 'number'}
 });
+
+export { stockSchema };

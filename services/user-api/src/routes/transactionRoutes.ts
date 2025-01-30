@@ -1,4 +1,6 @@
 import { Hono } from "hono";
+import { isAddMoneyToWalletRequest } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
+import { getValidator } from "shared-utils";
 import stockController from "../controllers/stockController";
 import walletController from "../controllers/walletController";
 
@@ -16,6 +18,10 @@ transactionRoutes.get(
   "/getWalletTransactions",
   walletController.getWalletTransactions
 );
-transactionRoutes.post("/addMoneyToWallet", walletController.addMoneyToWallet);
+transactionRoutes.post(
+  "/addMoneyToWallet",
+  getValidator(isAddMoneyToWalletRequest),
+  walletController.addMoneyToWallet
+);
 
 export default transactionRoutes;

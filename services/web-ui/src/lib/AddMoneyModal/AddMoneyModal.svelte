@@ -10,10 +10,9 @@
   };
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_missing_attribute -->
-<a class="font-medium cursor-pointer" on:click={open}>Add money</a>
+<button class="ghost font-medium cursor-pointer" on:click={open}
+  >Add money</button
+>
 
 <dialog bind:this={modal}>
   <div class="flex flex-col gap-4">
@@ -28,7 +27,7 @@
     </div>
 
     <form method="dialog" class="self-end">
-      <button>Close</button>
+      <button class="ghost">Close</button>
       <button on:click={handleAddMoney}>Add money</button>
     </form>
   </div>

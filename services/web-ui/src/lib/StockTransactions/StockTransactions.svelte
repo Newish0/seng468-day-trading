@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
   import { onMount } from "svelte";
 
   let transactions: any;
@@ -34,6 +35,10 @@
   onMount(() => {
     transactions = getWalletTransactions();
   });
+
+  const cancelTransaction = () => {
+    // to be implemented
+  };
 </script>
 
 <div class="flex flex-col w-full gap-4">
@@ -60,7 +65,7 @@
           <td>{transaction.status}</td>
           <td>
             {#if transaction.status !== "Completed"}
-              <button>Cancel</button>
+              <ConfirmModal on:click={cancelTransaction}>Cancel</ConfirmModal>
             {/if}
           </td>
         </tr>

@@ -7,7 +7,8 @@ h3,
 h4,
 h5,
 h6,
-table {
+table,
+button {
   margin: 0;
 }
 
@@ -15,4 +16,21 @@ dialog {
   border-radius: 20px;
   width: 91%;
   max-width: 512px;
+}
+
+button {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+button.ghost {
+  color: var(--accent);
+  text-decoration: none;
+
+  background-color: transparent;
+  border: none;
+}
+button.ghost:hover {
+  background-color: transparent;
+  border: none;
 }

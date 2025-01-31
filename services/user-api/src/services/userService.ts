@@ -60,6 +60,7 @@ const service = {
           time_stamp: "2021-01-01T00:00:00Z",
         },
       ],
+      walletBalance: 1000,
     };
     return user;
   },

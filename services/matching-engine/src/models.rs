@@ -19,6 +19,7 @@ pub struct MarketBuyRequest {
     pub stock_id: String,
     pub quantity: u32,
     pub stock_tx_id: String,
+    pub budget: f64,
 }
 
 #[derive(Serialize)]

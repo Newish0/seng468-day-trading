@@ -48,6 +48,7 @@ Placing a market buy order.
         stock_id: string,
         quantity: number,
         stock_tx_id: string,
+        budget: number, 
     }
     ```
 -   Response:

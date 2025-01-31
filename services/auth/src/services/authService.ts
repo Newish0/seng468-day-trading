@@ -2,8 +2,8 @@
 
 import { sign } from "hono/jwt";
 import bcrypt from "bcrypt";
-import { userSchema } from "PUT-PATH-TO-USER-SCHEMA-HERE";
-import { RedisInstance } from "PUT-PATH-TO-REDISINSTANCE-CLAS-HERE";
+import { userSchema } from "shared-utils";
+import { RedisInstance } from "shared-utils";
 import { Repository } from "redis-om";
 
 const JWT_SECRET = Bun.env.JWT_SECRET || "secret"; // TODO: Remove 'secret' in prod

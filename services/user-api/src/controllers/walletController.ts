@@ -32,9 +32,15 @@ const walletController = {
   >(
     c: Context<E, P, I>
   ) => {
-    const v = c.req.valid("json");
-    walletService.addMoneyToWallet(v.amount);
-    return c.json({}, 200);
+    // const userId = c.get("user");
+    const userId = "1234";
+    const { amount } = c.req.valid("json");
+    try {
+      walletService.addMoneyToWallet(userId, amount);
+      return c.json({ success: true, data: null }, 200);
+    } catch (e) {
+      return c.json({ success: false, data: null }, 500);
+    }
   },
 };
 

@@ -60,6 +60,22 @@ const service = {
           time_stamp: "2021-01-01T00:00:00Z",
         },
       ],
+      walletTransactions: [
+        {
+          wallet_tx_id: "1",
+          stock_tx_id: "1",
+          is_debit: false,
+          amount: 1000,
+          time_stamp: "2021-01-01T00:00:00Z",
+        },
+        {
+          wallet_tx_id: "2",
+          stock_tx_id: "2",
+          is_debit: true,
+          amount: 1000,
+          time_stamp: "2021-01-01T00:00:00Z",
+        },
+      ],
       walletBalance: 1000,
     };
     return user;

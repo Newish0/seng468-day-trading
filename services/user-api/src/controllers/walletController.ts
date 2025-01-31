@@ -16,8 +16,14 @@ const walletController = {
     }
   },
   getWalletTransactions: async (c: Context) => {
-    c.status(400);
-    return c.json({ message: "Not implemented" });
+    // const userId = c.get("user");
+    const userId = "1234";
+    try {
+      const user = await userService.getUserFromId(userId);
+      return c.json({ success: true, data: user.walletTransactions });
+    } catch (e) {
+      return c.json({ success: false, data: null }, 500);
+    }
   },
   addMoneyToWallet: async <
     E extends Env,

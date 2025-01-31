@@ -1,11 +1,7 @@
 {
-  "name": "seng468-day-trading",
+  "name": "shared-types",
+  "module": "index.ts",
   "type": "module",
-  "workspaces": [
-    "packages/*",
-    "services/foobar-service",
-    "services/user-api"
-  ],
   "devDependencies": {
     "@types/bun": "latest"
   },

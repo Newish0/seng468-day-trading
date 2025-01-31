@@ -43,6 +43,10 @@ impl StockMatchingPriorityQueue {
         }
     }
 
+    pub fn get_stock_queue(&self, stock_id: &str) -> Option<&BinaryHeap<Reverse<SellOrder>>> {
+        self.stock_queues.get(stock_id)
+    }
+
     pub fn insert(&mut self, order: SellOrder) {
         self.stock_queues
             .entry(order.stock_id.clone())

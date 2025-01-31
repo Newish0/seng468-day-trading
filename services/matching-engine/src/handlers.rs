@@ -1,5 +1,5 @@
 use axum::{extract::State, Json};
-use std::sync::Arc;
+use std::{cmp::Reverse, sync::Arc};
 use tokio::sync::RwLock;
 
 use crate::{
@@ -60,6 +60,7 @@ pub async fn market_buy(
         .map(|sell_order| sell_order.cur_quantity)
         .sum();
 
+    // Check available shares
     let mut shares_to_buy = payload.quantity;
     if shares_to_buy > available_shares {
         return Json(MarketBuyResponse {
@@ -68,6 +69,43 @@ pub async fn market_buy(
         });
     }
 
+    // Dry-run: Clone the priority queue to calculate total cost without modifying state
+    // OPTIMIZE: This implementation is wildly inefficient but future problem it is! 
+    // REFACTOR: Too much duplicate code between the dry run and the actual run. 
+    let Some(original_queue) = state
+        .matching_pq
+        .get_stock_queue(&payload.stock_id)
+        .cloned()
+    else {
+        return Json(MarketBuyResponse {
+            success: false,
+            data: None,
+        });
+    };
+
+    let mut cloned_queue = original_queue;
+    let mut total_price_dry = 0.0;
+    let mut remaining_dry = shares_to_buy; // make copy
+
+    while remaining_dry > 0 {
+        if let Some(Reverse(order)) = cloned_queue.pop() {
+            let take = remaining_dry.min(order.cur_quantity);
+            total_price_dry += take as f64 * order.price;
+            remaining_dry -= take;
+        } else {
+            break; // Should not occur due to available_shares check
+        }
+    }
+
+    // Budget validation
+    if total_price_dry > payload.budget {
+        return Json(MarketBuyResponse {
+            success: false,
+            data: None,
+        });
+    }
+
+    // Proceed with actual purchase processing
     let mut total_price = 0.0;
     let mut shares_bought = 0;
     while shares_to_buy > 0 {

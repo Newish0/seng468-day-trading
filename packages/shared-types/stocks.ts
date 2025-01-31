@@ -1,5 +1,6 @@
 import { isObject } from ".";
 
+// TODO: These should come from the schema, shouldn't be manually defined
 export type OwnedStock = {
   stock_id: string;
   stock_name: string;

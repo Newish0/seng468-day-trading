@@ -4,7 +4,9 @@ import controller from "../controllers/orderController";
 const orderRoutes = new Hono();
 
 // API requests from user-api
-orderRoutes.post("/placeStockOrder", controller.placeStockOrder);
+orderRoutes.post("/placeLimitSell", controller.placeLimitSell);
+orderRoutes.post("/placeMarketBuy", controller.placeMarketBuy);
+
 orderRoutes.post("/getStockPrices", controller.getStockPrices);
 orderRoutes.post("/cancelStockTransaction", controller.cancelStockTransaction);
 

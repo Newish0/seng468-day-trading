@@ -2,27 +2,38 @@ import service from "../services/orderService";
 import type { Context } from "hono";
 
 const controller = {
-  placeStockOrder: async (c: Context) => {
-    const { stock_id, is_buy, order_type, quantity, price } = await c.req.json();
+  placeLimitSell: async (c: Context) => {
+    const { stock_id, quantity, price } = await c.req.json();
 
-    if (!stock_id || is_buy === undefined || is_buy === null || !order_type || !quantity || (order_type !== "LIMIT" && order_type !== "MARKET")) {
+    if(!stock_id || !quantity || !price){
       return c.json({ success: false, data: { error: "Missing required parameters" } }, 400);
     }
 
-    if (order_type === "LIMIT" && is_buy === false && (price === undefined || price === null)) {
-      return c.json({ success: false, data: { error: "Price is required for SELL orders with LIMIT type" } }, 400);
-    }
-
     try {
-      await service.placeStockOrder(stock_id, is_buy, order_type, quantity, price);
+      await service.placeLimitSellOrder(stock_id, quantity, price);
       return c.json({ success: true, data: null }, 201);
     } catch (error) {
       if (error instanceof Error) {
         return c.json({ success: false, data: { error: error.message } }, 400);
       }
-      return c.json({ success: false, data: { error: "An unknown error has occurred" } }, 500);
+      return c.json({ success: false, data: { error: "An unknown error has occurred with limit sell" } }, 500);
     }
+
   },
+
+  placeMarketBuy: async (c: Context) => {
+    const { stock_id, quantity, seller_stock_tx_id } = await c.req.json();
+    const user = c.get("user")
+    try {
+      await service.placeMarketBuyOrder(stock_id, quantity, seller_stock_tx_id, user.user_name);
+      return c.json({ success: true, data: null }, 201);
+    } catch (error) {
+      if (error instanceof Error) {
+        return c.json({ success: false, data: { error: error.message } }, 400);
+      }
+      return c.json({ success: false, data: { error: "An unknown error has occurred with market buy" } }, 500);
+    }
+  }, 
 
   getStockPrices: async (c: Context) => {
     try {

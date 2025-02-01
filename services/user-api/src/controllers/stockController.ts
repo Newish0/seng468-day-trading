@@ -1,12 +1,22 @@
 import type { Context } from "hono";
-import stockService from "../services/stockService";
+import {
+  type GetStockPricesRequest,
+  type GetStockPricesResponse,
+} from "shared-types/dtos/order/getStockPrices";
+import { makeInternalRequest } from "shared-utils/internalCommunication";
 import userService from "../services/userService";
 
 const stockController = {
   getStockPrices: async (c: Context) => {
     try {
-      const stocks = await stockService.getAvailableStocks();
-      return c.json({ success: true, data: stocks });
+      const response = await makeInternalRequest<
+        GetStockPricesRequest,
+        GetStockPricesResponse
+      >({ body: undefined })("orderService", "getStockPrices");
+      if (!response.success) {
+        return c.json({ success: false, data: null }, 400);
+      }
+      return c.json({ success: true, data: response.data });
     } catch (e) {
       return c.json({ success: false, data: null }, 400);
     }

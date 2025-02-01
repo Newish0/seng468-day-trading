@@ -7,7 +7,10 @@ import {
   type PlaceMarketBuyRequest,
   type PlaceMarketBuyResponse,
 } from "shared-types/dtos/order/placeMarketBuy";
-import type { CancelStockTransactionRequest } from "shared-types/dtos/user-api/engine/cancelStockTransaction";
+import type {
+  CancelStockTransactionRequest,
+  CancelStockTransactionResponse,
+} from "shared-types/dtos/user-api/engine/cancelStockTransaction";
 import type { PlaceStockOrderRequest } from "shared-types/dtos/user-api/engine/placeStockOrder";
 import type { WrappedInput } from "shared-types/hono";
 import { ORDER_TYPE } from "shared-types/transactions";
@@ -74,8 +77,18 @@ const engineController = {
   >(
     c: Context<E, P, I>
   ) => {
-    c.status(400);
-    return c.json({ message: "Not implemented" });
+    const { stock_tx_id } = c.req.valid("json");
+    const response = await makeInternalRequest<
+      CancelStockTransactionRequest,
+      CancelStockTransactionResponse
+    >({
+      body: { stock_tx_id },
+    })("orderService", "cancelStockTransaction");
+    if (response.success) {
+      return c.json({ success: true, data: null });
+    } else {
+      return c.json({ success: false, data: null }, 400);
+    }
   },
 };
 

@@ -1,9 +1,7 @@
-/* TODO: ADD TYPES FROM SHARED PACKAGE ONCE MERGED*/
-
 import { sign } from "hono/jwt";
 import bcrypt from "bcrypt";
-import { userSchema } from "shared-utils";
-import { RedisInstance } from "shared-utils";
+import { userSchema, type User } from "shared-models";
+import { RedisInstance } from "shared-models";
 import { Repository } from "redis-om";
 
 const JWT_SECRET = Bun.env.JWT_SECRET || "secret"; // TODO: Remove 'secret' in prod
@@ -12,11 +10,12 @@ const SALT_ROUNDS = 10;
 // Creating connection here due to the implementation of RedisInstance.ts
 // This is probably NOT good - causes multiple connection creation?
 let redisConnection: RedisInstance = new RedisInstance();
-redisConnection.connect();
-const userRepository: Repository<any> = await redisConnection.createRepository(
-  userSchema,
-  "user_repo",
-);
+try {
+  redisConnection.connect();
+} catch (error) {
+  throw new Error("Error starting database server");
+}
+const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 
 const service = {
   /**
@@ -26,18 +25,10 @@ const service = {
    * @param name - The user's full name.
    * @throws Error - If user already exists.
    */
-  register: async (
-    username: string,
-    password: string,
-    name: string,
-  ): Promise<void> => {
+  register: async (username: string, password: string, name: string): Promise<void> => {
     let existingUser;
     try {
-      existingUser = await userRepository
-        .search()
-        .where("user_name")
-        .equals(username)
-        .returnFirst();
+      existingUser = await userRepository.search().where("user_name").equals(username).returnFirst();
     } catch (error) {
       throw new Error("Failed to check if user exists");
     }
@@ -48,12 +39,13 @@ const service = {
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    const newUser = {
+    const newUser: User = {
       user_name: username,
       password: hashedPassword,
       name,
       portfolio: [],
-      transaction_history: [],
+      stock_transaction_history: [],
+      wallet_transaction_history: [],
       wallet_balance: 0,
     };
 
@@ -72,18 +64,11 @@ const service = {
    * @returns The JWT token for the authenticated user.
    * @throws Error - If credentials are invalid or user is not found.
    */
-  login: async (
-    username: string,
-    password: string,
-  ): Promise<{ token: string }> => {
+  login: async (username: string, password: string): Promise<{ token: string }> => {
     let user;
 
     try {
-      user = await userRepository
-        .search()
-        .where("user_name")
-        .equals(username)
-        .returnFirst();
+      user = await userRepository.search().where("user_name").equals(username).returnFirst();
     } catch (error) {
       throw new Error("Failed to retrieve user data");
     }
@@ -91,8 +76,12 @@ const service = {
     if (!user) {
       throw new Error("User not found");
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    let isPasswordValid;
+    try {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } catch (error) {
+      throw new Error("An error has occured validating passwords");
+    }
 
     if (!isPasswordValid) {
       throw new Error("Password is incorrect");

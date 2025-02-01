@@ -19,6 +19,7 @@
     "hono": "^4.6.18",
     "redis": "^4.7.0",
     "redis-om": "^0.4.7",
-    "shared-utils": "workspace:*"
+    "shared-utils": "workspace:*",
+    "shared-models": "workspace:*"
   }
 }

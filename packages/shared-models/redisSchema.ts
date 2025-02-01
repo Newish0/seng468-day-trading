@@ -40,8 +40,9 @@ const userSchema = new Schema('users', {
   user_name: { type: 'string' }, // These are unique, could replace with user_id if needed
   password: { type: 'string'},
   name: { type: 'string'},
-  portfolio: { type: 'string[]'}, // Should contain stock ID and quantity owned
-  transaction_history: { type: 'string[]'},
+  portfolio: { type: 'string[]'}, // Should contain id's of owned stock, which gives us the stock name and current quantity owned
+  stock_transaction_history: { type: 'string[]'},
+  wallet_transaction_history: { type: 'string[]'},
   wallet_balence: { type: 'number'}
 });
 

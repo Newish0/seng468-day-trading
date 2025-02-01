@@ -17,12 +17,6 @@ class RedisInstance {
    */
   constructor(redisUrl: string = 'redis://localhost:6379') {
     this.redisClient = createClient({ url: redisUrl });
-
-    // Proper error handling
-    this.redisClient.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-      throw new Error(`Redis connection error: ${err.message}`);
-    });
   }
 
   /**
@@ -99,6 +93,9 @@ class RedisInstance {
 
     // Create repository with the schema
     const repository = new Repository(schema, this.redisClient);
+
+    // All of our repositorys should expect to be indexed into
+    repository.createIndex();
     
     // Add the repository to the dictionary
     this.repositoryDict[name] = repository;

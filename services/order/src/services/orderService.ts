@@ -282,7 +282,16 @@ const service = {
     }
   },
 
-  completeSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string) => {},
+  completeSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string) => {
+    // Updates the OG sell transaction to status = COMPLETED 
+    try{
+      let transaction = await stockTransactionRepository.search().where("stock_tx_id").equals(stock_tx_id).returnFirst();
+      transaction.status = "COMPLETED";
+      await stockTransactionRepository.save(transaction);
+    }catch(err){
+      throw new Error("Error updating limit sell order status to completed (completeSell)");
+    }
+  },
 };
 
 export default service;

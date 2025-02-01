@@ -57,10 +57,8 @@ Placing a market buy order.
     {
         stock_id: string,
         quantity: number,
-        seller_stock_tx_id: string,  
     }
     ```
-    Note: seller_stock_tx_id is the id of the transaction that created the sell order
 
 -   Response: (if success)
     ```ts

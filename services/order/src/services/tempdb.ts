@@ -1,51 +1,78 @@
 /* THIS WILL BE REMOVED - ONLY FOR TESTING */
+import { Schema } from "redis-om";
 
+type InferSchema<T extends Record<string, { type: string }>> = {
+  [K in keyof T]: T[K]["type"] extends "string"
+    ? string
+    : T[K]["type"] extends "string[]"
+    ? string[]
+    : T[K]["type"] extends "date"
+    ? string
+    : T[K]["type"] extends "number"
+    ? number
+    : T[K]["type"] extends "boolean"
+    ? boolean
+    : never;
+};
 
-import {Schema} from 'redis-om';
+const stockSchemaObject = {
+  stock_id: { type: "string" },
+  stock_name: { type: "string" },
+} as const;
+const stockSchema = new Schema("stocks", stockSchemaObject);
+export type Stock = InferSchema<typeof stockSchemaObject>;
 
-const stockSchema = new Schema('stocks', {
-  stock_id: { type: 'string' }, // We need a id for our stocks.
-  stock_name: { type: 'string' }, // We could also simply use the stock_name itself as the id
-  // current_price: { type: 'number'}, // Not required, as this should be inferred from the matching engine.
-  // current_quantity: { type: 'number'} // Not required, as this should be inferred from the matching engine.
-});
+const ownedStockSchemaObject = {
+  stock_id: { type: "string" },
+  stock_name: { type: "string" },
+  current_quantity: { type: "number" },
+} as const;
+const ownedStockSchema = new Schema("owned_stocks", ownedStockSchemaObject);
+export type StockOwned = InferSchema<typeof ownedStockSchemaObject>;
 
-// Contains duplicate info found in stocks, not sure if want to keep it this way
-// in the context of speeding up querys
-const stockOwnedSchema = new Schema('owned_stocks', {
-  stock_id: { type: 'string' }, 
-  stock_name: { type: 'string' },
-  current_quantity: { type: 'number'}
-});
+const walletTransactionSchemaObject = {
+  wallet_tx_id: { type: "string" },
+  stock_tx_id: { type: "string" },
+  is_debit: { type: "boolean" },
+  quantity: { type: "number" },
+  time_stamp: { type: "date" },
+} as const;
+const WalletTransactionSchmea = new Schema(
+  "wallet_transactions",
+  walletTransactionSchemaObject
+);
+export type WalletTransaction = InferSchema<
+  typeof walletTransactionSchemaObject
+>;
 
-const WalletTransactionSchmea = new Schema('wallet_transactions', {
-  wallet_tx_id: { type: 'string' },
-  stock_tx_id: { type: 'string'},
-  is_debit: { type: 'boolean' },
-  quantity: { type: 'number'},
-  time_stamp: { type: 'date'}
-});
+const stockTransactionSchemaObject = {
+  stock_tx_id: { type: "string" },
+  stock_id: { type: "string" },
+  wallet_tx_id: { type: "string" },
+  order_status: { type: "string" },
+  is_buy: { type: "boolean" },
+  order_type: { type: "string" },
+  stock_price: { type: "number" },
+  quantity: { type: "number" },
+  parent_tx_id: { type: "string" },
+  time_stamp: { type: "date" },
+} as const;
+const StockTransactionSchema = new Schema(
+  "stock_transactions",
+  stockTransactionSchemaObject
+);
+export type StockTransaction = InferSchema<typeof stockTransactionSchemaObject>;
 
-const StockTransactionSchmea = new Schema('stock_transactions', {
-  stock_tx_id: { type: 'string' },
-  stock_id: { type: 'string'},
-  wallet_tx_id: { type: 'string' },
-  order_status: { type: 'string' },
-  is_buy: { type: 'boolean' },
-  order_type: { type: 'string' },
-  stock_price: { type: 'number'},
-  quantity: { type: 'number'},
-  parent_tx_id: { type: 'string' },
-  time_stamp: { type: 'date'}
-});
+const userSchemaObject = {
+  user_name: { type: "string" },
+  password: { type: "string" },
+  name: { type: "string" },
+  portfolio: { type: "string[]" },
+  stock_transaction_history: { type: "string[]" },
+  wallet_transaction_history: { type: "string[]" },
+  wallet_balence: { type: "number" },
+} as const;
+const userSchema = new Schema("users", userSchemaObject);
+export type User = InferSchema<typeof userSchemaObject>;
 
-const userSchema = new Schema('users', {
-  user_name: { type: 'string' }, // These are unique, could replace with user_id if needed
-  password: { type: 'string'},
-  name: { type: 'string'},
-  portfolio: { type: 'string[]'}, // Should contain stock ID and quantity owned
-  transaction_history: { type: 'string[]'},
-  wallet_balance: { type: 'number'}
-});
-
-export { stockSchema, StockTransactionSchmea ,userSchema }; 
+export { stockSchema, ownedStockSchema, WalletTransactionSchmea, StockTransactionSchema, userSchema };

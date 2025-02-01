@@ -2,19 +2,39 @@ const internalEndpoints = {
   orderService: {
     host: Bun.env.ORDER_SERVICE_HOST || "http://localhost:3000",
     placeMarketBuy: {
-      path: "/marketBuy",
+      path: "/placeMarketBuy",
       requestMethod: "POST",
     },
     placeLimitSell: {
-      path: "/limitSell",
+      path: "/placeLimitSell",
+      requestMethod: "POST",
+    },
+    getStockPrices: {
+      path: "/getStockPrices",
+      requestMethod: "GET",
+    },
+    cancelStockTransaction: {
+      path: "/cancelStockTransaction",
       requestMethod: "POST",
     },
   },
   matchingEngine: {
     host: Bun.env.MATCHING_ENGINE_HOST || "http://localhost:3001",
-    someEndpoint: {
-      path: "/someEndpoint",
+    stockPrices: {
+      path: "/stockPrices",
       requestMethod: "GET",
+    },
+    marketBuy: {
+      path: "/marketBuy",
+      requestMethod: "POST",
+    },
+    limitSell: {
+      path: "/limitSell",
+      requestMethod: "POST",
+    },
+    cancelLimitSell: {
+      path: "/cancelLimitSell",
+      requestMethod: "DELETE",
     },
   },
 } as const;
@@ -68,3 +88,31 @@ export const makeInternalRequest =
     const data = (await response.json()) as TResponse;
     return { success: true, status: response.status, data };
   };
+
+// SAMPLE USAGE
+type PlaceMarketBuyRequest = {
+  stock_id: string;
+  quantity: number;
+};
+type PlaceMarketBuyResponse = {
+  quantity_bought: number;
+};
+async function sampleUsage() {
+  const response = await makeInternalRequest<
+    PlaceMarketBuyRequest,
+    PlaceMarketBuyResponse
+  >({
+    body: {
+      stock_id: "AAPL",
+      quantity: 10,
+    },
+  })("orderService", "placeMarketBuy");
+  if (!response.success) {
+    response.error; // defined
+    // response.data; // undefined
+    return;
+  }
+  response.data; // defined
+  response.data.quantity_bought; // defined
+  // response.error; // undefined
+}

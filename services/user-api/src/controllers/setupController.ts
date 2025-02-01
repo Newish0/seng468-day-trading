@@ -9,7 +9,7 @@ const setupController = {
       const stock_id = stockService.createStock(stock_name);
       return c.json({ success: true, data: { stock_id } });
     } catch (e) {
-      return c.json({ success: false, data: null }, 400);
+      return c.json({ success: false, data: null }, 500);
     }
   },
 };

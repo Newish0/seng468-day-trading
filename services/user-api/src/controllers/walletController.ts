@@ -29,7 +29,7 @@ const walletController = {
     const { amount } = c.req.valid("json");
     try {
       walletService.addMoneyToWallet(userId, amount);
-      return c.json({ success: true, data: null }, 200);
+      return c.json({ success: true, data: null });
     } catch (e) {
       return c.json({ success: false, data: null }, 500);
     }

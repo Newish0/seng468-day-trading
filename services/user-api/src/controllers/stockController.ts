@@ -18,7 +18,7 @@ const stockController = {
       }
       return c.json({ success: true, data: response.data });
     } catch (e) {
-      return c.json({ success: false, data: null }, 400);
+      return c.json({ success: false, data: null }, 500);
     }
   },
   getStockPortfolio: async (c: ContextWithUser) => {

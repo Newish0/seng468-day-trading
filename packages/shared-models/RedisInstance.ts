@@ -9,7 +9,6 @@ class RedisInstance {
   // May need some help with setting redisClient and repositoryDict as static vars, so we can make sure we have proper
   // Synchronization amoung the microservices
   private redisClient: RedisClientType;
-  private repositoryDict: Record<string, Repository<any>> = {}; // A dictionary to store repositories
 
   /**
    * 
@@ -56,49 +55,33 @@ class RedisInstance {
   }
 
   /**
-   * Performs a quick check within the dictionary to see if a 
+   * Queries the database, and performs a quick check to see if the schema has already been instantiated within the database. 
    * @param name - Name of the repository we want to check for
    * @returns boolean - A boolean value determining if the repository already exists in the database
    */
-  doesRepositoryExist(name: string): boolean {
+  async doesRepositoryExist(name: string): Promise<number> {
     // Need to typecast this if it exists, but for now this works
-    return !(!this.repositoryDict[name]); // Returns true if repository does exist
+    let key : string = name + ':index:hash'; // The naming convention for the repositories should follow this format.
+    return await (this.redisClient.exists(key)); // Returns true if repository does exist
   }
-
-  /**
-   * Gets the repository given its name. A check to see if the repository exists should be performed first
-   * @param name - The name of the repository we want to check for
-   * @returns {Repository<any>} - The repository that is stored in the dictionary 
-   */
-  getRepository(name: string): Repository<any> {
-    return this.repositoryDict[name];
-  }
-
+ 
   /**
    * Creates a repository given a schema and name. It will then add it to the global dictionary 
    * @param schema - The type of schema the Repository will be supporting 
    * @param name - The name of the repository 
    * @returns {Repository<any>} - Returns the repository it instantiated
    */
-  createRepository(schema: Schema, name: string): Repository<any> {
+  async createRepository(schema: Schema): Promise<Repository<any>> {
     // Check if Redis client is connected
     if (!this.redisClient.isOpen) {
       throw new Error('Redis client is not connected to a live instance.');
-    }
-
-    // Check if a repository with the same name already exists
-    if (this.doesRepositoryExist(name)) {
-      throw new Error(`Repository with name '${name}' already exists.`);
     }
 
     // Create repository with the schema
     const repository = new Repository(schema, this.redisClient);
 
     // All of our repositorys should expect to be indexed into
-    repository.createIndex();
-    
-    // Add the repository to the dictionary
-    this.repositoryDict[name] = repository;
+    await repository.createIndex();
     
     return repository;
   }

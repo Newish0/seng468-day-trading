@@ -118,6 +118,39 @@ Cancel a stock transaction
     ```
 
 
+The following routes are from Matching-Engine -> Order-Service
+
+### `/partialSell`
+
+For notifying the order service with a partial sell
+
+-   Method: POST
+-   Request Body:
+    ```ts
+    {
+        stock_id: string,
+        quantity: number,
+        price: number, 
+        stock_tx_id: string, 
+        user_name: string, // the user_name of the user who created the limit sell 
+    }
+    ```
+
+### `/partialSell`
+
+For notifying the order service that the limit sell has completed
+
+-   Method: POST
+-   Request Body:
+    ```ts
+    {
+        stock_id: string,
+        quantity: number, 
+        price: number,
+        stock_tx_id: string, 
+    }
+    ```
+
 
 
 

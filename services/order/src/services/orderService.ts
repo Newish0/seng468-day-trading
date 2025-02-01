@@ -20,7 +20,7 @@ const stockOwnedRepository: Repository<any> = await redisConnection.createReposi
 
 const service = {
   placeLimitSellOrder: async (stock_id: string, quantity: number, price: number, user_name: string) => {
-    // Review: Check whether the user has that particular stock/quantity or in user-api?
+    // Review: Check whether the user has that particular stock/quantity or in user-api or not needed?
 
     const limitSellRequest = {
       stock_id,
@@ -200,15 +200,46 @@ const service = {
 
   cancelStockTransaction: async (stock_tx_id: string) => {
     // Cancellation of a limit sell order
-    // TODO: Fetch stock_id, quantity, price from transaction to pass to matching engine
-    //  stock_id: string,
-    //  quantity: number,
-    //  price: number,
-    //  stock_tx_id: string
-    // TODO: Query the matching engine for a cancel sell limit
-    // TODO: Modify the cancelled limit sell transaction to status="CANCELLED"
+
+    let transaction;
+
+    try{
+      transaction = await stockTransactionRepository.search().where("stock_tx_id").equals(stock_tx_id).returnFirst();
+    }catch(error){
+      throw new Error("Error fetching the transaction to cancel (cancelStockTransaction");
+    }
+
+    const cancelSellRequest = {
+      stock_id: transaction.stock_id,
+      quantity: transaction.quantity,
+      price: transaction.price,
+      stock_tx_id: transaction.stock_tx_id
+    }
+    
+    // Query the matching engine to cancel the limit order
+    let matchin_engine_res;
+    try{
+      // REVIEW: The following endpoint name/API method (DELETE) is subject to change 
+      matchin_engine_res = await fetch(`${MATCHING_SERVICE_URL}/limitSell`, {
+        method: "DELETE", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cancelSellRequest),
+      });
+    }catch(error){
+      throw new Error("Error with API request to matching engine (cancelStockTransaction");
+    }
+
+    // Modify the cancelled limit sell transaction to status="CANCELLED"
+    try{
+      let transaction = await stockTransactionRepository.search().where("stock_tx_id").equals(stock_tx_id).returnFirst();
+      transaction.status = "CANCELLED";
+      await stockTransactionRepository.save(transaction);
+    }catch(error){
+      throw new Error("Error with updating limit sell order's status to CANCELLED (callStockTransaction)")
+    }
     // TODO: Modify owner of cancelled limit sell's portfolio to include the cancelled stock ( or add to existing stock share quantity
     // if he still has shares they did not create a sell order for )
+    
   },
 
   partialSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string, user_name: string) => {

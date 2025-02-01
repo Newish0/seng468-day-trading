@@ -1,13 +1,11 @@
-import type { Context, Env } from "hono";
 import type { AddMoneyToWalletRequest } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
-import { type WrappedInput } from "shared-types/hono";
+import { type ContextWithUser, type WrappedInput } from "shared-types/hono";
 import userService from "../services/userService";
 import walletService from "../services/walletService";
 
 const walletController = {
-  getWalletBalance: async (c: Context) => {
-    // const userId = c.get("user");
-    const userId = "1234";
+  getWalletBalance: async (c: ContextWithUser) => {
+    const userId = c.get("user");
     try {
       const user = await userService.getUserFromId(userId);
       return c.json({ success: true, data: { balance: user.walletBalance } });
@@ -15,9 +13,8 @@ const walletController = {
       return c.json({ success: false, data: null }, 500);
     }
   },
-  getWalletTransactions: async (c: Context) => {
-    // const userId = c.get("user");
-    const userId = "1234";
+  getWalletTransactions: async (c: ContextWithUser) => {
+    const userId = c.get("user");
     try {
       const user = await userService.getUserFromId(userId);
       return c.json({ success: true, data: user.walletTransactions });
@@ -25,15 +22,10 @@ const walletController = {
       return c.json({ success: false, data: null }, 500);
     }
   },
-  addMoneyToWallet: async <
-    E extends Env,
-    P extends string,
-    I extends WrappedInput<AddMoneyToWalletRequest>
-  >(
-    c: Context<E, P, I>
+  addMoneyToWallet: async (
+    c: ContextWithUser<WrappedInput<AddMoneyToWalletRequest>>
   ) => {
-    // const userId = c.get("user");
-    const userId = "1234";
+    const userId = c.get("user");
     const { amount } = c.req.valid("json");
     try {
       walletService.addMoneyToWallet(userId, amount);

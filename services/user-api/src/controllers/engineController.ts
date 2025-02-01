@@ -1,4 +1,3 @@
-import type { Context, Env } from "hono";
 import {
   type PlaceLimitSellRequest,
   type PlaceLimitSellResponse,
@@ -12,17 +11,13 @@ import type {
   CancelStockTransactionResponse,
 } from "shared-types/dtos/user-api/engine/cancelStockTransaction";
 import type { PlaceStockOrderRequest } from "shared-types/dtos/user-api/engine/placeStockOrder";
-import type { WrappedInput } from "shared-types/hono";
+import type { ContextWithUser, WrappedInput } from "shared-types/hono";
 import { ORDER_TYPE } from "shared-types/transactions";
 import { makeInternalRequest } from "shared-utils/internalCommunication";
 
 const engineController = {
-  placeStockOrder: async <
-    E extends Env,
-    P extends string,
-    I extends WrappedInput<PlaceStockOrderRequest>
-  >(
-    c: Context<E, P, I>
+  placeStockOrder: async (
+    c: ContextWithUser<WrappedInput<PlaceStockOrderRequest>>
   ) => {
     const {
       stock_id,
@@ -70,12 +65,8 @@ const engineController = {
       }
     }
   },
-  cancelStockTransaction: async <
-    E extends Env,
-    P extends string,
-    I extends WrappedInput<CancelStockTransactionRequest>
-  >(
-    c: Context<E, P, I>
+  cancelStockTransaction: async (
+    c: ContextWithUser<WrappedInput<CancelStockTransactionRequest>>
   ) => {
     const { stock_tx_id } = c.req.valid("json");
     const response = await makeInternalRequest<

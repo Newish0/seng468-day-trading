@@ -7,7 +7,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./services/gateway/nginx.config:/etc/nginx/conf.d/default.config:ro
+      - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./services/gateway/html:/usr/share/nginx/html:ro
     depends_on:
       - user-api
@@ -19,7 +19,7 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     container_name: user-api
     ports:
-      - "8080"
+      - "3000"
 
   # auth:
   #   build: ./services/auth

@@ -3,5 +3,5 @@ WORKDIR /app
 COPY . .
 WORKDIR /app/services/user-api
 RUN bun install --frozen-lockfile
-EXPOSE 8080
+EXPOSE 3000
 CMD ["bun", "run", "src/index.ts"]

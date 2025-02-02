@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./services/gateway/nginx.config:/etc/nginx/conf.d/default.config:ro
+      - ./services/gateway/html:/usr/share/nginx/html:ro
+    # depends_on:
+    #   - user-api
+    #   - service2
+
+  # user-api:
+  #   build: ./services/user-api
+  #   container_name: user-api
+  #   expose:
+  #     - "8080"  # Only accessible on the Docker network
+
+  # auth:
+  #   build: ./services/auth
+  #   container_name: auth
+  #   expose:
+  #     - "8080"

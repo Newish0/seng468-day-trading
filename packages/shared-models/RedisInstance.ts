@@ -1,6 +1,7 @@
 import {Schema, Repository, EntityId} from 'redis-om';
 import { createClient} from 'redis';
 import type { RedisClientType, RedisModules } from 'redis'; 
+import type { Entity } from 'redis-om';
 
 
 //Instantiation object
@@ -69,16 +70,16 @@ class RedisInstance {
    * Creates a repository given a schema and name. It will then add it to the global dictionary 
    * @param schema - The type of schema the Repository will be supporting 
    * @param name - The name of the repository 
-   * @returns {Repository<any>} - Returns the repository it instantiated
+   * @returns {Repository<Entity>} - Returns the repository it instantiated
    */
-  async createRepository(schema: Schema): Promise<Repository<any>> {
+  async createRepository(schema: Schema): Promise<Repository<Entity>> {
     // Check if Redis client is connected
     if (!this.redisClient.isOpen) {
       throw new Error('Redis client is not connected to a live instance.');
     }
 
     // Create repository with the schema
-    const repository = new Repository(schema, this.redisClient);
+    const repository = new Repository<Entity>(schema, this.redisClient);
 
     // All of our repositorys should expect to be indexed into
     await repository.createIndex();
@@ -93,22 +94,22 @@ class RedisInstance {
    * @param data - The data we want to insert into the repository
    * @returns {Promise<string>} - Returns the key in which we inserted our data into.
    */
-  async addIntoRepository(repository: Repository<any>, data: any): Promise<string> {
+  async addIntoRepository(repository: Repository<Entity>, data: Entity): Promise<string> {
     // Saving the data to the repository
-    const record : any = await repository.save(data);
+    const record : Entity = await repository.save(data);
   
     // Returning the EntityId
-    return record[EntityId]; // or record.entityId if EntityId is not used directly as a key
+    return record[EntityId] as string; // or record.entityId if EntityId is not used directly as a key
   }
 
   /**
    * Takes the given repository, and retrieves the data stored at the given key.
    * @param repository - The repository we want to insert data into
    * @param key - The key for the data we want to retrieve from the repository
-   * @returns {Promise<any>} - Returns the data stored at that key.
+   * @returns {Promise<Entity>} - Returns the data stored at that key.
    */
-  async getFromRepository(repository: Repository<any>, key: string): Promise<any> {
-    let data : any = await repository.fetch(key);
+  async getFromRepository(repository: Repository<Entity>, key: string): Promise<Entity> {
+    let data : Entity = await repository.fetch(key);
     return data;
   }
 
@@ -118,7 +119,7 @@ class RedisInstance {
    * @param key - The key for the data we want to retrieve from the repository
    * @returns {Promise<void>} - Returns nothing.
    */
-  async removeFromRepository(repository: Repository<any>, key: string): Promise<void> {
+  async removeFromRepository(repository: Repository<Entity>, key: string): Promise<void> {
     await repository.remove(key);
   }
 
@@ -130,7 +131,7 @@ class RedisInstance {
    * @param replacement - The data we want to insert into the repository
    * @returns {Promise<string>} - Returns the key in which we updated our data into.
    */
-  async updateFromRepository(repository: Repository<any>, key: string, replacement: any): Promise<void> {
+  async updateFromRepository(repository: Repository<Entity>, key: string, replacement: Entity): Promise<void> {
     //  // Saving the data to the repository
     //  const record : any = await repository.save(key, replacement);
   

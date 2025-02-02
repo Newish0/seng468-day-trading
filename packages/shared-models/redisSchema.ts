@@ -74,4 +74,4 @@ const userSchemaObject = {
 const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;
 
-export { stockSchema };
+export { stockSchema, ownedStockSchema, WalletTransactionSchmea, StockTransactionSchema, userSchema };

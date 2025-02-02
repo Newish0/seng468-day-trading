@@ -1,9 +1,10 @@
 import service from "../services/authService";
 import type { Context } from "hono";
+import type { RegisterRequest, LoginRequest } from "shared-types/dtos/auth/auth"
 
 const controller = {
   register: async (c: Context) => {
-    const { user_name, password, name } = await c.req.json();
+    const { user_name, password, name }: RegisterRequest = await c.req.json();
 
     if (!user_name || !password || !name) {
       return c.json(
@@ -24,7 +25,7 @@ const controller = {
   },
 
   login: async (c: Context) => {
-    const { user_name, password } = await c.req.json();
+    const { user_name, password }: LoginRequest = await c.req.json();
 
     if (!user_name || !password) {
       return c.json(

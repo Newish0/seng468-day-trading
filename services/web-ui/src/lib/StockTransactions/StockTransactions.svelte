@@ -56,6 +56,7 @@
       </tr>
     </thead>
     <tbody>
+      <!-- TODO: Partial sell transactions ideally could be grouped together and put under say an accordion -->
       {#each transactions as transaction}
         <tr>
           <td>{transaction.stock}</td>

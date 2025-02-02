@@ -9,15 +9,17 @@ services:
     volumes:
       - ./services/gateway/nginx.config:/etc/nginx/conf.d/default.config:ro
       - ./services/gateway/html:/usr/share/nginx/html:ro
-    # depends_on:
-    #   - user-api
-    #   - service2
+    depends_on:
+      - user-api
+      # - auth
 
-  # user-api:
-  #   build: ./services/user-api
-  #   container_name: user-api
-  #   expose:
-  #     - "8080"  # Only accessible on the Docker network
+  user-api:
+    build:
+      context: . # Use the project root as the build context
+      dockerfile: ./services/user-api/Dockerfile
+    container_name: user-api
+    ports:
+      - "8080"
 
   # auth:
   #   build: ./services/auth

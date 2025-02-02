@@ -25,11 +25,6 @@
 
     <div class="flex flex-col w-max">
       <label>
-        Price
-        <br />
-        <input type="number" />
-      </label>
-      <label>
         Quantity
         <br />
         <input step="1" type="number" />

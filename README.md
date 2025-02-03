@@ -34,13 +34,28 @@ This outlines how to use workspaces.
 3. `service/foobar-service/package.json` has `"foobar-package": "workspace:*"` in it's dependencies.
 4. In `index.ts` of `foobar-service`, we can call the `somePackageFunc` function from `foobar-package`.
 5. If everything is setup corrrectly, when we run `bun run index.ts` inside of `foobar-service`, we should get
-    ```
-    Hello from foobar SERVICE!
-    Hello from foobar PACKAGE!
-    ```
+   ```
+   Hello from foobar SERVICE!
+   Hello from foobar PACKAGE!
+   ```
 
 ## Prerequisites
 
--   Bun v1.1.x (To be upgraded to v1.2 prior to starting the project)
--   Rust v1.84.0
--   Docker
+- Bun v1.1.x (To be upgraded to v1.2 prior to starting the project)
+- Rust v1.84.0
+- Docker
+
+## Running End to End Test Script
+
+End to end test script uses Bun's built-in test runner (bun:test).
+
+1. First run docker compose
+
+   ```
+   docker-compose up --build
+   ```
+
+2. Run the tests
+   ```
+   bun test
+   ```

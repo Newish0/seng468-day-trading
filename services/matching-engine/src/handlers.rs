@@ -47,7 +47,6 @@ pub async fn market_buy(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<MarketBuyRequest>,
 ) -> Json<MarketBuyResponse> {
-    // TODO: add payload validation with serde_validate?
 
     // Need to have lock the entire time to ensure no other sell occurs
     // between ensuring we have enough shares and the actual buy/sell process.
@@ -165,7 +164,6 @@ pub async fn limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<LimitSellRequest>,
 ) -> Json<LimitSellResponse> {
-    // TODO: Implement payload validation with serde_validate?
 
     let sell_order = SellOrder {
         stock_id: payload.stock_id,
@@ -189,7 +187,6 @@ pub async fn cancel_limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<LimitSellRequest>,
 ) -> Json<LimitSellCancelResponse> {
-    // TODO: Implement payload validation with serde_validate?
 
     let some_sell_order = {
         let mut state = state.write().await;

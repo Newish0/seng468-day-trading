@@ -53,10 +53,12 @@ pub async fn market_buy(
     // between ensuring we have enough shares and the actual buy/sell process.
     let mut state = state.write().await;
 
+    // Total number of shares on sale excluding those from the user requesting the buy order.
     let available_shares: u32 = state
         .matching_pq
         .get_all_orders(&payload.stock_id)
         .iter()
+        .filter(|sell_order| sell_order.user_name != payload.user_name)
         .map(|sell_order| sell_order.cur_quantity)
         .sum();
 
@@ -70,8 +72,8 @@ pub async fn market_buy(
     }
 
     // Dry-run: Clone the priority queue to calculate total cost without modifying state
-    // OPTIMIZE: This implementation is wildly inefficient but future problem it is! 
-    // REFACTOR: Too much duplicate code between the dry run and the actual run. 
+    // OPTIMIZE: This implementation is wildly inefficient but future problem it is!
+    // REFACTOR: Too much duplicate code between the dry run and the actual run.
     let Some(original_queue) = state
         .matching_pq
         .get_stock_queue(&payload.stock_id)
@@ -89,6 +91,11 @@ pub async fn market_buy(
 
     while remaining_dry > 0 {
         if let Some(Reverse(order)) = cloned_queue.pop() {
+            // Skip if the sell order is from the user requesting the buy order.
+            if order.user_name == payload.user_name {
+                continue;
+            }
+
             let take = remaining_dry.min(order.cur_quantity);
             total_price_dry += take as f64 * order.price;
             remaining_dry -= take;
@@ -111,6 +118,12 @@ pub async fn market_buy(
     while shares_to_buy > 0 {
         // Assume the sell order always exist due to the above shares quantity check; unwrap is ok.
         let mut top_sell_order = state.matching_pq.pop(&payload.stock_id).unwrap();
+
+        // Skip if the sell order is from the user requesting the buy order.
+        if top_sell_order.user_name == payload.user_name {
+            continue;
+        }
+
         let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
 
         // Complete the top sell order or perform partial sell on the top sell order
@@ -161,6 +174,7 @@ pub async fn limit_sell(
         partially_sold: false,
         ori_quantity: payload.quantity,
         cur_quantity: payload.quantity,
+        user_name: payload.user_name,
     };
 
     {

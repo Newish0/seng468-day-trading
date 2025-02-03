@@ -49,6 +49,7 @@ Placing a market buy order.
         quantity: number,
         stock_tx_id: string,
         budget: number, 
+        user_name: string
     }
     ```
 -   Response:
@@ -76,6 +77,7 @@ Placing a limit sell order.
         quantity: number,
         price: number,
         stock_tx_id: string,
+        user_name: string
     }
     ```
 -   Response:

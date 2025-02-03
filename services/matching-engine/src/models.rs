@@ -20,6 +20,7 @@ pub struct MarketBuyRequest {
     pub quantity: u32,
     pub stock_tx_id: String,
     pub budget: f64,
+    pub user_name: String, 
 }
 
 #[derive(Serialize)]
@@ -43,6 +44,7 @@ pub struct LimitSellRequest {
     pub quantity: u32,
     pub price: f64,
     pub stock_tx_id: String,
+    pub user_name: String, 
 }
 
 #[derive(Serialize)]

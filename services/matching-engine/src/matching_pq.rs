@@ -9,6 +9,7 @@ pub struct SellOrder {
     pub ori_quantity: u32,
     pub cur_quantity: u32,
     pub price: f64,
+    pub user_name: String, 
 }
 
 impl Eq for SellOrder {}

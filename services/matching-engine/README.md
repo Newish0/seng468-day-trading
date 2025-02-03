@@ -37,7 +37,7 @@ The API endpoints are intentionally named slight different from the endpoints th
     }
     ```
 
-### `/markerBuy`
+### `/marketBuy`
 
 Placing a market buy order.
 

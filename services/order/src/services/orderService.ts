@@ -70,18 +70,20 @@ const service = {
       throw new Error("Error fetching user data from database (Limit Sell Order)");
     }
 
+    const txId = crypto.randomUUID();
+
     // Initializes limit sell request to request the matching-engine
     const limitSellRequest: LimitSellOrderRequest = {
       stock_id,
       quantity,
       price,
-      stock_tx_id: "generate",
+      stock_tx_id: txId,
       user_name,
     };
 
     // Constructs a limit sell transaction
     const transaction: StockTransaction = {
-      stock_tx_id: "generate here",
+      stock_tx_id: txId,
       stock_id,
       wallet_tx_id: null,
       order_status: ORDER_STATUS.IN_PROGRESS,
@@ -100,8 +102,6 @@ const service = {
       throw new Error("Error saving limit sell transaction into database");
     }
 
-    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
-
     // Add limit sell transaction to user
     userData.stock_transaction_history.push(transaction.stock_tx_id);
     try {
@@ -109,6 +109,8 @@ const service = {
     } catch {
       throw new Error("Error adding transaction to user in the database");
     }
+
+    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
   },
 
   /**
@@ -134,9 +136,11 @@ const service = {
       throw new Error("Error fetching user data from database (Market Buy Order)");
     }
 
+    const buyTxId = crypto.randomUUID();
+
     // New buyer transaction that has NOT been approved by Matching Engine yet
     let new_user_transaction: StockTransaction = {
-      stock_tx_id: "place-holder",
+      stock_tx_id: buyTxId,
       parent_tx_id: null,
       stock_id: stock_id,
       wallet_tx_id: null,
@@ -159,10 +163,11 @@ const service = {
     const result = await matEngSvc.placeMarketBuyOrder(marketBuyRequest);
 
     // Create wallet transaction for buyer. (Before new_user_transaction stored into db)
+    const walletTxId = crypto.randomUUID();
     let new_wallet_transaction: WalletTransaction;
     try {
       new_wallet_transaction = {
-        wallet_tx_id: "generate_wallet_tx_id",
+        wallet_tx_id: walletTxId,
         stock_tx_id: new_user_transaction.stock_tx_id,
         is_debit: true, // TODO: debit functionality has not been implemented yet
         amount: result.data.price_total,
@@ -316,7 +321,7 @@ const service = {
         order_type: ORDER_TYPE.MARKET,
         stock_price: 0, // HACK: set price to 0 b/c price unknown atm (not matched by matching engine)
         quantity: quantity,
-        time_stamp: "data-here",
+        time_stamp: "data-here", // TODO: Add timestamp 
       };
       committedStockTx = await stockTransactionRepository.save(newStockTxForPartial);
     } catch (error) {
@@ -332,7 +337,7 @@ const service = {
         stock_tx_id: newStockTxId,
         is_debit: false,
         amount: total_amount,
-        time_stamp: "data-here",
+        time_stamp: "data-here", // TODO: Add timestamp 
       };
       await walletTransactionRepository.save(newWalletTx);
     } catch (error) {

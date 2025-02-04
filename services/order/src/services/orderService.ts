@@ -62,6 +62,14 @@ const service = {
   ) => {
     // Review: Check whether the user has that particular stock/quantity here or in user-api?
 
+    let userData: User | null; // contains user info from database
+    try {
+      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      if (!userData) throw new Error("Error finding user (placeLimitSellOrder)");
+    } catch (err) {
+      throw new Error("Error fetching user data from database (Limit Sell Order)");
+    }
+
     // Initializes limit sell request to request the matching-engine
     const limitSellRequest: LimitSellOrderRequest = {
       stock_id,
@@ -71,14 +79,12 @@ const service = {
       user_name,
     };
 
-    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
-
     // Constructs a limit sell transaction
     const transaction: StockTransaction = {
       stock_tx_id: "generate here",
       stock_id,
       wallet_tx_id: null,
-      order_status: ORDER_STATUS.PARTIALLY_COMPLETED,
+      order_status: ORDER_STATUS.IN_PROGRESS,
       is_buy: false,
       order_type: ORDER_TYPE.LIMIT,
       stock_price: price,
@@ -92,6 +98,16 @@ const service = {
       await stockTransactionRepository.save(transaction);
     } catch (err) {
       throw new Error("Error saving limit sell transaction into database");
+    }
+
+    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
+
+    // Add limit sell transaction to user
+    userData.stock_transaction_history.push(transaction.stock_tx_id);
+    try {
+      await userRepository.save(userData);
+    } catch {
+      throw new Error("Error adding transaction to user in the database");
     }
   },
 
@@ -107,16 +123,13 @@ const service = {
    * or with saving the transaction and updating the user's balance.
    */
   placeMarketBuyOrder: async (stock_id: string, quantity: number, user_name: string) => {
-    let user_data: User | null; // contains user info from database
-    let user_balance: number;
+    let userData: User | null; // contains user info from database
 
     // Fetches the buyer's user_balance (required for matching-engine)
     try {
-      user_data = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
 
-      if (!user_data) throw new Error("Error finding user (placeMarketOrder)");
-
-      user_balance = user_data.wallet_balance;
+      if (!userData) throw new Error("Error finding user (placeMarketOrder)");
     } catch (err) {
       throw new Error("Error fetching user data from database (Market Buy Order)");
     }
@@ -139,7 +152,7 @@ const service = {
       stock_id,
       quantity,
       stock_tx_id: new_user_transaction.stock_tx_id,
-      budget: user_balance,
+      budget: userData.wallet_balance,
       user_name,
     };
 
@@ -173,10 +186,10 @@ const service = {
 
     // update the user balance for buyer (updates the user fetched at the start of method)
     try {
-      user_data.wallet_balance = user_data.wallet_balance - result.data.price_total;
-      user_data.stock_transaction_history.push(new_user_transaction.stock_tx_id);
-      user_data.wallet_transaction_history.push(new_wallet_transaction.wallet_tx_id);
-      await userRepository.save(user_data);
+      userData.wallet_balance = userData.wallet_balance - result.data.price_total;
+      userData.stock_transaction_history.push(new_user_transaction.stock_tx_id);
+      userData.wallet_transaction_history.push(new_wallet_transaction.wallet_tx_id);
+      await userRepository.save(userData);
     } catch (error) {
       throw new Error("Error updating buyer information for buy order(placeMarketBuyOrder)");
     }

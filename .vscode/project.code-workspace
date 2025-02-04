@@ -55,5 +55,8 @@
             "packages/": true,
             "services/": true,
         },
+        "cSpell.words": [
+            "dtos"
+        ],
     }
 }

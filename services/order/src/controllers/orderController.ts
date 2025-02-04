@@ -1,4 +1,4 @@
-import service from "../services/orderService";
+import service from "@/services/orderService";
 import type { Context } from "hono";
 
 const controller = {

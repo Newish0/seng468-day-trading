@@ -19,8 +19,11 @@ import type {
 } from "shared-types/dtos/order-service/orderRequests";
 import type { User } from "shared-types/user";
 import type { OwnedStock } from "shared-types/stocks";
+import { MatchingEngineService } from "./matchingEngineService";
 
-const MATCHING_SERVICE_URL = Bun.env.MATCHING_SERVICE_URL || "http://matching-engine:3000";
+const matEngSvc = new MatchingEngineService(
+  Bun.env.MATCHING_SERVICE_URL || "http://matching-engine:3000"
+);
 
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
@@ -59,7 +62,7 @@ const service = {
   ) => {
     // Review: Check whether the user has that particular stock/quantity here or in user-api?
 
-    // Initalizes limit sell request to request the matching-engine
+    // Initializes limit sell request to request the matching-engine
     const limitSellRequest: LimitSellOrderRequest = {
       stock_id,
       quantity,
@@ -68,29 +71,7 @@ const service = {
       user_name,
     };
 
-    let response;
-
-    // Requests the matching-engine to begin a limit sell
-    try {
-      response = await fetch(`${MATCHING_SERVICE_URL}/limitSell`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(limitSellRequest),
-      });
-    } catch (err) {
-      throw new Error("Unknown error with limit sell");
-    }
-
-    let result;
-    try {
-      result = await response.json();
-    } catch (err) {
-      throw new Error("Failed to parse response as JSON");
-    }
-
-    if (!result || !result.success) {
-      throw new Error("Limit sell order failed");
-    }
+    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
 
     // Constructs a limit sell transaction
     const transaction: StockTransaction = {
@@ -163,27 +144,7 @@ const service = {
       user_name,
     };
 
-    let response;
-    try {
-      response = await fetch(`${MATCHING_SERVICE_URL}/marketBuy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(marketBuyRequest),
-      });
-    } catch (err) {
-      throw new Error("Unknown error with market buy");
-    }
-
-    let result;
-    try {
-      result = await response.json();
-    } catch (err) {
-      throw new Error("Failed to parse response as JSON (Market Buy)");
-    }
-
-    if (!result || !result.success) {
-      throw new Error("Market sell order failed");
-    }
+    const result = await matEngSvc.placeMarketBuyOrder(marketBuyRequest);
 
     // Create wallet transaction for buyer. (Before new_user_transaction stored into db)
     let new_wallet_transaction: WalletTransaction;
@@ -235,18 +196,7 @@ const service = {
    * @throws {Error} - Throws error if the fetch request fails or if the response cannot be parsed.
    */
   getStockPrices: async () => {
-    try {
-      const response = await fetch(`${MATCHING_SERVICE_URL}/getStockPrices`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch stock prices");
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      throw new Error("Failed to fetch stock prices");
-    }
+    return await matEngSvc.getStockPrices();
   },
 
   /**
@@ -258,8 +208,6 @@ const service = {
    * @throws {Error} - Throws error if the transaction cannot be found or canceled.
    */
   cancelStockTransaction: async (stock_tx_id: string) => {
-    // Cancellation of a limit sell order
-
     let transaction: StockTransaction | null;
 
     try {
@@ -284,17 +232,7 @@ const service = {
     };
 
     // Query the matching engine to cancel the limit order
-    let matchin_engine_res;
-    try {
-      // REVIEW: The following endpoint name/API method (DELETE) is subject to change
-      matchin_engine_res = await fetch(`${MATCHING_SERVICE_URL}/limitSell`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cancelSellRequest),
-      });
-    } catch (error) {
-      throw new Error("Error with API request to matching engine (cancelStockTransaction");
-    }
+    await matEngSvc.cancelSellOrder(cancelSellRequest);
 
     // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
     try {

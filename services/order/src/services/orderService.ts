@@ -1,42 +1,62 @@
-import { StockTransactionSchema, userSchema, WalletTransactionSchmea, ownedStockSchema } from "./tempdb";
+import {
+  StockTransactionSchema,
+  userSchema,
+  WalletTransactionSchmea,
+  ownedStockSchema,
+} from "./tempdb";
 import { RedisInstance } from "./RedisInstance";
 import { Repository } from "redis-om";
-import { type StockTransaction, type WalletTransaction, ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
-import type {LimitSellOrderRequest,MarketBuyRequest,CancelSellRequest,} from "shared-types/dtos/order-service/orderRequests";
+import {
+  type StockTransaction,
+  type WalletTransaction,
+  ORDER_STATUS,
+  ORDER_TYPE,
+} from "shared-types/transactions";
+import type {
+  LimitSellOrderRequest,
+  MarketBuyRequest,
+  CancelSellRequest,
+} from "shared-types/dtos/order-service/orderRequests";
 import type { User } from "shared-types/user";
-import type { OwnedStock} from "shared-types/stocks"
+import type { OwnedStock } from "shared-types/stocks";
 
 const MATCHING_SERVICE_URL = Bun.env.MATCHING_SERVICE_URL || "http://matching-engine:3000";
 
-let redisConnection: RedisInstance = new RedisInstance();
+const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
-const stockTransactionRepository: Repository<StockTransaction> = await redisConnection.createRepository(
-  StockTransactionSchema,
-  "stock_transaction_schema",
-);
-const userRepository: Repository<User> = await redisConnection.createRepository(userSchema, "user_schema");
-
-const walletTransactionRepository: Repository<WalletTransaction> = await redisConnection.createRepository(
-  WalletTransactionSchmea,
-  "wallet_transaction_schema",
+const stockTransactionRepository: Repository<StockTransaction> =
+  await redisConnection.createRepository(StockTransactionSchema, "stock_transaction_schema");
+const userRepository: Repository<User> = await redisConnection.createRepository(
+  userSchema,
+  "user_schema"
 );
 
-const stockOwnedRepository: Repository<OwnedStock> = await redisConnection.createRepository(ownedStockSchema, "stock_owned_schema");
+const walletTransactionRepository: Repository<WalletTransaction> =
+  await redisConnection.createRepository(WalletTransactionSchmea, "wallet_transaction_schema");
+
+const stockOwnedRepository: Repository<OwnedStock> = await redisConnection.createRepository(
+  ownedStockSchema,
+  "stock_owned_schema"
+);
 
 const service = {
-
   /**
    * Places a limit sell order by sending a request to the matching engine,
    * and then saves the order as a stock transaction in the database.
-   * 
+   *
    * @param {string} stock_id - The ID of the stock being sold.
    * @param {number} quantity - The quantity of stock to sell.
    * @param {number} price - The price at which the stock is to be sold.
    * @param {string} user_name - The name of the user placing the sell order.
-   * 
+   *
    * @throws {Error} - Throws error if there is an issue with the matching engine or saving the transaction.
    */
-  placeLimitSellOrder: async (stock_id: string, quantity: number, price: number, user_name: string) => {
+  placeLimitSellOrder: async (
+    stock_id: string,
+    quantity: number,
+    price: number,
+    user_name: string
+  ) => {
     // Review: Check whether the user has that particular stock/quantity here or in user-api?
 
     // Initalizes limit sell request to request the matching-engine
@@ -50,7 +70,7 @@ const service = {
 
     let response;
 
-    // Requests the matching-engine to begin a limit sell 
+    // Requests the matching-engine to begin a limit sell
     try {
       response = await fetch(`${MATCHING_SERVICE_URL}/limitSell`, {
         method: "POST",
@@ -94,21 +114,18 @@ const service = {
     }
   },
 
-
-
   /**
    * Places a market buy order by sending a request to the matching engine,
    * processes the response, and updates the user's stock and wallet balances accordingly.
-   * 
+   *
    * @param {string} stock_id - The ID of the stock being purchased.
    * @param {number} quantity - The number of shares to buy.
    * @param {string} user_name - The name of the user placing the buy order.
-   * 
+   *
    * @throws {Error} - Throws error if there is an issue fetching user data, with the matching engine request,
    * or with saving the transaction and updating the user's balance.
    */
   placeMarketBuyOrder: async (stock_id: string, quantity: number, user_name: string) => {
-    
     let user_data: User | null; // contains user info from database
     let user_balance: number;
 
@@ -183,7 +200,7 @@ const service = {
       throw new Error("Error creating new wallet transaction (Market Buy");
     }
 
-    // update new_user_transaction and store into database 
+    // update new_user_transaction and store into database
     try {
       new_user_transaction.order_status = ORDER_STATUS.COMPLETED;
       // Matching Engine provides price_total instead of stock price according to matching engine API Specs?
@@ -198,25 +215,23 @@ const service = {
     try {
       user_data.wallet_balance = user_data.wallet_balance - result.data.price_total;
       user_data.stock_transaction_history.push(new_user_transaction.stock_tx_id);
-      user_data.wallet_transaction_history.push(new_wallet_transaction.wallet_tx_id); 
+      user_data.wallet_transaction_history.push(new_wallet_transaction.wallet_tx_id);
       await userRepository.save(user_data);
     } catch (error) {
       throw new Error("Error updating buyer information for buy order(placeMarketBuyOrder)");
     }
 
-      // TODO:
-      // Check if buyer already owns shares in this specific stock, if they do, add
-      // the number of shares bought in this buy order to total quantity
-      // else if user does not have shares in this stock yet, add a new stockOwned entry
+    // TODO:
+    // Check if buyer already owns shares in this specific stock, if they do, add
+    // the number of shares bought in this buy order to total quantity
+    // else if user does not have shares in this stock yet, add a new stockOwned entry
   },
-
-
 
   /**
    * Fetches the current stock prices from the matching engine.
-   * 
+   *
    * @returns {Promise<Object>} - Resolves with the stock prices data fetched from the matching engine.
-   * 
+   *
    * @throws {Error} - Throws error if the fetch request fails or if the response cannot be parsed.
    */
   getStockPrices: async () => {
@@ -234,14 +249,12 @@ const service = {
     }
   },
 
-
-
   /**
    * Cancels an existing limit sell order by sending a cancel request to the matching engine,
    * and then updates the order status to 'CANCELLED' in the database.
-   * 
+   *
    * @param {string} stock_tx_id - The transaction ID of the stock transaction to cancel.
-   * 
+   *
    * @throws {Error} - Throws error if the transaction cannot be found or canceled.
    */
   cancelStockTransaction: async (stock_tx_id: string) => {
@@ -250,7 +263,11 @@ const service = {
     let transaction: StockTransaction | null;
 
     try {
-      transaction = await stockTransactionRepository.search().where("stock_tx_id").equals(stock_tx_id).returnFirst();
+      transaction = await stockTransactionRepository
+        .search()
+        .where("stock_tx_id")
+        .equals(stock_tx_id)
+        .returnFirst();
     } catch (error) {
       throw new Error("Error fetching the transaction to cancel (cancelStockTransaction");
     }
@@ -284,35 +301,44 @@ const service = {
       transaction.order_status = ORDER_STATUS.CANCELLED;
       await stockTransactionRepository.save(transaction);
     } catch (error) {
-      throw new Error("Error with updating limit sell order's status to CANCELLED (callStockTransaction)");
+      throw new Error(
+        "Error with updating limit sell order's status to CANCELLED (callStockTransaction)"
+      );
     }
-    
+
     // TODO: Modify owner of cancelled limit sell's portfolio to include the cancelled stock (or add to existing stock share quantity
     // if he still has shares they did not create a sell order for )
   },
-
-
 
   /**
    * Handles partial fulfillment of a sell order. This includes updating the parent transaction
    * to 'PARTIALLY_COMPLETED', creating a new COMPLETED transaction for the partial sale, and adjusting
    * the seller's wallet balance accordingly (adds sold amount to balance).
-   * 
+   *
    * @param {string} stock_id - The ID of the stock being sold.
    * @param {number} quantity - The quantity of stock being partially sold.
    * @param {number} price - The price at which the partial sale occurs.
    * @param {string} stock_tx_id - The parent transaction ID of the original sell order.
    * @param {string} user_name - The name of the user who placed the original sell order.
-   * 
+   *
    * @throws {Error} - Throws error if there is an issue with updating transactions, wallet balance, or fetching user data.
    */
-  partialSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string, user_name: string) => {
-
+  partialSell: async (
+    stock_id: string,
+    quantity: number,
+    price: number,
+    stock_tx_id: string,
+    user_name: string
+  ) => {
     let parent_transaction: StockTransaction | null;
 
     // Gets the main parent limit sell transaction and changes the status to 'PARTIALLY_COMPLETE'
     try {
-      parent_transaction = await stockTransactionRepository.search().where("stock_tx_id").equals(stock_tx_id).returnFirst();
+      parent_transaction = await stockTransactionRepository
+        .search()
+        .where("stock_tx_id")
+        .equals(stock_tx_id)
+        .returnFirst();
 
       if (!parent_transaction) {
         throw new Error(`Parent Transaction with id ${stock_tx_id} does not exist (partialSell)`);
@@ -320,7 +346,9 @@ const service = {
       parent_transaction.order_status = ORDER_STATUS.PARTIALLY_COMPLETED;
       parent_transaction = await stockTransactionRepository.save(parent_transaction);
     } catch (error) {
-      throw new Error("Error updating the status of parent sell transaction to PARTIALLY_COMPLETE (partialSell)");
+      throw new Error(
+        "Error updating the status of parent sell transaction to PARTIALLY_COMPLETE (partialSell)"
+      );
     }
 
     let new_user_transaction: StockTransaction = {
@@ -370,7 +398,11 @@ const service = {
 
     // updates the seller's wallet after a successful partial sell of their limit sell order
     try {
-      let user: User | null = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      let user: User | null = await userRepository
+        .search()
+        .where("user_name")
+        .equals(user_name)
+        .returnFirst();
       if (!user) {
         throw new Error("Error finding user (partialSell)");
       }
@@ -381,16 +413,14 @@ const service = {
     }
   },
 
-
-
   /**
    * Marks the original sell transaction as COMPLETED once the full order is fulfilled.
-   * 
+   *
    * @param {string} stock_id - The ID of the stock being sold.
    * @param {number} quantity - The total quantity of stock sold.
    * @param {number} price - The price at which the stock is sold.
    * @param {string} stock_tx_id - The transaction ID of the original sell order.
-   * 
+   *
    * @throws {Error} - Throws error if there is an issue with updating the transaction to 'COMPLETED'.
    */
   completeSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string) => {
@@ -402,7 +432,8 @@ const service = {
         .equals(stock_tx_id)
         .returnFirst();
 
-      if (!transaction) throw new Error(`The transaction with id ${stock_tx_id} does not exist (completeSell)`);
+      if (!transaction)
+        throw new Error(`The transaction with id ${stock_tx_id} does not exist (completeSell)`);
 
       transaction.order_status = ORDER_STATUS.COMPLETED;
       await stockTransactionRepository.save(transaction);

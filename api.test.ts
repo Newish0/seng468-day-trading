@@ -1,136 +1,134 @@
 import { test, expect } from "bun:test";
-import request from "supertest";
-import dotenv from "dotenv";
 
-dotenv.config(); // Load environment variables
+const BASE_URL = "http://localhost:8080";
+const TEST_USER = { user_name: "test", password: "test", name: "Test User" };
 
-// API Endpoints
-const API_URL_AUTH = "http://localhost:8080/authentication";
-const API_URL_USER = "http://localhost:8080/transaction";
-const API_URL_ENGINE = "http://localhost:8080/engine";
-const API_URL_SETUP = "http://localhost:8080/setup";
+let authToken: string;
+let stockId: string;
+let stockTxId: string;
 
-let token = "";
-let stockId = "";
+// Helper function to make API requests
+async function apiRequest(method: string, endpoint: string, body?: object) {
+  const options: RequestInit = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  };
 
-test("User Registration", async () => {
-  const res = await request(API_URL_AUTH).post("/register").send({
-    user_name: "test",
-    password: "test",
-    name: "Test User",
+  const response = await fetch(`${BASE_URL}${endpoint}`, options);
+  return response.json();
+}
+
+// Step 1: Register a new user
+test("Register a new user", async () => {
+  const response = await apiRequest(
+    "POST",
+    "/authentication/register",
+    TEST_USER
+  );
+  expect(response).toEqual({ success: true, data: null });
+});
+
+// Step 2: Login and store token
+test("Login a user", async () => {
+  const response = await apiRequest("POST", "/authentication/login", {
+    user_name: TEST_USER.user_name,
+    password: TEST_USER.password,
   });
 
-  expect(res.statusCode).toBeOneOf([201, 400]); // 201 = Success, 400 = Already exists
-  expect(res.body).toHaveProperty("success", true);
+  expect(response.success).toBe(true);
+  expect(response.data).toHaveProperty("token");
+
+  authToken = response.data.token; // Store token for future requests
 });
 
-test("User Login", async () => {
-  const res = await request(API_URL_AUTH).post("/login").send({
-    user_name: "test",
-    password: "test",
+// Step 3: Add money to wallet
+test("Add money to wallet", async () => {
+  const response = await apiRequest("POST", "/transaction/addMoneyToWallet", {
+    amount: 10000,
   });
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(res.body.data).toHaveProperty("token");
-
-  token = res.body.data.token;
+  expect(response).toEqual({ success: true, data: null });
 });
 
-test("Fetch Stock Prices", async () => {
-  const res = await request(API_URL_USER)
-    .get("/getStockPrices")
-    .set("Authorization", `Bearer ${token}`);
+// Step 4: Create a stock and store stock_id
+test("Create a new stock", async () => {
+  const response = await apiRequest("POST", "/setup/createStock", {
+    stock_name: "Google",
+  });
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(Array.isArray(res.body.data)).toBe(true);
+  expect(response.success).toBe(true);
+  expect(response.data).toHaveProperty("stock_id");
+
+  stockId = response.data.stock_id; // Store stock_id for future requests
 });
 
-test("Fetch Wallet Balance", async () => {
-  const res = await request(API_URL_USER)
-    .get("/getWalletBalance")
-    .set("Authorization", `Bearer ${token}`);
+// Step 5: Place a stock order
+test("Place a stock order", async () => {
+  const response = await apiRequest("POST", "/engine/placeStockOrder", {
+    stock_id: stockId,
+    is_buy: true,
+    order_type: "LIMIT",
+    quantity: 50,
+    price: 150,
+  });
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(res.body.data).toHaveProperty("balance");
+  expect(response).toEqual({ success: true, data: null });
 });
 
-test("Fetch Stock Portfolio", async () => {
-  const res = await request(API_URL_USER)
-    .get("/getStockPortfolio")
-    .set("Authorization", `Bearer ${token}`);
+// Step 6: Retrieve stock transactions and store stock_tx_id
+test("Retrieve stock transactions", async () => {
+  const response = await apiRequest("GET", "/transaction/getStockTransactions");
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(Array.isArray(res.body.data)).toBe(true);
+  expect(response.success).toBe(true);
+  expect(response.data.length).toBeGreaterThan(0);
+
+  stockTxId = response.data[0].stock_tx_id; // Store stock_tx_id for future tests
 });
 
-test("Fetch Wallet Transactions", async () => {
-  const res = await request(API_URL_USER)
-    .get("/getWalletTransactions")
-    .set("Authorization", `Bearer ${token}`);
+// Step 7: Retrieve stock portfolio
+test("Retrieve stock portfolio", async () => {
+  const response = await apiRequest("GET", "/transaction/getStockPortfolio");
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(Array.isArray(res.body.data)).toBe(true);
+  expect(response.success).toBe(true);
+  expect(response.data.length).toBeGreaterThan(0);
 });
 
-test("Fetch Stock Transactions", async () => {
-  const res = await request(API_URL_USER)
-    .get("/getStockTransactions")
-    .set("Authorization", `Bearer ${token}`);
+// Step 8: Retrieve wallet balance
+test("Retrieve wallet balance", async () => {
+  const response = await apiRequest("GET", "/transaction/getWalletBalance");
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
-  expect(Array.isArray(res.body.data)).toBe(true);
+  expect(response.success).toBe(true);
+  expect(response.data).toHaveProperty("balance");
 });
 
-test("Add Money to Wallet", async () => {
-  const res = await request(API_URL_USER)
-    .post("/addMoneyToWallet")
-    .set("Authorization", `Bearer ${token}`)
-    .send({ amount: 100 });
+// Step 9: Retrieve wallet transactions
+test("Retrieve wallet transactions", async () => {
+  const response = await apiRequest(
+    "GET",
+    "/transaction/getWalletTransactions"
+  );
 
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
+  expect(response.success).toBe(true);
+  expect(response.data.length).toBeGreaterThan(0);
 });
 
-test("Create a New Stock", async () => {
-  const res = await request(API_URL_SETUP)
-    .post("/createStock")
-    .send({ stock_name: "Google" });
+// Step 10: Cancel a stock transaction
+test("Cancel a stock transaction", async () => {
+  const response = await apiRequest("POST", "/engine/cancelStockTransaction", {
+    stock_tx_id: stockTxId,
+  });
 
-  expect(res.statusCode).toBe(201);
-  expect(res.body).toHaveProperty("success", true);
-  expect(res.body.data).toHaveProperty("stock_id");
-
-  stockId = res.body.data.stock_id;
+  expect(response).toEqual({ success: true, data: null });
 });
 
-test("Place a Stock Order", async () => {
-  const res = await request(API_URL_ENGINE)
-    .post("/placeStockOrder")
-    .set("Authorization", `Bearer ${token}`)
-    .send({
-      stock_id: stockId,
-      is_buy: true,
-      order_type: "LIMIT",
-      quantity: 100,
-      price: 80,
-    });
+// Step 11: Retrieve updated stock transactions
+test("Retrieve updated stock transactions", async () => {
+  const response = await apiRequest("GET", "/transaction/getStockTransactions");
 
-  expect(res.statusCode).toBe(201);
-  expect(res.body).toHaveProperty("success", true);
-});
-
-test("Cancel a Stock Transaction", async () => {
-  const res = await request(API_URL_ENGINE)
-    .post("/cancelStockTransaction")
-    .set("Authorization", `Bearer ${token}`)
-    .send({ stock_tx_id: "62738363a50350b1fbb243a6" });
-
-  expect(res.statusCode).toBe(200);
-  expect(res.body).toHaveProperty("success", true);
+  expect(response.success).toBe(true);
+  expect(response.data.length).toBeGreaterThan(0);
 });

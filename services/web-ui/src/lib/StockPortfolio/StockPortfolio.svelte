@@ -1,26 +1,29 @@
 <script lang="ts">
-  import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
+  import { type GetStockPortfolioRequest, type GetStockPortfolioResponse } from "shared-types/dtos/user-api/transaction/getStockPortfolio";
+  import type { OwnedStock } from "shared-types/stocks";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
 
-  let portfolio: any;
+  let portfolio: OwnedStock[];
 
-  const getPortfolio = () => {
-    // to be implemented
+  const getPortfolio = async () => {
+    const response = await makeInternalRequest<GetStockPortfolioRequest, GetStockPortfolioResponse>({
+      body: undefined,
+    })("userApi", "getStockPortfolio");
 
-    return [
-      {
-        stock: "AAPL",
-        quantity: 5,
-      },
-      {
-        stock: "GOOGL",
-        quantity: 5,
-      },
-    ];
+    if (!response.success) {
+      // TODO: Raise some kind of error toast to the user
+      return [];
+    }
+
+    return response.data.data;
   };
 
   onMount(() => {
-    portfolio = getPortfolio();
+    getPortfolio().then((data) => {
+      portfolio = data;
+    });
   });
 </script>
 
@@ -38,10 +41,10 @@
     <tbody>
       {#each portfolio as stock}
         <tr>
-          <td>{stock.stock}</td>
-          <td>{stock.quantity}</td>
+          <td>{stock.stock_id}</td>
+          <td>{stock.quantity_owned}</td>
           <td>
-            <SellStockModal stockName={stock.stock} />
+            <SellStockModal stockName={stock.stock_name} stockId={stock.stock_id} />
           </td>
         </tr>
       {/each}

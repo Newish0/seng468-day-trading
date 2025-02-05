@@ -1,4 +1,43 @@
 const internalEndpoints = {
+  userApi: {
+    host: Bun.env.USER_API_HOST || "http://localhost:3000",
+    getStockPrices: {
+      path: "/transaction/getStockPrices",
+      requestMethod: "GET",
+    },
+    getStockPortfolio: {
+      path: "/transaction/getStockPortfolio",
+      requestMethod: "GET",
+    },
+    getStockTransactions: {
+      path: "/transaction/getStockTransactions",
+      requestMethod: "GET",
+    },
+    getWalletBalance: {
+      path: "/transaction/getWalletBalance",
+      requestMethod: "GET",
+    },
+    getWalletTransactions: {
+      path: "/transaction/getWalletTransactions",
+      requestMethod: "GET",
+    },
+    addMoneyToWallet: {
+      path: "/transaction/addMoneyToWallet",
+      requestMethod: "POST",
+    },
+    placeStockOrder: {
+      path: "/engine/placeStockOrder",
+      requestMethod: "POST",
+    },
+    cancelStockTransaction: {
+      path: "/engine/cancelStockTransaction",
+      requestMethod: "POST",
+    },
+    createStock: {
+      path: "/setup/createStock",
+      requestMethod: "POST",
+    },
+  },
   orderService: {
     host: Bun.env.ORDER_SERVICE_HOST || "http://localhost:3000",
     placeMarketBuy: {
@@ -98,10 +137,7 @@ type PlaceMarketBuyResponse = {
   quantity_bought: number;
 };
 async function sampleUsage() {
-  const response = await makeInternalRequest<
-    PlaceMarketBuyRequest,
-    PlaceMarketBuyResponse
-  >({
+  const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
     body: {
       stock_id: "AAPL",
       quantity: 10,

@@ -60,6 +60,9 @@ export function isWalletTransaction(obj: any): obj is WalletTransaction {
     typeof obj.time_stamp === "string"
   );
 }
+export function isWalletTransactionArray(obj: any): obj is WalletTransaction[] {
+  return Array.isArray(obj) && obj.every((item) => isWalletTransaction(item));
+}
 
 export enum ORDER_STATUS {
   PENDING = "PENDING",

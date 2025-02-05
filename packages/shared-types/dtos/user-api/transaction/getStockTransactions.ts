@@ -1,13 +1,10 @@
 import { isValidReturnType, type ReturnType } from "../..";
-import {
-  isStockTransaction,
-  type StockTransaction,
-} from "../../../transactions";
+import { isStockTransaction, type StockTransaction } from "../../../transactions";
+
+export type GetStockTransactionsRequest = void;
 
 export type GetStockTransactionsResponse = ReturnType<StockTransaction[]>;
-export function isGetStockTransactionsResponse(
-  obj: any
-): obj is GetStockTransactionsResponse {
+export function isGetStockTransactionsResponse(obj: any): obj is GetStockTransactionsResponse {
   return (
     isValidReturnType(obj) &&
     "data" in obj &&

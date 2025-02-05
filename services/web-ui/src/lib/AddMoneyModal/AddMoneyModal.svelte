@@ -1,12 +1,26 @@
 <script lang="ts">
+  import { type AddMoneyToWalletRequest, type AddMoneyToWalletResponse } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
+
   let modal: HTMLDialogElement;
 
   const open = () => {
     modal.showModal();
   };
 
-  const handleAddMoney = () => {
-    // to be implemented
+  const handleAddMoney = async () => {
+    const response = await makeInternalRequest<AddMoneyToWalletRequest, AddMoneyToWalletResponse>({
+      body: {
+        amount: 0, // TODO: Get this from the input field
+      },
+    })("userApi", "addMoneyToWallet");
+
+    if (!response.success) {
+      // TODO: Raise some kind of error toast to the user
+      return;
+    }
+
+    // TODO: Show some kind of success toast to the user and update UI
   };
 </script>
 

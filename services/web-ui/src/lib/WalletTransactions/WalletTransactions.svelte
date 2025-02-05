@@ -1,35 +1,28 @@
 <script lang="ts">
+  import { type GetWalletTransactionsRequest, type GetWalletTransactionsResponse } from "shared-types/dtos/user-api/transaction/getWalletTransactions";
+  import type { WalletTransaction } from "shared-types/transactions";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
 
-  let transactions: any;
+  let transactions: WalletTransaction[];
 
-  const getWalletTransactions = () => {
-    // to be implemented
+  const getWalletTransactions = async () => {
+    const response = await makeInternalRequest<GetWalletTransactionsRequest, GetWalletTransactionsResponse>({
+      body: undefined,
+    })("userApi", "getWalletTransactions");
 
-    return [
-      {
-        stock: "AAPL",
-        usedDebit: false,
-        amount: 1500,
-        time: "2024-01-29 12:00",
-      },
-      {
-        stock: "GOOGL",
-        usedDebit: true,
-        amount: 1250,
-        time: "2024-01-29 13:15",
-      },
-      {
-        stock: "MSFT",
-        usedDebit: false,
-        amount: 1100,
-        time: "2024-01-29 14:30",
-      },
-    ];
+    if (!response.success) {
+      // TODO: Raise some kind of error toast to the user
+      return [];
+    }
+
+    return response.data.data;
   };
 
   onMount(() => {
-    transactions = getWalletTransactions();
+    getWalletTransactions().then((data) => {
+      transactions = data;
+    });
   });
 </script>
 
@@ -48,10 +41,11 @@
     <tbody>
       {#each transactions as transaction}
         <tr>
-          <td>{transaction.stock}</td>
-          <td>{transaction.usedDebit}</td>
+          <!-- TODO: Don't have access to the stock name currently, schema needs to change if we want it -->
+          <!-- <td>{transaction.stock}</td> -->
+          <td>{transaction.is_debit}</td>
           <td>${transaction.amount}</td>
-          <td>{transaction.time}</td>
+          <td>{transaction.time_stamp}</td>
         </tr>
       {/each}
     </tbody>

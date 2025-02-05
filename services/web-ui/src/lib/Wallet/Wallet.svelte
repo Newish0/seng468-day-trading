@@ -1,17 +1,28 @@
 <script lang="ts">
-  import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
+  import type { GetWalletBalanceRequest, GetWalletBalanceResponse } from "shared-types/dtos/user-api/transaction/getWalletBalance";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
 
   let balance: number;
 
   onMount(() => {
-    balance = getBalance();
+    getBalance().then((data) => {
+      balance = data;
+    });
   });
 
-  const getBalance = (): number => {
-    // to be implemented
+  const getBalance = async () => {
+    const response = await makeInternalRequest<GetWalletBalanceRequest, GetWalletBalanceResponse>({
+      body: undefined
+    })("userApi", "getWalletBalance");
 
-    return 12345;
+    if (!response.success) {
+      // TODO: Raise some kind of error toast to the user
+      return 0;
+    }
+
+    return response.data.data.balance;
   };
 </script>
 

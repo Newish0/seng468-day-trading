@@ -1,10 +1,10 @@
 import { isValidReturnType, type ReturnType } from "../..";
 import { isOwnedStock, type OwnedStock } from "../../../stocks";
 
+export type GetStockPortfolioRequest = void;
+
 export type GetStockPortfolioResponse = ReturnType<OwnedStock[]>;
-export function isGetStockPortfolioResponse(
-  obj: any
-): obj is GetStockPortfolioResponse {
+export function isGetStockPortfolioResponse(obj: any): obj is GetStockPortfolioResponse {
   return (
     isValidReturnType(obj) &&
     "data" in obj &&

@@ -171,7 +171,7 @@ const service = {
         stock_tx_id: new_user_transaction.stock_tx_id,
         is_debit: true, // TODO: debit functionality has not been implemented yet
         amount: result.data.price_total,
-        time_stamp: "date-here",
+        time_stamp: "date-here", // TODO: add timestamp
       };
       new_wallet_transaction = await walletTransactionRepository.save(new_wallet_transaction);
     } catch (error) {
@@ -266,136 +266,119 @@ const service = {
   },
 
   /**
-   * Handles partial fulfillment of a sell order. This includes updating the parent transaction
+   * Handles fulfillment of a sell order both partially or complete. This includes updating the parent transaction
    * to 'PARTIALLY_COMPLETED', creating a new COMPLETED transaction for the partial sale, and adjusting
    * the seller's wallet balance accordingly (adds sold amount to balance).
    *
+   * NOTE: The partial sell may or may not be the last sell. If it is last, then we also need to
+   *       mark the main parent sell (i.e. the transaction with `stock_tx_id`) to be completed.
+   *
    * @param {string} stock_id - The ID of the stock being sold.
-   * @param {number} quantity - The quantity of stock being partially sold.
+   * @param {number} sold_quantity - The quantity of stock that was sold at this time
+   * @param {number} remaining_quantity - The quantity of stock still queued in the Matching Engine
    * @param {number} price - The price at which the partial sale occurs.
    * @param {string} stock_tx_id - The **parent** transaction ID of the original sell order.
    * @param {string} user_name - The name of the user who placed the original sell order.
    *
    * @throws {Error} - Throws error if there is an issue with updating transactions, wallet balance, or fetching user data.
+   *
    */
-  partialSell: async (
+  updateSale: async (
     stock_id: string,
-    quantity: number,
+    sold_quantity: number,
+    remaining_quantity: number,
     price: number,
     stock_tx_id: string,
     user_name: string
   ) => {
-    // Gets the main parent limit sell transaction and changes the status to 'PARTIALLY_COMPLETE'
+    let parentTransaction: StockTransaction | null;
     try {
-      const parent_transaction: StockTransaction | null = await stockTransactionRepository
+      parentTransaction = await stockTransactionRepository
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
         .returnFirst();
+    } catch (error) {
+      throw new Error("Error querying for the parent transaction");
+    }
 
-      if (!parent_transaction) {
-        throw new Error(`Parent Transaction with id ${stock_tx_id} does not exist (partialSell)`);
+    if (!parentTransaction) {
+      throw new Error(`Parent Transaction with id ${stock_tx_id} does not exist (updateSells)`);
+    }
+
+    const isComplete = remaining_quantity === 0;
+    const isPartial = sold_quantity !== parentTransaction.quantity;
+    const walletTxId = crypto.randomUUID();
+    const partialSellTxId = crypto.randomUUID();
+
+    let committedPartialSellTx: StockTransaction | null = null;
+    if (isPartial) {
+      parentTransaction.order_status = ORDER_STATUS.PARTIALLY_COMPLETED;
+
+      // Creates a new transaction with the parent_stock_tx_id linking to the original limit sell transaction with status COMPLETED
+      try {
+        committedPartialSellTx = await stockTransactionRepository.save({
+          stock_tx_id: partialSellTxId,
+          parent_tx_id: stock_tx_id,
+          stock_id: stock_id,
+          wallet_tx_id: walletTxId, // Optimistically include wallet transaction id
+          order_status: ORDER_STATUS.COMPLETED,
+          is_buy: true,
+          order_type: ORDER_TYPE.MARKET,
+          stock_price: price,
+          quantity: sold_quantity,
+          time_stamp: "data-here", // TODO: Add timestamp
+        });
+      } catch (error) {
+        throw new Error(
+          "Error creating a new partial complete transaction for seller (partialSell)"
+        );
       }
+    } // if - isPartial
 
-      parent_transaction.order_status = ORDER_STATUS.PARTIALLY_COMPLETED;
-      await stockTransactionRepository.save(parent_transaction);
-    } catch (error) {
-      throw new Error(
-        "Error updating the status of parent sell transaction to PARTIALLY_COMPLETE (partialSell)"
-      );
+    // Must check `isComplete` after checking `isPartial` b/c
+    // we overwrites the partially completed status to complete
+    if (isComplete) {
+      parentTransaction.order_status = ORDER_STATUS.COMPLETED;
     }
 
-    const newStockTxId = "new trans id here";
-    const newWalletTxId = "generate_wallet_tx_id";
-
-    // Creates a new transaction with the parent_stock_tx_id linking to the original limit sell transaction with status COMPLETED
-    let committedStockTx;
+    // Add whatever the sold amount was to the wallet. No distinction between partial and complete
+    // needs to be made since this amount is whatever that has been just sold.
+    const relatedStockTx = isPartial ? committedPartialSellTx! : parentTransaction;
+    const amount: number = price * sold_quantity; // amount not provided by the matching-engine
     try {
-      const newStockTxForPartial: StockTransaction = {
-        stock_tx_id: newStockTxId,
-        parent_tx_id: stock_tx_id,
-        stock_id: stock_id,
-        wallet_tx_id: newWalletTxId, // Optimistically include wallet transaction id
-        order_status: ORDER_STATUS.COMPLETED,
-        is_buy: true,
-        order_type: ORDER_TYPE.MARKET,
-        stock_price: 0, // HACK: set price to 0 b/c price unknown atm (not matched by matching engine)
-        quantity: quantity,
-        time_stamp: "data-here", // TODO: Add timestamp 
-      };
-      committedStockTx = await stockTransactionRepository.save(newStockTxForPartial);
-    } catch (error) {
-      throw new Error("Error creating a new partial complete transaction for seller (partialSell)");
-    }
-
-    const total_amount: number = price * quantity; // total_amount not provided by the matching-engine
-
-    // create a new wallet transaction for seller (a child sell order) with status completed
-    try {
-      const newWalletTx: WalletTransaction = {
-        wallet_tx_id: newWalletTxId,
-        stock_tx_id: newStockTxId,
+      await walletTransactionRepository.save({
+        wallet_tx_id: walletTxId,
+        stock_tx_id: relatedStockTx.stock_tx_id,
         is_debit: false,
-        amount: total_amount,
-        time_stamp: "data-here", // TODO: Add timestamp 
-      };
-      await walletTransactionRepository.save(newWalletTx);
+        amount,
+        time_stamp: "data-here", // TODO: Add timestamp
+      });
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction
       try {
-        stockTransactionRepository.save({ ...committedStockTx, wallet_tx_id: null });
+        stockTransactionRepository.save({ ...relatedStockTx, wallet_tx_id: null });
       } catch (err) {
         throw new Error(
-          `Failed to rollback optimistic wallet ID in stock transaction ${newStockTxId}`
+          `Failed to rollback optimistic wallet ID in stock transaction ${relatedStockTx.stock_tx_id}`
         );
       }
-
-      throw new Error("Error creating a new wallet transaction for seller (partialSell)");
     }
 
-    // updates the seller's wallet after a successful partial sell of their limit sell order
+    // Updates the seller's wallet to match the latest wallet transaction
     try {
-      let user: User | null = await userRepository
+      const user: User | null = await userRepository
         .search()
         .where("user_name")
         .equals(user_name)
         .returnFirst();
-      if (!user) {
-        throw new Error("Error finding user (partialSell)");
-      }
-      user.wallet_balance = user.wallet_balance + total_amount;
+
+      if (!user) throw new Error("Error finding user (updateSales)");
+
+      user.wallet_balance += amount;
       await userRepository.save(user);
     } catch (error) {
-      throw new Error("Error updating the wallet of the limit sell user (partialSell)");
-    }
-  },
-
-  /**
-   * Marks the original sell transaction as COMPLETED once the full order is fulfilled.
-   *
-   * @param {string} stock_id - The ID of the stock being sold.
-   * @param {number} quantity - The total quantity of stock sold.
-   * @param {number} price - The price at which the stock is sold.
-   * @param {string} stock_tx_id - The transaction ID of the original sell order.
-   *
-   * @throws {Error} - Throws error if there is an issue with updating the transaction to 'COMPLETED'.
-   */
-  completeSell: async (stock_id: string, quantity: number, price: number, stock_tx_id: string) => {
-    // Updates the original sell transaction status to COMPLETED
-    try {
-      let transaction: StockTransaction | null = await stockTransactionRepository
-        .search()
-        .where("stock_tx_id")
-        .equals(stock_tx_id)
-        .returnFirst();
-
-      if (!transaction)
-        throw new Error(`The transaction with id ${stock_tx_id} does not exist (completeSell)`);
-
-      transaction.order_status = ORDER_STATUS.COMPLETED;
-      await stockTransactionRepository.save(transaction);
-    } catch (err) {
-      throw new Error("Error updating limit sell order status to completed (completeSell)");
+      throw new Error("Error updating the wallet of the limit sell user (updateSales)");
     }
   },
 };

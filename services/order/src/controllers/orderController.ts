@@ -59,24 +59,20 @@ const controller = {
     }
   },
 
-  // Handle partial sell updates sent by the Matching Engine
-  partialSell: async (c: Context) => {
-    const { stock_id, quantity, price, stock_tx_id, user_name } = await c.req.json();
+  //  Handle sell updates sent by the Matching Engine
+  updateSale: async (c: Context) => {
+    const { stock_id, sold_quantity, remaining_quantity, price, stock_tx_id, user_name } =
+      await c.req.json();
 
     try {
-      await service.partialSell(stock_id, quantity, price, stock_tx_id, user_name);
-      return c.json({ success: true });
-    } catch (error) {
-      return handleError(c, error, "An error occurred while processing partial sell");
-    }
-  },
-
-  //  Handle complete sell updates sent by the Matching Engine
-  completeSell: async (c: Context) => {
-    const { stock_id, quantity, price, stock_tx_id } = await c.req.json();
-
-    try {
-      await service.completeSell(stock_id, quantity, price, stock_tx_id);
+      await service.updateSale(
+        stock_id,
+        sold_quantity,
+        remaining_quantity,
+        price,
+        stock_tx_id,
+        user_name
+      );
       return c.json({ success: true });
     } catch (error) {
       return handleError(c, error, "An error occurred while completing sell");

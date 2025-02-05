@@ -11,7 +11,6 @@ orderRoutes.post("/getStockPrices", controller.getStockPrices);
 orderRoutes.post("/cancelStockTransaction", controller.cancelStockTransaction);
 
 // API requests from matching engine
-orderRoutes.post("/partialSell", controller.partialSell);
-orderRoutes.post("/completeSell", controller.completeSell);
+orderRoutes.post("/updateSale", controller.updateSale);
 
 export default orderRoutes;

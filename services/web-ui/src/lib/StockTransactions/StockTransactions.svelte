@@ -4,6 +4,7 @@
   import { ORDER_STATUS, type StockTransaction } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
 
   let transactions: StockTransaction[];
@@ -14,7 +15,7 @@
     })("userApi", "getStockTransactions");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to get stock transactions", type: TOAST_TYPES.ERROR });
       return [] as StockTransaction[];
     }
 
@@ -36,10 +37,11 @@
     })("userApi", "cancelStockTransaction")
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to cancel transaction", type: TOAST_TYPES.ERROR });
       return;
     }
 
+    addToast({ message: "Successfully cancelled transaction", type: TOAST_TYPES.SUCCESS });
     // TODO: Should we refetch at this point or should this be sufficient given we have a success response?
     transactions = transactions.filter((transaction) => transaction.stock_tx_id !== stock_tx_id);
   };

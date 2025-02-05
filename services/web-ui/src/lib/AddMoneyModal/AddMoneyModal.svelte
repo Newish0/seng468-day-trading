@@ -1,6 +1,7 @@
 <script lang="ts">
   import { type AddMoneyToWalletRequest, type AddMoneyToWalletResponse } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
 
   let modal: HTMLDialogElement;
 
@@ -16,11 +17,12 @@
     })("userApi", "addMoneyToWallet");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to add money to wallet", type: TOAST_TYPES.ERROR });
       return;
     }
 
-    // TODO: Show some kind of success toast to the user and update UI
+    // TODO: Show the amount added in the toast
+    addToast({ message: "Successfully added money to wallet", type: TOAST_TYPES.SUCCESS });
   };
 </script>
 

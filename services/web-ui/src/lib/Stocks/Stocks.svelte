@@ -3,6 +3,7 @@
   import type { AvailableStock } from "shared-types/stocks";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
 
   let stocks: AvailableStock[];
@@ -13,7 +14,7 @@
     })("userApi", "getStockPrices");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({message: "Failed to get stocks", type: TOAST_TYPES.ERROR});
       return [];
     }
 

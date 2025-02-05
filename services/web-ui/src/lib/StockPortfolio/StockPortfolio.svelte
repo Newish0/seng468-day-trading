@@ -3,6 +3,7 @@
   import type { OwnedStock } from "shared-types/stocks";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
 
   let portfolio: OwnedStock[];
@@ -13,7 +14,7 @@
     })("userApi", "getStockPortfolio");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to get portfolio", type: TOAST_TYPES.ERROR });
       return [];
     }
 

@@ -2,13 +2,16 @@
   import type { GetWalletBalanceRequest, GetWalletBalanceResponse } from "shared-types/dtos/user-api/transaction/getWalletBalance";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
 
+  let fetched = false;
   let balance: number;
 
   onMount(() => {
     getBalance().then((data) => {
       balance = data;
+      fetched = true;
     });
   });
 
@@ -18,7 +21,7 @@
     })("userApi", "getWalletBalance");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to get wallet balance", type: TOAST_TYPES.ERROR });
       return 0;
     }
 
@@ -29,7 +32,7 @@
 <div class="flex flex-col w-full max-w-md gap-3">
   <h3>Wallet</h3>
 
-  {#if !balance}
+  {#if !fetched}
     Loading...
   {:else}
     <div class="flex items-center gap-10">

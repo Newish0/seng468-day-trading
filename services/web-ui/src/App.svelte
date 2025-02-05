@@ -1,11 +1,12 @@
 <script lang="ts">
-  import Auth from "./lib/Auth/Auth.svelte";
   import "simpledotcss";
   import "./app.css";
+  import Auth from "./lib/Auth/Auth.svelte";
   import StockPortfolio from "./lib/StockPortfolio/StockPortfolio.svelte";
   import Stocks from "./lib/Stocks/Stocks.svelte";
-  import Wallet from "./lib/Wallet/Wallet.svelte";
   import StockTransactions from "./lib/StockTransactions/StockTransactions.svelte";
+  import Toast from "./lib/Toast/Toast.svelte";
+  import Wallet from "./lib/Wallet/Wallet.svelte";
   import WalletTransactions from "./lib/WalletTransactions/WalletTransactions.svelte";
 
   let loggedIn = true;
@@ -28,5 +29,6 @@
     <StockPortfolio />
     <StockTransactions />
     <Stocks />
+    <Toast />
   {/if}
 </main>

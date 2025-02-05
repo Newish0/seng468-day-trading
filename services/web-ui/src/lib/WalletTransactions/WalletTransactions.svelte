@@ -3,6 +3,7 @@
   import type { WalletTransaction } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
 
   let transactions: WalletTransaction[];
 
@@ -12,7 +13,7 @@
     })("userApi", "getWalletTransactions");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to get wallet transactions", type: TOAST_TYPES.ERROR });
       return [];
     }
 

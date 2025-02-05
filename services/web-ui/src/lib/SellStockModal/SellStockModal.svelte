@@ -2,6 +2,7 @@
   import { type PlaceStockOrderRequest, type PlaceStockOrderResponse } from "shared-types/dtos/user-api/engine/placeStockOrder";
   import { ORDER_TYPE } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
 
   let modal: HTMLDialogElement;
 
@@ -21,11 +22,12 @@
     })("userApi", "placeStockOrder");
 
     if (!response.success) {
-      // TODO: Raise some kind of error toast to the user
+      addToast({ message: "Failed to sell stock", type: TOAST_TYPES.ERROR });
       return;
     }
 
-    // TODO: Show some kind of success toast to the user
+    // TODO: Change message to `Successfully placed ${quantity} shares of ${stockName} for sale for $${price}`
+    addToast({ message: "Successfully sold stock", type: TOAST_TYPES.SUCCESS });
   };
 
   export let stockId: string;

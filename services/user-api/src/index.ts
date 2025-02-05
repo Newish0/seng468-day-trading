@@ -1,9 +1,10 @@
 import { Hono } from "hono";
+import { getEnvVariable } from "shared-utils/env";
 import engineRoutes from "./routes/engineRoutes.ts";
 import setupRoutes from "./routes/setupRoutes";
 import transactionRoutes from "./routes/transactionRoutes";
 
-const port = Bun.env.PORT || 3000;
+const port = getEnvVariable("USER_API_PORT", "3000");
 const app = new Hono();
 
 app.route("/transaction", transactionRoutes);

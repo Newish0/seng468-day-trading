@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/*",
     "services/foobar-service",
-    "services/user-api"
+    "services/user-api",
+    "services/web-ui"
   ],
   "devDependencies": {
     "@types/bun": "latest"

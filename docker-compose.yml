@@ -15,13 +15,13 @@ services:
 
   user-api:
     build:
-      context: . # Use the project root as the build context
+      context: . # Use the project root as the build context for packages to work
       dockerfile: ./services/user-api/Dockerfile
     environment:
-      - PORT=3000
+      - PORT=4000
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - ORDER_SERVICE_URL=http://order:3002
+      # - ORDER_SERVICE_URL=http://order:3002
     container_name: user-api
     networks:
       - day-trading-network

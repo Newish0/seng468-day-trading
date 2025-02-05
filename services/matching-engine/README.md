@@ -12,7 +12,7 @@ or with hot reload
 cargo watch -x run
 ```
 
-## Building for release 
+## Building for release
 
 ```bash
 cargo build --release
@@ -48,7 +48,7 @@ Placing a market buy order.
         stock_id: string,
         quantity: number,
         stock_tx_id: string,
-        budget: number, 
+        budget: number,
         user_name: string
     }
     ```
@@ -117,101 +117,21 @@ Cancelling a limit sell order.
 
 ## Expected API Specs of the Order Service
 
-### Partial Sell Update
+### Sale Update
 
--   Route: `http://order_svc/partialSell`
+-   Route: `http://order_svc/updateSale`
 -   Method: `POST`
 -   Request Body:
+
     ```ts
     {
         stock_id: string,
-        quantity: number, // Number of shares sold for this new transaction
+        sold_quantity: number, // Number of shares sold at this time
+        remaining_quantity: number, // Number of shares remaining in the Matching Engine
         price: number, // Price it was sold at; should be the same as the requested price
-        stock_tx_id: string, // The original root tx_id
+        stock_tx_id: string, / The original root tx_id
+        user_name: string, // the user_name of the user who created the limit sell
     }
     ```
 
 NOTE: the `stock_tx_id` will always be the initial transaction ID. That is, all subsequent partial sells will use the root transaction ID.
-
-### Complete Sell Update
-
--   Route: `http://order_svc/completeSell`
--   Method: `POST`
--   Request Body:
-    ```ts
-    {
-        stock_id: string,
-        quantity: number, // total number of shares sold; should be the same as the requested number
-        price: number, // Price it was sold at; should be the same as the requested price
-        stock_tx_id: string, // The original root tx_id
-    }
-    ```
-
-### Example Interaction between the Matching Engine & Order Service
-
-Original limit sell order to `http://matching_engine/limitSell`
-
-> Order Service --> Matching Engine
-
-```ts
-{
-      stock_id: "GOOG",
-      quantity: 100,
-      price: 42.0,
-      stock_tx_id: "f001",
-}
-```
-
-First partial sell to `http://order_svc/partialSell`
-
-> Matching Engine --> Order Service
-
-```ts
-{
-      stock_id: "GOOG",
-      quantity: 11,
-      price: 42.0,
-      stock_tx_id: "f001",
-}
-```
-
-Second partial sell to `http://order_svc/partialSell`
-
-> Matching Engine --> Order Service
-
-```ts
-{
-      stock_id: "GOOG",
-      quantity: 69,
-      price: 42.0,
-      stock_tx_id: "f001",
-}
-```
-
-Third partial sell to `http://order_svc/partialSell`
-
-> Matching Engine --> Order Service
-
-```ts
-{
-      stock_id: "GOOG",
-      quantity: 20,
-      price: 42.0,
-      stock_tx_id: "f001",
-}
-```
-
-Complete the sell order via `http://order_svc/completeSell`
-
-> Matching Engine --> Order Service
-
-```ts
-{
-      stock_id: "GOOG",
-      quantity: 100,
-      price: 42.0,
-      stock_tx_id: "f001",
-}
-```
-
-The quantity across the partial sells should add up to the original sell of 100.

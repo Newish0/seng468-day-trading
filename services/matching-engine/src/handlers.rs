@@ -8,6 +8,7 @@ use crate::{
         LimitSellCancelData, LimitSellCancelResponse, LimitSellRequest, LimitSellResponse,
         MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice, StockPricesResponse,
     },
+    order_service::{self, OrderService, OrderServiceConfig, OrderUpdate},
     state::AppState,
 };
 
@@ -47,7 +48,6 @@ pub async fn market_buy(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<MarketBuyRequest>,
 ) -> Json<MarketBuyResponse> {
-
     // Need to have lock the entire time to ensure no other sell occurs
     // between ensuring we have enough shares and the actual buy/sell process.
     let mut state = state.write().await;
@@ -126,28 +126,62 @@ pub async fn market_buy(
         let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
 
         // Complete the top sell order or perform partial sell on the top sell order
+        let order_update;
         if purchase_all {
             total_price += top_sell_order.cur_quantity as f64 * top_sell_order.price;
             shares_bought += top_sell_order.cur_quantity;
 
             shares_to_buy -= top_sell_order.cur_quantity;
+
+            let sold_qty = top_sell_order.cur_quantity; // make copy
             top_sell_order.cur_quantity = 0;
 
-            // TODO: Send complete sell request to Order service
+            order_update = OrderUpdate {
+                stock_id: top_sell_order.stock_id.clone(),
+                price: top_sell_order.price,
+                remaining_quantity: top_sell_order.cur_quantity,
+                sold_quantity: sold_qty,
+                stock_tx_id: top_sell_order.stock_tx_id.clone(),
+                user_name: top_sell_order.user_name.clone(),
+            };
         } else {
             total_price += shares_to_buy as f64 * top_sell_order.price;
             shares_bought += shares_to_buy;
 
             top_sell_order.cur_quantity -= shares_to_buy;
             top_sell_order.partially_sold = true;
+
+            let sold_qty = shares_to_buy; // make copy
             shares_to_buy = 0;
 
-            // TODO: Send partial sell request to Order service
+            order_update = OrderUpdate {
+                stock_id: top_sell_order.stock_id.clone(),
+                price: top_sell_order.price,
+                remaining_quantity: top_sell_order.cur_quantity,
+                sold_quantity: sold_qty,
+                stock_tx_id: top_sell_order.stock_tx_id.clone(),
+                user_name: top_sell_order.user_name.clone(),
+            };
 
             // Reinsert the sell order back into the PQ since it is a partial sell
             state.matching_pq.insert(top_sell_order);
         }
-    }
+
+        // DEBUG: Output the request to order service
+        #[cfg(debug_assertions)]
+        {
+            println!("{:?}", order_update);
+        }
+
+        let order_service = OrderService::new(OrderServiceConfig {
+            base_url: String::from("http://order_svc/updateSale"), // TODO: use env var
+            max_retries: 3,
+            base_retry_delay_secs: 2,
+        });
+
+        // TODO: do this on a separate thread.
+        order_service.update_sale(order_update).await.unwrap(); // TODO: Add error handling
+    } // while
 
     Json(MarketBuyResponse {
         success: true,
@@ -164,7 +198,6 @@ pub async fn limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<LimitSellRequest>,
 ) -> Json<LimitSellResponse> {
-
     let sell_order = SellOrder {
         stock_id: payload.stock_id,
         stock_tx_id: payload.stock_tx_id,
@@ -187,7 +220,6 @@ pub async fn cancel_limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<LimitSellRequest>,
 ) -> Json<LimitSellCancelResponse> {
-
     let some_sell_order = {
         let mut state = state.write().await;
         state

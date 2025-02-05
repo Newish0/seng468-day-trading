@@ -5,17 +5,19 @@ use tokio::time::{sleep, Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrderUpdate {
-    stock_id: String,
-    quantity: f64,
-    price: f64,
-    stock_tx_id: String,
+    pub stock_id: String,
+    pub sold_quantity: u32,
+    pub remaining_quantity: u32,
+    pub price: f64,
+    pub stock_tx_id: String,
+    pub user_name: String,
 }
 
 #[derive(Debug)]
 pub struct OrderServiceConfig {
-    base_url: String,
-    max_retries: u32,
-    retry_delay_secs: u64,
+    pub base_url: String,
+    pub max_retries: u32,
+    pub base_retry_delay_secs: u64,
 }
 
 #[derive(Debug)]
@@ -67,23 +69,16 @@ impl OrderService {
             }
 
             retries += 1;
-            sleep(Duration::from_secs(self.config.retry_delay_secs)).await;
+            let retry_delay = self.config.base_retry_delay_secs.pow(retries);
+            sleep(Duration::from_secs(retry_delay)).await;
         }
     }
 
-    /// Sends a partial sell update to the Order Service
+    /// Sends a sale update to the Order Service
     ///
     /// # Arguments
-    /// * `update` - The OrderUpdate containing partial sell information
-    pub async fn partial_sell(&self, update: OrderUpdate) -> Result<(), Box<dyn Error>> {
-        self.make_request("partialSell", &update).await
-    }
-
-    /// Sends a complete sell update to the Order Service
-    ///
-    /// # Arguments
-    /// * `update` - The OrderUpdate containing complete sell information
-    pub async fn complete_sell(&self, update: OrderUpdate) -> Result<(), Box<dyn Error>> {
-        self.make_request("completeSell", &update).await
+    /// * `update` - The OrderUpdate containing sale information
+    pub async fn update_sale(&self, update: OrderUpdate) -> Result<(), Box<dyn Error>> {
+        self.make_request("updateSale", &update).await
     }
 }

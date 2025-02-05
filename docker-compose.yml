@@ -17,12 +17,75 @@ services:
     build:
       context: . # Use the project root as the build context
       dockerfile: ./services/user-api/Dockerfile
+    environment:
+      - PORT=3000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ORDER_SERVICE_URL=http://order:3002
     container_name: user-api
+    networks:
+      - day-trading-network
     ports:
       - "3000"
+    # depends_on:
+    # - redis
+    # - order
 
+  #   # Redis Database
+  # redis:
+  #     image: redis/redis-stack:latest
+  #     ports:
+  #         - "6379:6379"
+  #         - "8001:8001" # REVIEW: For RedisInsight I think... We can remove this for production maybe?
+  #     networks:
+  #         - day-trading-network
+  #     volumes:
+  #         - redis-data:/data
+
+  # # Authentication Service
   # auth:
-  #   build: ./services/auth
-  #   container_name: auth
-  #   expose:
-  #     - "8080"
+  #     build:
+  #         context: ./services/auth
+  #         dockerfile: Dockerfile
+  #     environment:
+  #         - PORT=3001
+  #         - REDIS_HOST=redis
+  #         - REDIS_PORT=6379
+  #     depends_on:
+  #         - redis
+  #     networks:
+  #         - day-trading-network
+
+  # # Order Service
+  # order:
+  #     build:
+  #         context: ./services/order
+  #         dockerfile: Dockerfile
+  #     environment:
+  #         - PORT=3002
+  #         - REDIS_HOST=redis
+  #         - REDIS_PORT=6379
+  #         - MATCHING_ENGINE_URL=http://matching-engine:3003
+  #     depends_on:
+  #         - redis
+  #         - matching-engine
+  #     networks:
+  #         - day-trading-network
+
+  # # Matching Engine (Rust)
+  # matching-engine:
+  #     build:
+  #         context: ./services/matching-engine
+  #         dockerfile: Dockerfile
+  #     environment:
+  #         - PORT=3003
+  #         - ORDER_SERVICE_URL=http://order:3002
+  #     networks:
+  #         - day-trading-network
+
+volumes:
+  redis-data:
+
+networks:
+  day-trading-network:
+    driver: bridge

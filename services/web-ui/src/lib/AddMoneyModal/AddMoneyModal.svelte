@@ -49,9 +49,7 @@
 
     <div class="flex self-end gap-1">
       {#if !loading}
-        <form method="dialog">
-          <button class="ghost">Cancel</button>
-        </form>
+        <button class="ghost" on:click={() => modal.close()}>Cancel</button>
       {/if}
       <button on:click={handleAddMoney} disabled={loading}>
         {#if loading}

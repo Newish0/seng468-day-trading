@@ -2,8 +2,13 @@
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { auth } from "./auth";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+
+  export let mode: "login" | "register" = "register";
+
   let username = "";
   let password = "";
+
+  let loading = false;
 
   async function login() {
     // TODO: revisit once auth service is in and add types
@@ -15,17 +20,14 @@
      */
 
     const res = await makeInternalRequest<any, any>({
-      body: { username, password },
+      body: { user_name: username, password },
       //@ts-ignore
     })("auth", "login");
 
     if (res.success) {
       const data = res.data;
       localStorage.setItem("jwt", data.token);
-      auth.set({ token: data.token, user: data.user });
-
-      username = "";
-      password = "";
+      auth.set({ token: data.token, username });
     } else {
       addToast({ message: `Failed to login`, type: TOAST_TYPES.ERROR });
     }
@@ -42,10 +44,18 @@
     <input type="password" id="password" bind:value={password} />
   </div>
 
-  <button on:click={login}>Login</button>
+  <button on:click={login} disabled={loading}>
+    {#if loading}
+      Logging in...
+    {:else}
+      Login
+    {/if}
+  </button>
 
   <p class="text-base flex items-center">
     New to TradeSimple?
-    <button class="ghost" on:click> Register instead </button>
+    <button class="ghost" on:click={() => (mode = "register")} disabled={loading}>
+      Register instead
+    </button>
   </p>
 </div>

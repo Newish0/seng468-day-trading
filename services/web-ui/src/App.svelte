@@ -31,10 +31,12 @@
     <StockTransactions />
     <Stocks />
     <Toast />
-
-    <div class="absolute top-2 right-2 flex items-center gap-2">
-      <ThemeToggle />
-      <LogOut />
-    </div>
   {/if}
+
+  <div class="absolute top-2 right-2 !flex !items-center !gap-2">
+    <ThemeToggle />
+    {#if $auth.token}
+      <LogOut />
+    {/if}
+  </div>
 </main>

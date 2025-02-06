@@ -5,7 +5,7 @@
   export let mode: "login" | "register" = "register";
 </script>
 
-<div>
+<div class="mx-auto w-full max-w-lg">
   {#if mode === "register"}
     <Register on:click={() => (mode = "login")} />
   {:else}

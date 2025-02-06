@@ -9,8 +9,7 @@
   import Wallet from "./lib/Wallet/Wallet.svelte";
   import WalletTransactions from "./lib/WalletTransactions/WalletTransactions.svelte";
   import ThemeToggle from "./lib/ThemeToggle/ThemeToggle.svelte";
-
-  let loggedIn = true;
+  import { auth } from "./lib/Auth/auth";
 </script>
 
 <main class="max-w-[1200px] flex flex-col my-[60px] mx-auto gap-12 scheme-dark">
@@ -22,7 +21,7 @@
     </div>
   </div>
 
-  {#if !loggedIn}
+  {#if !$auth.token}
     <Auth />
   {:else}
     <Wallet />

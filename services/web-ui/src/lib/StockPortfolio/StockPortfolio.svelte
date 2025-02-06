@@ -1,17 +1,24 @@
 <script lang="ts">
-  import { type GetStockPortfolioRequest, type GetStockPortfolioResponse } from "shared-types/dtos/user-api/transaction/getStockPortfolio";
+  import {
+    type GetStockPortfolioRequest,
+    type GetStockPortfolioResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockPortfolio";
   import type { OwnedStock } from "shared-types/stocks";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
   let portfolio: OwnedStock[];
 
   const getPortfolio = async () => {
-    const response = await makeInternalRequest<GetStockPortfolioRequest, GetStockPortfolioResponse>({
-      body: undefined,
-    })("userApi", "getStockPortfolio");
+    const response = await makeInternalRequest<GetStockPortfolioRequest, GetStockPortfolioResponse>(
+      {
+        headers: $authHeader,
+        body: undefined,
+      }
+    )("userApi", "getStockPortfolio");
 
     if (!response.success) {
       addToast({ message: "Failed to get portfolio", type: TOAST_TYPES.ERROR });

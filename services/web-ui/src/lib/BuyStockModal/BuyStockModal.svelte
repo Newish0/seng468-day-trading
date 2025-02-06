@@ -6,6 +6,7 @@
   import { ORDER_TYPE } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { authHeader } from "../Auth/auth";
 
   export let stockId: string;
   export let stockName: string;
@@ -21,6 +22,7 @@
   const handleBuyStock = async () => {
     loading = true;
     const response = await makeInternalRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
+      headers: $authHeader,
       body: {
         stock_id: stockId,
         quantity,

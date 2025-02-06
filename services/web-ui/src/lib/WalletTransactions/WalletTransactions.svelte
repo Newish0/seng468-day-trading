@@ -1,14 +1,22 @@
 <script lang="ts">
-  import { type GetWalletTransactionsRequest, type GetWalletTransactionsResponse } from "shared-types/dtos/user-api/transaction/getWalletTransactions";
+  import {
+    type GetWalletTransactionsRequest,
+    type GetWalletTransactionsResponse,
+  } from "shared-types/dtos/user-api/transaction/getWalletTransactions";
   import type { WalletTransaction } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { authHeader } from "../Auth/auth";
 
   let transactions: WalletTransaction[];
 
   const getWalletTransactions = async () => {
-    const response = await makeInternalRequest<GetWalletTransactionsRequest, GetWalletTransactionsResponse>({
+    const response = await makeInternalRequest<
+      GetWalletTransactionsRequest,
+      GetWalletTransactionsResponse
+    >({
+      headers: $authHeader,
       body: undefined,
     })("userApi", "getWalletTransactions");
 

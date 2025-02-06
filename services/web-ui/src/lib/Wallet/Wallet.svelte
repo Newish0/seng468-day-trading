@@ -1,9 +1,13 @@
 <script lang="ts">
-  import type { GetWalletBalanceRequest, GetWalletBalanceResponse } from "shared-types/dtos/user-api/transaction/getWalletBalance";
+  import type {
+    GetWalletBalanceRequest,
+    GetWalletBalanceResponse,
+  } from "shared-types/dtos/user-api/transaction/getWalletBalance";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
   let fetched = false;
   let balance: number;
@@ -17,7 +21,8 @@
 
   const getBalance = async () => {
     const response = await makeInternalRequest<GetWalletBalanceRequest, GetWalletBalanceResponse>({
-      body: undefined
+      headers: $authHeader,
+      body: undefined,
     })("userApi", "getWalletBalance");
 
     if (!response.success) {

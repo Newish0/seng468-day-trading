@@ -12,13 +12,6 @@
 
   async function login() {
     // TODO: revisit once auth service is in and add types
-    // TODO: also will need to include jwt in header for all internal requests
-    /** i.e.
-      const token =  get(auth).token;
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-     */
-
     const res = await makeInternalRequest<any, any>({
       body: { user_name: username, password },
       //@ts-ignore

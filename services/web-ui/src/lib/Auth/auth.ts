@@ -14,6 +14,10 @@ export const auth = writable<AuthStore>({
   username: "a-username",
 });
 
-export const authHeader = derived(auth, ($auth) => {
+type AuthHeader = {
+  Authorization: string;
+};
+
+export const authHeader = derived(auth, ($auth): AuthHeader | {} => {
   return $auth.token ? { Authorization: `Bearer ${$auth.token}` } : {};
 });

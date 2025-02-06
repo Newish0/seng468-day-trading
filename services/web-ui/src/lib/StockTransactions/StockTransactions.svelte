@@ -1,17 +1,28 @@
 <script lang="ts">
-  import { type CancelStockTransactionRequest, type CancelStockTransactionResponse } from "shared-types/dtos/user-api/engine/cancelStockTransaction";
-  import { type GetStockTransactionsRequest, type GetStockTransactionsResponse } from "shared-types/dtos/user-api/transaction/getStockTransactions";
+  import {
+    type CancelStockTransactionRequest,
+    type CancelStockTransactionResponse,
+  } from "shared-types/dtos/user-api/engine/cancelStockTransaction";
+  import {
+    type GetStockTransactionsRequest,
+    type GetStockTransactionsResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockTransactions";
   import { ORDER_STATUS, type StockTransaction } from "shared-types/transactions";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
   let transactions: StockTransaction[];
 
   const getStockTransactions = async () => {
-    const response = await makeInternalRequest<GetStockTransactionsRequest, GetStockTransactionsResponse>({
-      body: undefined
+    const response = await makeInternalRequest<
+      GetStockTransactionsRequest,
+      GetStockTransactionsResponse
+    >({
+      headers: $authHeader,
+      body: undefined,
     })("userApi", "getStockTransactions");
 
     if (!response.success) {
@@ -29,12 +40,16 @@
     });
   });
 
-  const cancelTransaction = async ({stock_tx_id}: Pick<StockTransaction, "stock_tx_id">) => {
-    const response = await makeInternalRequest<CancelStockTransactionRequest, CancelStockTransactionResponse>({
+  const cancelTransaction = async ({ stock_tx_id }: Pick<StockTransaction, "stock_tx_id">) => {
+    const response = await makeInternalRequest<
+      CancelStockTransactionRequest,
+      CancelStockTransactionResponse
+    >({
+      headers: $authHeader,
       body: {
-        stock_tx_id: stock_tx_id
-      }
-    })("userApi", "cancelStockTransaction")
+        stock_tx_id: stock_tx_id,
+      },
+    })("userApi", "cancelStockTransaction");
 
     if (!response.success) {
       addToast({ message: "Failed to cancel transaction", type: TOAST_TYPES.ERROR });
@@ -72,7 +87,10 @@
           <td>{transaction.order_status}</td>
           <td>
             {#if transaction.order_status !== ORDER_STATUS.COMPLETED}
-              <ConfirmModal on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}>Cancel</ConfirmModal>
+              <ConfirmModal
+                on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}
+                >Cancel</ConfirmModal
+              >
             {/if}
           </td>
         </tr>

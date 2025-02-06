@@ -5,6 +5,7 @@
   } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { authHeader } from "../Auth/auth";
 
   let modal: HTMLDialogElement;
   let amount: number = 0;
@@ -17,6 +18,7 @@
   const handleAddMoney = async () => {
     loading = true;
     const response = await makeInternalRequest<AddMoneyToWalletRequest, AddMoneyToWalletResponse>({
+      headers: $authHeader,
       body: {
         amount,
       },

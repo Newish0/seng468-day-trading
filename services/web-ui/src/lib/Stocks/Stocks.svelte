@@ -1,20 +1,25 @@
 <script lang="ts">
-  import { type GetStockPricesRequest, type GetStockPricesResponse } from "shared-types/dtos/user-api/transaction/getStockPrices";
+  import {
+    type GetStockPricesRequest,
+    type GetStockPricesResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockPrices";
   import type { AvailableStock } from "shared-types/stocks";
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
   let stocks: AvailableStock[];
 
   const getStocks = async () => {
     const response = await makeInternalRequest<GetStockPricesRequest, GetStockPricesResponse>({
+      headers: $authHeader,
       body: undefined,
     })("userApi", "getStockPrices");
 
     if (!response.success) {
-      addToast({message: "Failed to get stocks", type: TOAST_TYPES.ERROR});
+      addToast({ message: "Failed to get stocks", type: TOAST_TYPES.ERROR });
       return [];
     }
 

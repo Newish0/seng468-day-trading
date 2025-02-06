@@ -16,10 +16,8 @@ This project is built using the following technologies:
 
 ### **1. Install Dependencies**
 
-Make sure you have [Node.js](https://nodejs.org/) installed, then run:
-
 ```bash
-npm install
+bun install
 ```
 
 ### **2. Run the Development Server**
@@ -27,7 +25,7 @@ npm install
 Start the Vite-powered development server:
 
 ```bash
-npm start
+bun run dev
 ```
 
 Your project will be available at **http://localhost:5173/**.
@@ -37,7 +35,7 @@ Your project will be available at **http://localhost:5173/**.
 To create an optimized production build:
 
 ```bash
-npm run build
+bun run build
 ```
 
 ### **4. Preview the Production Build**
@@ -45,7 +43,7 @@ npm run build
 Serve the built project locally:
 
 ```bash
-npm run preview
+bun run preview
 ```
 
 ## **Folder Structure**

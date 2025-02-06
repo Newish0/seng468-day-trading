@@ -27,11 +27,9 @@
   });
 </script>
 
-<div class="absolute top-2 right-2">
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <!-- svelte-ignore a11y_missing_attribute -->
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <a class="!cursor-pointer !text-sm !font-mono !p-1 !px-2" on:click={toggleTheme}>
-    Use {theme === "dark" ? "light" : "dark"} mode
-  </a>
-</div>
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_missing_attribute -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<a class="!cursor-pointer !text-sm !font-mono !p-1 !px-2" on:click={toggleTheme}>
+  Use {theme === "dark" ? "light" : "dark"} mode
+</a>

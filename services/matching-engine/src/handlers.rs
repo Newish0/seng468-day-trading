@@ -1,4 +1,5 @@
 use axum::{extract::State, Json};
+use std::env;
 use std::{cmp::Reverse, sync::Arc};
 use tokio::sync::RwLock;
 
@@ -167,14 +168,19 @@ pub async fn market_buy(
             state.matching_pq.insert(top_sell_order);
         }
 
+        // Get the endpoint from the environment variable, with a default if not found
+        let endpoint = env::var("ORDER_SERVICE_URL")
+            .unwrap_or_else(|_| "http://order/updateSale:3000".to_string());
+
         // DEBUG: Output the request to order service
         #[cfg(debug_assertions)]
         {
+            println!("Send sale update to {:?}", endpoint);
             println!("{:?}", order_update);
         }
 
         let order_service = OrderService::new(OrderServiceConfig {
-            base_url: String::from("http://order_svc/updateSale"), // TODO: use env var
+            base_url: endpoint,
             max_retries: 3,
             base_retry_delay_secs: 2,
         });

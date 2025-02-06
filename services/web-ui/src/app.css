@@ -35,3 +35,33 @@ button.ghost:hover {
   background-color: transparent;
   border: none;
 }
+/* Default: Dark mode */
+:root {
+  color-scheme: dark;
+  --bg: #212121;
+  --accent-bg: #2b2b2b;
+  --text: #dcdcdc;
+  --text-light: #ababab;
+  --accent: #ffb300;
+  --accent-hover: #ffe099;
+  --accent-text: var(--bg);
+  --code: #f06292;
+  --preformatted: #ccc;
+  --disabled: #111;
+}
+
+/* Light mode overrides */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fff;
+  --accent-bg: #f5f7ff;
+  --text: #212121;
+  --text-light: #585858;
+  --accent: #0d47a1;
+  --accent-hover: #1266e2;
+  --accent-text: var(--bg);
+  --code: #d81b60;
+  --preformatted: #444;
+  --marked: #ffdd33;
+  --disabled: #efefef;
+}

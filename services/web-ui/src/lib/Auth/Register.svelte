@@ -2,6 +2,7 @@
   import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { auth } from "./auth";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { fade } from "svelte/transition";
 
   export let mode: "login" | "register" = "register";
 
@@ -37,7 +38,11 @@
   }
 </script>
 
-<div class="p-8 px-12 border rounded-3xl max-w-[500px] flex flex-col gap-4">
+<div
+  class="p-8 px-12 border rounded-3xl max-w-[500px] flex flex-col gap-4"
+  in:fade={{ duration: 200, delay: 50 }}
+  out:fade={{ duration: 50 }}
+>
   <h3>Register</h3>
 
   <div class="flex flex-col">

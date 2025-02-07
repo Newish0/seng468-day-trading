@@ -1,4 +1,3 @@
-
 import { stockSchema } from './redisSchema';
 import { RedisInstance } from './RedisInstance';
 import {Schema, Repository, EntityId} from 'redis-om';

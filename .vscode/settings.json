@@ -1,0 +1,11 @@
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode", // Set Prettier as default formatter
+    "editor.formatOnSave": true, // Automatically format on save
+    "editor.formatOnPaste": true, // Automatically format when pasting
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode" // Ensure Prettier for TypeScript
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode" // Ensure Prettier for JSON
+    },
+}

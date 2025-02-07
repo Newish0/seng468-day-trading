@@ -221,10 +221,11 @@ const service = {
    * and then updates the order status to 'CANCELLED' in the database.
    *
    * @param {string} stock_tx_id - The transaction ID of the stock transaction to cancel.
+   * @param {string} user_name - The name of the user who placed placed the original stock transaction  
    *
    * @throws {Error} - Throws error if the transaction cannot be found or canceled.
    */
-  cancelStockTransaction: async (stock_tx_id: string) => {
+  cancelStockTransaction: async (stock_tx_id: string, user_name: string) => {
     let transaction: StockTransaction | null;
 
     try {

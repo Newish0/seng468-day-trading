@@ -29,6 +29,7 @@ Placing a limit sell order.
         stock_id: string,
         quantity: number,
         price: number, 
+        user_name: string, 
     }
     ```
 -   Response: (if success)
@@ -57,6 +58,7 @@ Placing a market buy order.
     {
         stock_id: string,
         quantity: number,
+        user_name: string, 
     }
     ```
 
@@ -100,6 +102,7 @@ Cancel a stock transaction
     ```ts
     {
         stock_tx_id: string,
+        user_name: string, 
     }
     ```
 -   Response: (if success)

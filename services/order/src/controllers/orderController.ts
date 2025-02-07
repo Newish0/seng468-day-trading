@@ -4,8 +4,7 @@ import { handleError } from "shared-utils";
 
 const controller = {
   placeLimitSell: async (c: Context) => {
-    const { stock_id, quantity, price } = await c.req.json();
-    const user_name = c.get("user");
+    const { stock_id, quantity, price, user_name } = await c.req.json();
 
     if (!stock_id || !quantity || !price || !user_name) {
       return c.json({ success: false, data: { error: "Missing required parameters" } }, 400);
@@ -20,10 +19,10 @@ const controller = {
   },
 
   placeMarketBuy: async (c: Context) => {
-    const { stock_id, quantity } = await c.req.json();
-    const user = c.get("user");
+    const { stock_id, quantity, user_name} = await c.req.json();
+
     try {
-      await service.placeMarketBuyOrder(stock_id, quantity, user.user_name);
+      await service.placeMarketBuyOrder(stock_id, quantity, user_name);
       return c.json({ success: true, data: null }, 201);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred with market buy");
@@ -45,14 +44,14 @@ const controller = {
   },
 
   cancelStockTransaction: async (c: Context) => {
-    const { stock_tx_id } = await c.req.json();
+    const { stock_tx_id, user_name } = await c.req.json();
 
     if (!stock_tx_id) {
       return c.json({ success: false, data: { error: "Missing stock_tx_id" } }, 400);
     }
 
     try {
-      await service.cancelStockTransaction(stock_tx_id);
+      await service.cancelStockTransaction(stock_tx_id, user_name);
       return c.json({ success: true, data: null }, 200);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred while canceling transaction");

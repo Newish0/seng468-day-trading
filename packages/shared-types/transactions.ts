@@ -3,13 +3,13 @@ import { isObject } from ".";
 export type StockTransaction = {
   stock_tx_id: string;
   stock_id: string;
-  wallet_tx_id: string;
+  wallet_tx_id: string | null;
   order_status: ORDER_STATUS;
   is_buy: boolean;
   order_type: ORDER_TYPE;
   stock_price: number;
   quantity: number;
-  parent_tx_id: string;
+  parent_tx_id: string | null;
   time_stamp: string;
 };
 export function isStockTransaction(obj: any): obj is StockTransaction {
@@ -65,6 +65,8 @@ export enum ORDER_STATUS {
   PENDING = "PENDING",
   PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED",
   COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  IN_PROGRESS = "IN_PROGRESS"
 }
 export function isValidOrderStatus(obj: any): obj is ORDER_STATUS {
   return (

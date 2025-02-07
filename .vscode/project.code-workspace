@@ -44,6 +44,10 @@
             "name": "services/web-ui",
             "path": "../services/web-ui"
         },
+        {
+            "name": "services/order",
+            "path": "../services/order"
+        },
     ],
     "settings": {
         "files.exclude": {
@@ -51,5 +55,8 @@
             "packages/": true,
             "services/": true,
         },
+        "cSpell.words": [
+            "dtos"
+        ],
     }
 }

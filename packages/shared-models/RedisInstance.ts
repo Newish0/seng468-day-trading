@@ -87,58 +87,6 @@ class RedisInstance {
     return repository;
   }
 
-  /**
-   * Takes the given repository, and adds the data into it. The Repository and data passed to it need to have a matching schema in order to work
-   * there is no error handling in the case where we pass into the repository a differnt schema from what its configured to.
-   * @param repository - The repository we want to insert data into
-   * @param data - The data we want to insert into the repository
-   * @returns {Promise<string>} - Returns the key in which we inserted our data into.
-   */
-  async addIntoRepository(repository: Repository<Entity>, data: Entity): Promise<string> {
-    // Saving the data to the repository
-    const record : Entity = await repository.save(data);
-  
-    // Returning the EntityId
-    return record[EntityId] as string; // or record.entityId if EntityId is not used directly as a key
-  }
-
-  /**
-   * Takes the given repository, and retrieves the data stored at the given key.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to retrieve from the repository
-   * @returns {Promise<Entity>} - Returns the data stored at that key.
-   */
-  async getFromRepository(repository: Repository<Entity>, key: string): Promise<Entity> {
-    let data : Entity = await repository.fetch(key);
-    return data;
-  }
-
-  /**
-   * Takes the given repository, and retrieves the data stored at the given key.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to retrieve from the repository
-   * @returns {Promise<void>} - Returns nothing.
-   */
-  async removeFromRepository(repository: Repository<Entity>, key: string): Promise<void> {
-    await repository.remove(key);
-  }
-
-  /**
-   * Takes the given repository, and updates the data based on the given key. Redis doesn't seem to have a intuitive way of updating information it seems.
-   * So currently, all this function does is take the same object and overwrite it.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to update from the repository
-   * @param replacement - The data we want to insert into the repository
-   * @returns {Promise<string>} - Returns the key in which we updated our data into.
-   */
-  async updateFromRepository(repository: Repository<Entity>, key: string, replacement: Entity): Promise<void> {
-    //  // Saving the data to the repository
-    //  const record : any = await repository.save(key, replacement);
-  
-    //  // Returning the EntityId
-    //  return record[EntityId]; // or record.entityId if EntityId is not used directly as a key
-    console.log("I don't work yet");
-  }
 
 }
 

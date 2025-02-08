@@ -22,7 +22,7 @@ const stockSchema = new Schema("stocks", stockSchemaObject);
 export type Stock = InferSchema<typeof stockSchemaObject>;
 
 const ownedStockSchemaObject = {
-  user_id: { type: "string" },
+  user_name: { type: "string" },
   stock_id: { type: "string" },
   stock_name: { type: "string" },
   current_quantity: { type: "number" },
@@ -31,7 +31,7 @@ const ownedStockSchema = new Schema("owned_stocks", ownedStockSchemaObject);
 export type StockOwned = InferSchema<typeof ownedStockSchemaObject>;
 
 const walletTransactionSchemaObject = {
-  user_id: { type: "string" },
+  user_name: { type: "string" },
   wallet_tx_id: { type: "string" },
   stock_tx_id: { type: "string" },
   is_debit: { type: "boolean" },
@@ -47,7 +47,7 @@ export type WalletTransaction = InferSchema<
 >;
 
 const stockTransactionSchemaObject = {
-  user_id: { type: "string" },
+  user_name: { type: "string" },
   stock_tx_id: { type: "string" },
   stock_id: { type: "string" },
   wallet_tx_id: { type: "string" },

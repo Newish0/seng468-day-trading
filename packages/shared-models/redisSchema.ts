@@ -22,6 +22,7 @@ const stockSchema = new Schema("stocks", stockSchemaObject);
 export type Stock = InferSchema<typeof stockSchemaObject>;
 
 const ownedStockSchemaObject = {
+  user_id: { type: "string"},
   stock_id: { type: "string" },
   stock_name: { type: "string" },
   current_quantity: { type: "number" },

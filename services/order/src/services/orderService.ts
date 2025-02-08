@@ -42,6 +42,21 @@ const stockOwnedRepository: Repository<OwnedStock> = await redisConnection.creat
   "stock_owned_schema"
 );
 
+await stockTransactionRepository.createIndex();
+await userRepository.createIndex();
+await walletTransactionRepository.createIndex();
+
+
+// userRepository.save({
+//   name: 2111,
+//   user_name: "bob",
+//   password: "abc",
+//   portfolio: [],
+//   stock_transaction_history: [],
+//   wallet_balance: 3000,
+//   wallet_transaction_history: []
+// })
+
 const service = {
   /**
    * Places a limit sell order by sending a request to the matching engine,
@@ -92,13 +107,14 @@ const service = {
       stock_price: price,
       quantity,
       parent_tx_id: null,
-      time_stamp: "date-here",
+      time_stamp: new Date().toISOString(),
     };
 
     // Saves limit sell order to the database
     try {
       await stockTransactionRepository.save(transaction);
     } catch (err) {
+      console.error(err)
       throw new Error("Error saving limit sell transaction into database");
     }
 
@@ -149,7 +165,7 @@ const service = {
       order_type: ORDER_TYPE.MARKET,
       stock_price: 0, // HACK: set price to 0: price unknown atm (not matched by matching engine)
       quantity: quantity,
-      time_stamp: "date-here",
+      time_stamp: new Date().toISOString(),
     };
 
     const marketBuyRequest: MarketBuyRequest = {
@@ -171,7 +187,7 @@ const service = {
         stock_tx_id: new_user_transaction.stock_tx_id,
         is_debit: true, // TODO: debit functionality has not been implemented yet
         amount: result.data.price_total,
-        time_stamp: "date-here", // TODO: add timestamp
+        time_stamp: new Date().toISOString()
       };
       new_wallet_transaction = await walletTransactionRepository.save(new_wallet_transaction);
     } catch (error) {
@@ -328,7 +344,7 @@ const service = {
           order_type: ORDER_TYPE.MARKET,
           stock_price: price,
           quantity: sold_quantity,
-          time_stamp: "data-here", // TODO: Add timestamp
+          time_stamp: new Date().toISOString()
         });
       } catch (error) {
         throw new Error(
@@ -353,7 +369,7 @@ const service = {
         stock_tx_id: relatedStockTx.stock_tx_id,
         is_debit: false,
         amount,
-        time_stamp: "data-here", // TODO: Add timestamp
+        time_stamp: new Date().toISOString()
       });
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction

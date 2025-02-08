@@ -170,12 +170,12 @@ pub async fn market_buy(
 
         // Get the endpoint from the environment variable, with a default if not found
         let endpoint = env::var("ORDER_SERVICE_URL")
-            .unwrap_or_else(|_| "http://order/updateSale:3000".to_string());
+            .unwrap_or_else(|_| "http://order:3000".to_string());
 
         // DEBUG: Output the request to order service
         #[cfg(debug_assertions)]
         {
-            println!("Send sale update to {:?}", endpoint);
+            println!("Send sale update to {endpoint}");
             println!("{:?}", order_update);
         }
 

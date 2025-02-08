@@ -168,19 +168,19 @@ pub async fn market_buy(
             state.matching_pq.insert(top_sell_order);
         }
 
-        // Get the endpoint from the environment variable, with a default if not found
-        let endpoint = env::var("ORDER_SERVICE_URL")
-            .unwrap_or_else(|_| "http://order/updateSale:3000".to_string());
+        // Get the base url from the environment variable, with a default if not found
+        let base_url = env::var("ORDER_SERVICE_URL")
+            .unwrap_or_else(|_| "http://order:3000".to_string());
 
         // DEBUG: Output the request to order service
         #[cfg(debug_assertions)]
         {
-            println!("Send sale update to {:?}", endpoint);
+            println!("Send sale update to {base_url}");
             println!("{:?}", order_update);
         }
 
         let order_service = OrderService::new(OrderServiceConfig {
-            base_url: endpoint,
+            base_url,
             max_retries: 3,
             base_retry_delay_secs: 2,
         });

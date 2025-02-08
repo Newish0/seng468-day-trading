@@ -17,6 +17,7 @@
     "redis": "^4.7.0",
     "redis-om": "^0.4.7",
     "shared-utils": "workspace:*",
-    "shared-types": "workspace:*"
+    "shared-types": "workspace:*",
+    "shared-models": "workspace:*"
   }
 }

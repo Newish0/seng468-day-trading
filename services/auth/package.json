@@ -1,0 +1,26 @@
+{
+  "name": "auth-service",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun --watch index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
+    "hono": "^4.6.18",
+    "redis": "^4.7.0",
+    "redis-om": "^0.4.7",
+    "shared-utils": "workspace:*",
+    "shared-models": "workspace:*",
+    "shared-types": "workspace:*"
+  }
+}

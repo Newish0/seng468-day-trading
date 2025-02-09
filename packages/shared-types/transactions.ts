@@ -10,7 +10,7 @@ export type StockTransaction = {
   stock_price: number;
   quantity: number;
   parent_tx_id: string | null;
-  time_stamp: string;
+  time_stamp: Date;
 };
 export function isStockTransaction(obj: any): obj is StockTransaction {
   return (
@@ -43,7 +43,7 @@ export type WalletTransaction = {
   stock_tx_id: string;
   is_debit: boolean;
   amount: number;
-  time_stamp: string;
+  time_stamp: Date;
 };
 export function isWalletTransaction(obj: any): obj is WalletTransaction {
   return (

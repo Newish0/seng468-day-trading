@@ -38,7 +38,8 @@ const walletTransactionSchemaObject = {
   quantity: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
-const WalletTransactionSchmea = new Schema("wallet_transactions", walletTransactionSchemaObject);
+
+const WalletTransactionSchema = new Schema("wallet_transactions", walletTransactionSchemaObject);
 export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
 
 const stockTransactionSchemaObject = {
@@ -61,7 +62,7 @@ const userSchemaObject = {
   user_name: { type: "string" },
   password: { type: "string" },
   name: { type: "string" },
-  wallet_balence: { type: "number" },
+  wallet_balance: { type: "number" },
 } as const;
 const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;
@@ -69,7 +70,7 @@ export type User = InferSchema<typeof userSchemaObject>;
 export {
   stockSchema,
   ownedStockSchema,
-  WalletTransactionSchmea,
+  WalletTransactionSchema,
   StockTransactionSchema,
   userSchema,
 };

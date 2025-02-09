@@ -26,7 +26,7 @@ const service = {
    * @throws Error - If user already exists.
    */
   register: async (username: string, password: string, name: string): Promise<void> => {
-    let existingUser;
+    let existingUser: User | null;
     try {
       existingUser = await userRepository
         .search()
@@ -65,7 +65,7 @@ const service = {
    * @throws Error - If credentials are invalid or user is not found.
    */
   login: async (username: string, password: string): Promise<{ token: string }> => {
-    let user;
+    let user: User | null;
 
     try {
       user = await userRepository.search().where("user_name").equals(username).returnFirst();

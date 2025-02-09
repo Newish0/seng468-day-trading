@@ -1,7 +1,7 @@
 import { sign } from "hono/jwt";
 import bcrypt from "bcrypt";
-import { userSchema, type User } from "shared-models";
-import { RedisInstance } from "shared-models";
+import { userSchema, type User } from "shared-models/redisSchema";
+import { RedisInstance } from "shared-models/RedisInstance";
 import { Repository } from "redis-om";
 
 const JWT_SECRET = Bun.env.JWT_SECRET || "secret"; // TODO: Remove 'secret' in prod
@@ -28,7 +28,11 @@ const service = {
   register: async (username: string, password: string, name: string): Promise<void> => {
     let existingUser;
     try {
-      existingUser = await userRepository.search().where("user_name").equals(username).returnFirst();
+      existingUser = await userRepository
+        .search()
+        .where("user_name")
+        .equals(username)
+        .returnFirst();
     } catch (error) {
       throw new Error("Failed to check if user exists");
     }
@@ -43,15 +47,11 @@ const service = {
       user_name: username,
       password: hashedPassword,
       name,
-      portfolio: [],
-      stock_transaction_history: [],
-      wallet_transaction_history: [],
       wallet_balance: 0,
     };
 
     try {
       await userRepository.save(newUser);
-      console.log(`User ${username} registered successfully`); // [For Debug]
     } catch (error) {
       throw new Error("Failed to register user");
     }

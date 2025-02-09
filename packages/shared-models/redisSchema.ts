@@ -38,13 +38,8 @@ const walletTransactionSchemaObject = {
   quantity: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
-const WalletTransactionSchmea = new Schema(
-  "wallet_transactions",
-  walletTransactionSchemaObject
-);
-export type WalletTransaction = InferSchema<
-  typeof walletTransactionSchemaObject
->;
+const WalletTransactionSchmea = new Schema("wallet_transactions", walletTransactionSchemaObject);
+export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
 
 const stockTransactionSchemaObject = {
   user_name: { type: "string" },
@@ -59,10 +54,7 @@ const stockTransactionSchemaObject = {
   parent_tx_id: { type: "string" },
   time_stamp: { type: "date" },
 } as const;
-const StockTransactionSchema = new Schema(
-  "stock_transactions",
-  stockTransactionSchemaObject
-);
+const StockTransactionSchema = new Schema("stock_transactions", stockTransactionSchemaObject);
 export type StockTransaction = InferSchema<typeof stockTransactionSchemaObject>;
 
 const userSchemaObject = {
@@ -74,4 +66,10 @@ const userSchemaObject = {
 const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;
 
-export { stockSchema, ownedStockSchema, WalletTransactionSchmea, StockTransactionSchema, userSchema };
+export {
+  stockSchema,
+  ownedStockSchema,
+  WalletTransactionSchmea,
+  StockTransactionSchema,
+  userSchema,
+};

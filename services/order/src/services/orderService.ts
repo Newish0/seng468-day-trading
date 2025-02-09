@@ -91,7 +91,7 @@ const service = {
       stock_price: price,
       quantity,
       parent_tx_id: null,
-      time_stamp: "date-here",
+      time_stamp: new Date().toISOString(),
     };
 
     // Saves limit sell order to the database
@@ -174,7 +174,7 @@ const service = {
       order_type: ORDER_TYPE.MARKET,
       stock_price: 0, // HACK: set price to 0: price unknown atm (not matched by matching engine)
       quantity: quantity,
-      time_stamp: "date-here",
+      time_stamp: new Date().toISOString(),
     };
 
     const marketBuyRequest: MarketBuyRequest = {
@@ -194,9 +194,9 @@ const service = {
       new_wallet_transaction = {
         wallet_tx_id: walletTxId,
         stock_tx_id: new_user_transaction.stock_tx_id,
-        is_debit: true, // TODO: debit functionality has not been implemented yet
+        is_debit: true,
         amount: result.data.price_total,
-        time_stamp: "date-here", // TODO: add timestamp
+        time_stamp: new Date().toISOString(),
       };
       new_wallet_transaction = await walletTransactionRepository.save(new_wallet_transaction);
     } catch (error) {
@@ -398,7 +398,7 @@ const service = {
           order_type: ORDER_TYPE.MARKET,
           stock_price: price,
           quantity: sold_quantity,
-          time_stamp: "data-here", // TODO: Add timestamp
+          time_stamp: new Date().toISOString(),
         });
       } catch (error) {
         throw new Error(
@@ -423,7 +423,7 @@ const service = {
         stock_tx_id: relatedStockTx.stock_tx_id,
         is_debit: false,
         amount,
-        time_stamp: "data-here", // TODO: Add timestamp
+        time_stamp: new Date().toISOString(),
       });
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction

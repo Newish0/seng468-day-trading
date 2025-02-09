@@ -6,7 +6,7 @@ type InferSchema<T extends Record<string, { type: string }>> = {
     : T[K]["type"] extends "string[]"
     ? string[]
     : T[K]["type"] extends "date"
-    ? string
+    ? Date
     : T[K]["type"] extends "number"
     ? number
     : T[K]["type"] extends "boolean"

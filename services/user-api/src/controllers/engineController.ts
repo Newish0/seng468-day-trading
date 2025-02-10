@@ -17,6 +17,7 @@ import { makeInternalRequest } from "shared-utils/internalCommunication";
 
 const engineController = {
   placeStockOrder: async (c: ContextWithUser<WrappedInput<PlaceStockOrderRequest>>) => {
+    const { username: user_name } = c.get("user");
     const { stock_id, is_buy: isBuy, order_type: orderType, quantity, price } = c.req.valid("json");
     if (isBuy) {
       if (orderType !== ORDER_TYPE.MARKET) {
@@ -27,6 +28,7 @@ const engineController = {
           stock_id,
           quantity,
           price,
+          user_name,
         },
       })("orderService", "placeLimitSell");
       if (response.success) {
@@ -42,6 +44,7 @@ const engineController = {
         body: {
           stock_id,
           quantity,
+          user_name,
         },
       })("orderService", "placeMarketBuy");
       if (response.success) {

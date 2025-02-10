@@ -12,7 +12,11 @@ export type WrappedInput<T> = {
 export type ContextWithUser<T extends Input = WrappedInput<unknown>> = Context<
   Env & {
     Variables: {
-      user: string;
+      user: {
+        username: string;
+        name: string;
+        exp: string;
+      };
     };
   },
   string,

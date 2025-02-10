@@ -20,9 +20,8 @@ const stockService = {
     if (existingStock) {
       throw new Error("Stock already exists");
     }
-    // TODO: Is it fine to have stock_id and stock_name the same?
     const stock: Stock = {
-      stock_id: stock_name,
+      stock_id: crypto.randomUUID(),
       stock_name,
     };
     const stock_id = await stockRepository!.save(stock);

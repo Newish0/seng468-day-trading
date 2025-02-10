@@ -21,9 +21,9 @@ const stockController = {
     }
   },
   getStockPortfolio: async (c: ContextWithUser) => {
-    const userId = c.get("user");
+    const { username } = c.get("user");
     try {
-      const userStocks = await stockService.getUserStockPortfolio(userId);
+      const userStocks = await stockService.getUserStockPortfolio(username);
       const userStocksOwned = userStocks.map((stock) => ({
         stock_id: stock.stock_id,
         stock_name: stock.stock_name,
@@ -35,9 +35,9 @@ const stockController = {
     }
   },
   getStockTransactions: async (c: ContextWithUser) => {
-    const userId = c.get("user");
+    const { username } = c.get("user");
     try {
-      const userStockTransactions = await stockService.getUserStockTransactions(userId);
+      const userStockTransactions = await stockService.getUserStockTransactions(username);
       const userStockTransactionsFormatted = userStockTransactions.map((transaction) => ({
         stock_tx_id: transaction.stock_tx_id,
         stock_id: transaction.stock_id,
@@ -48,7 +48,7 @@ const stockController = {
         stock_price: transaction.stock_price,
         quantity: transaction.quantity,
         parent_tx_id: transaction.parent_tx_id,
-        time_stamp: transaction.time_stamp,
+        time_stamp: transaction.time_stamp.toISOString(),
       }));
       return c.json({ success: true, data: userStockTransactionsFormatted });
     } catch (e) {

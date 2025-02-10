@@ -1,9 +1,18 @@
 version: "3.8"
+# To run docker compose: `docker-compose up --build`
+
+networks:
+  day-trading-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+
 
 services:
-  nginx:
+  gateway:
     image: nginx:latest
-    container_name: nginx_proxy
+    container_name: gateway
     ports:
       - "8080:80"
     volumes:
@@ -11,50 +20,48 @@ services:
       - ./services/gateway/html:/usr/share/nginx/html:ro
     depends_on:
       - user-api
-      # - auth
+      - auth
 
   user-api:
     build:
       context: . # Use the project root as the build context for packages to work
       dockerfile: ./services/user-api/Dockerfile
     environment:
-      - PORT=4000
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - PORT=3000
+      # - REDIS_HOST=redis
+      # - REDIS_PORT=6379
       # - ORDER_SERVICE_URL=http://order:3002
     container_name: user-api
     networks:
       - day-trading-network
     ports:
       - "3000"
-    # depends_on:
-    # - redis
+    depends_on:
+      - redis
     # - order
 
-  #   # Redis Database
-  # redis:
-  #     image: redis/redis-stack:latest
-  #     ports:
-  #         - "6379:6379"
-  #         - "8001:8001" # REVIEW: For RedisInsight I think... We can remove this for production maybe?
-  #     networks:
-  #         - day-trading-network
-  #     volumes:
-  #         - redis-data:/data
+    # Redis Database
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001" # REVIEW: For RedisInsight I think... We can remove this for production maybe?
+    networks:
+      - day-trading-network
+    volumes:
+      - redis-data:/data
 
-  # # Authentication Service
-  # auth:
-  #     build:
-  #         context: ./services/auth
-  #         dockerfile: Dockerfile
-  #     environment:
-  #         - PORT=3001
-  #         - REDIS_HOST=redis
-  #         - REDIS_PORT=6379
-  #     depends_on:
-  #         - redis
-  #     networks:
-  #         - day-trading-network
+  # Auth Service
+  auth:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/auth/Dockerfile
+    environment:
+      - PORT=3000
+    depends_on:
+      - redis
+    networks:
+      - day-trading-network
 
   # # Order Service
   # order:
@@ -72,20 +79,13 @@ services:
   #     networks:
   #         - day-trading-network
 
-  # # Matching Engine (Rust)
-  # matching-engine:
-  #     build:
-  #         context: ./services/matching-engine
-  #         dockerfile: Dockerfile
-  #     environment:
-  #         - PORT=3003
-  #         - ORDER_SERVICE_URL=http://order:3002
-  #     networks:
-  #         - day-trading-network
-
-volumes:
-  redis-data:
-
-networks:
-  day-trading-network:
-    driver: bridge
+  # Matching Engine (Rust)
+  matching-engine:
+    build:
+      context: ./services/matching-engine
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3003
+      - ORDER_SERVICE_URL=http://order:3002
+    networks:
+      - day-trading-network

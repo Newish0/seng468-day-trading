@@ -1,27 +1,30 @@
-// TODO: STUBS
-class RedisInstance {
-  connect() {}
-  async createRepository(schema: any, name: string) {}
-}
-type Repository<T> = any;
-const userSchema = null;
-const stockSchema = null;
-// TODO: END STUBS
+import { Repository } from "redis-om";
+import { RedisInstance } from "shared-models/RedisInstance";
+import {
+  ownedStockSchema,
+  stockSchema,
+  StockTransactionSchema,
+  userSchema,
+  WalletTransactionSchema,
+  type Stock,
+  type StockOwned,
+  type StockTransaction,
+  type User,
+  type WalletTransaction,
+} from "shared-models/redisSchema";
 
 export let redisConnection: RedisInstance | null = null;
-export let userRepository: Repository<any> | null = null; // TODO: remove the any
-export let stockRepository: Repository<any> | null = null; // TODO: remove the any
+export let userRepository: Repository<User> | null = null;
+export let stockRepository: Repository<Stock> | null = null;
+export let ownedStockRepository: Repository<StockOwned> | null = null;
+export let stockTransactionRepository: Repository<StockTransaction> | null = null;
+export let walletTransactionRepository: Repository<WalletTransaction> | null = null;
 export async function setupRedisConnection() {
   redisConnection = new RedisInstance();
   redisConnection.connect();
-  userRepository = await redisConnection.createRepository(
-    // TODO: This might need to be fetchRepository
-    userSchema,
-    "user_repo"
-  );
-  stockRepository = await redisConnection.createRepository(
-    // TODO: This might need to be fetchRepository
-    stockSchema,
-    "stock_repo"
-  );
+  userRepository = await redisConnection.createRepository(userSchema);
+  stockRepository = await redisConnection.createRepository(stockSchema);
+  ownedStockRepository = await redisConnection.createRepository(ownedStockSchema);
+  stockTransactionRepository = await redisConnection.createRepository(StockTransactionSchema);
+  walletTransactionRepository = await redisConnection.createRepository(WalletTransactionSchema);
 }

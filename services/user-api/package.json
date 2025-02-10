@@ -11,6 +11,7 @@
   "dependencies": {
     "hono": "^4.6.19",
     "shared-types": "workspace:*",
-    "shared-utils": "workspace:*"
+    "shared-utils": "workspace:*",
+    "shared-models": "workspace:*"
   }
 }

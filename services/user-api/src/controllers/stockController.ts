@@ -12,10 +12,21 @@ const stockController = {
       const response = await makeInternalRequest<GetStockPricesRequest, GetStockPricesResponse>({
         body: undefined,
       })("orderService", "getStockPrices");
-      if (!response.success) {
+      if (!response.success || !response.data.success) {
         return c.json({ success: false, data: null }, 400);
       }
-      return c.json({ success: true, data: response.data });
+      const sortedData = response.data.data.sort((stock1, stock2) => {
+        const stockName1Upper = stock1.stock_name.toUpperCase();
+        const stockName2Upper = stock2.stock_name.toUpperCase();
+        if (stockName1Upper < stockName2Upper) {
+          return 1;
+        }
+        if (stockName1Upper > stockName2Upper) {
+          return -1;
+        }
+        return 0;
+      });
+      return c.json({ success: true, data: sortedData });
     } catch (e) {
       return c.json({ success: false, data: null }, 500);
     }
@@ -24,11 +35,23 @@ const stockController = {
     const { username } = c.get("user");
     try {
       const userStocks = await stockService.getUserStockPortfolio(username);
-      const userStocksOwned = userStocks.map((stock) => ({
-        stock_id: stock.stock_id,
-        stock_name: stock.stock_name,
-        quantity_owned: stock.current_quantity,
-      }));
+      const userStocksOwned = userStocks
+        .map((stock) => ({
+          stock_id: stock.stock_id,
+          stock_name: stock.stock_name,
+          quantity_owned: stock.current_quantity,
+        }))
+        .sort((stock1, stock2) => {
+          const stockName1Upper = stock1.stock_name.toUpperCase();
+          const stockName2Upper = stock2.stock_name.toUpperCase();
+          if (stockName1Upper < stockName2Upper) {
+            return 1;
+          }
+          if (stockName1Upper > stockName2Upper) {
+            return -1;
+          }
+          return 0;
+        });
       return c.json({ success: true, data: userStocksOwned });
     } catch (e) {
       return c.json({ success: false, data: null }, 500);

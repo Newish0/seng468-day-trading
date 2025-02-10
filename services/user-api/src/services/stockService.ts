@@ -12,7 +12,14 @@ const stockService = {
     if (!redisConnection) {
       await setupRedisConnection();
     }
-    // TODO: Do I need to explicitly check if stock_name is available or is there a unique constraint?
+    const existingStock = await stockRepository!
+      .search()
+      .where("stock_name")
+      .equals(stock_name)
+      .returnFirst();
+    if (existingStock) {
+      throw new Error("Stock already exists");
+    }
     // TODO: Is it fine to have stock_id and stock_name the same?
     const stock: Stock = {
       stock_id: stock_name,

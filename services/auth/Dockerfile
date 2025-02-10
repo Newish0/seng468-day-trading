@@ -1,13 +1,8 @@
 FROM oven/bun:latest
-
-WORKDIR /auth
-
-COPY package.json bun.lockb ./
-
+WORKDIR /app
+COPY . .
+WORKDIR /app/services/auth
 RUN bun install
-
-COPY src/ ./src/
-
-EXPOSE 3000 
-
-CMD ["bun", "src/index.ts"]
+EXPOSE 3000
+CMD ["bun", "run", "src/index.ts"]
+# to build: run from monorepo root with `docker build -f services/auth/Dockerfile -t user-api-image .` 

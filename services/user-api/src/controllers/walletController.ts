@@ -22,9 +22,7 @@ const walletController = {
       return c.json({ success: false, data: null }, 500);
     }
   },
-  addMoneyToWallet: async (
-    c: ContextWithUser<WrappedInput<AddMoneyToWalletRequest>>
-  ) => {
+  addMoneyToWallet: async (c: ContextWithUser<WrappedInput<AddMoneyToWalletRequest>>) => {
     const userId = c.get("user");
     const { amount } = c.req.valid("json");
     try {

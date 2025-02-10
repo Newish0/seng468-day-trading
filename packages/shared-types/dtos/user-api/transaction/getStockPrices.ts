@@ -8,9 +8,7 @@ export type GetStockPricesResponse = ReturnType<
     current_price: number;
   }[]
 >;
-export function isGetStockPricesResponse(
-  obj: any
-): obj is GetStockPricesResponse {
+export function isGetStockPricesResponse(obj: any): obj is GetStockPricesResponse {
   return (
     isValidReturnType(obj) &&
     "data" in obj &&

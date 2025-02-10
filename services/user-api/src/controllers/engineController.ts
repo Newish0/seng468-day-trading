@@ -16,24 +16,13 @@ import { ORDER_TYPE } from "shared-types/transactions";
 import { makeInternalRequest } from "shared-utils/internalCommunication";
 
 const engineController = {
-  placeStockOrder: async (
-    c: ContextWithUser<WrappedInput<PlaceStockOrderRequest>>
-  ) => {
-    const {
-      stock_id,
-      is_buy: isBuy,
-      order_type: orderType,
-      quantity,
-      price,
-    } = c.req.valid("json");
+  placeStockOrder: async (c: ContextWithUser<WrappedInput<PlaceStockOrderRequest>>) => {
+    const { stock_id, is_buy: isBuy, order_type: orderType, quantity, price } = c.req.valid("json");
     if (isBuy) {
       if (orderType !== ORDER_TYPE.MARKET) {
         return c.json({ success: false, data: null }, 422);
       }
-      const response = await makeInternalRequest<
-        PlaceLimitSellRequest,
-        PlaceLimitSellResponse
-      >({
+      const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({
         body: {
           stock_id,
           quantity,
@@ -49,10 +38,7 @@ const engineController = {
       if (orderType !== ORDER_TYPE.LIMIT) {
         return c.json({ success: false, data: null }, 422);
       }
-      const response = await makeInternalRequest<
-        PlaceMarketBuyRequest,
-        PlaceMarketBuyResponse
-      >({
+      const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
         body: {
           stock_id,
           quantity,

@@ -8,9 +8,7 @@ export type GetStockPortfolioResponse = ReturnType<
     quantity_owned: number;
   }[]
 >;
-export function isGetStockPortfolioResponse(
-  obj: any
-): obj is GetStockPortfolioResponse {
+export function isGetStockPortfolioResponse(obj: any): obj is GetStockPortfolioResponse {
   return (
     isValidReturnType(obj) &&
     "data" in obj &&

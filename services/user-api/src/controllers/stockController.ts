@@ -9,10 +9,9 @@ import userService from "../services/userService";
 const stockController = {
   getStockPrices: async (c: ContextWithUser) => {
     try {
-      const response = await makeInternalRequest<
-        GetStockPricesRequest,
-        GetStockPricesResponse
-      >({ body: undefined })("orderService", "getStockPrices");
+      const response = await makeInternalRequest<GetStockPricesRequest, GetStockPricesResponse>({
+        body: undefined,
+      })("orderService", "getStockPrices");
       if (!response.success) {
         return c.json({ success: false, data: null }, 400);
       }

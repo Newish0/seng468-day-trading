@@ -1,26 +1,20 @@
+import { EntityId, Repository } from "redis-om";
+import { RedisInstance } from "shared-models/RedisInstance";
+import type { StockOwned, StockTransaction, WalletTransaction } from "shared-models/redisSchema";
 import {
+  ownedStockSchema,
   StockTransactionSchema,
   userSchema,
   WalletTransactionSchema,
-  ownedStockSchema,
 } from "shared-models/redisSchema";
-import { RedisInstance } from "shared-models/RedisInstance";
-import { Repository } from "redis-om";
-import {
-  type StockTransaction,
-  type WalletTransaction,
-  ORDER_STATUS,
-  ORDER_TYPE,
-} from "shared-types/transactions";
 import type {
+  CancelSellRequest,
   LimitSellOrderRequest,
   MarketBuyRequest,
-  CancelSellRequest,
 } from "shared-types/dtos/order-service/orderRequests";
+import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
-import type { OwnedStock } from "shared-types/stocks";
 import { MatchingEngineService } from "./matchingEngineService";
-import { EntityId } from "redis-om";
 
 const matEngSvc = new MatchingEngineService(
   Bun.env.MATCHING_SERVICE_URL || "http://matching-engine:3000"
@@ -37,7 +31,7 @@ const userRepository: Repository<User> = await redisConnection.createRepository(
 const walletTransactionRepository: Repository<WalletTransaction> =
   await redisConnection.createRepository(WalletTransactionSchema);
 
-const stockOwnedRepository: Repository<OwnedStock> = await redisConnection.createRepository(
+const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
   ownedStockSchema
 );
 
@@ -104,7 +98,7 @@ const service = {
     const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
 
     if (result.success) {
-      let ownedStock: OwnedStock | null;
+      let ownedStock: StockOwned | null;
       try {
         ownedStock = await stockOwnedRepository
           .search()
@@ -118,7 +112,7 @@ const service = {
         throw new Error("Error fetching owned stock data from database");
       }
 
-      if (ownedStock.quantity_owned <= quantity) {
+      if (ownedStock.current_quantity <= quantity) {
         // If the quantity to sell equals the owned quantity, delete the record
         try {
           const ownedStockEntityId = (ownedStock as any)[EntityId]; // HACK: Get's the Entity id of ownedStock and bypasses ts typecheck
@@ -128,7 +122,7 @@ const service = {
         }
       } else {
         // If there's more stock left, just decrease the quantity
-        ownedStock.quantity_owned -= quantity;
+        ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
         try {
           await stockOwnedRepository.save(ownedStock);
         } catch (err) {
@@ -205,10 +199,13 @@ const service = {
 
     // update new_user_transaction and store into database
     try {
-      new_user_transaction.order_status = ORDER_STATUS.COMPLETED;
       // Matching Engine provides price_total instead of stock price according to matching engine API Specs?
-      new_user_transaction.stock_price = result.data.price_total / result.data.quantity;
-      new_user_transaction.wallet_tx_id = new_wallet_transaction.wallet_tx_id;
+      new_user_transaction = {
+        ...new_user_transaction,
+        order_status: ORDER_STATUS.COMPLETED,
+        stock_price: result.data.price_total / result.data.quantity,
+        wallet_tx_id: new_wallet_transaction.wallet_tx_id,
+      };
       new_user_transaction = await stockTransactionRepository.save(new_user_transaction);
     } catch (error) {
       throw new Error("Error storing new_user_transaction for buyer (placeMarketBuyOrder)");
@@ -225,7 +222,7 @@ const service = {
     // TODO: Move into separate function as same func in cancelTransaction
     try {
       // Check if user owns stock already
-      let ownedStock: OwnedStock | null = await stockOwnedRepository
+      let ownedStock: StockOwned | null = await stockOwnedRepository
         .search()
         .where("stock_id")
         .equals(stock_id)
@@ -234,15 +231,15 @@ const service = {
         .returnFirst();
 
       if (ownedStock) {
-        ownedStock.quantity_owned += quantity;
+        ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity + quantity };
         await stockOwnedRepository.save(ownedStock);
       } else {
         // If the user does not own the stock, create a new entry
-        let newOwnedStock: OwnedStock = {
+        let newOwnedStock: StockOwned = {
           stock_id,
           user_name,
           stock_name: "Stock Name Here", // Why needed? Another query to just fetch this? :(
-          quantity_owned: quantity,
+          current_quantity: quantity,
         };
         await stockOwnedRepository.save(newOwnedStock);
       }
@@ -300,7 +297,7 @@ const service = {
 
     // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
     try {
-      transaction.order_status = ORDER_STATUS.CANCELLED;
+      transaction = { ...transaction, order_status: ORDER_STATUS.CANCELLED };
       transaction = await stockTransactionRepository.save(transaction);
     } catch (error) {
       throw new Error(
@@ -310,7 +307,7 @@ const service = {
 
     try {
       // Check if user owns stock already
-      let ownedStock: OwnedStock | null = await stockOwnedRepository
+      let ownedStock: StockOwned | null = await stockOwnedRepository
         .search()
         .where("stock_id")
         .equals(transaction.stock_tx_id)
@@ -319,15 +316,18 @@ const service = {
         .returnFirst();
 
       if (ownedStock) {
-        ownedStock.quantity_owned += transaction.quantity;
+        ownedStock = {
+          ...ownedStock,
+          current_quantity: ownedStock.current_quantity + transaction.quantity,
+        };
         await stockOwnedRepository.save(ownedStock);
       } else {
         // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        let newOwnedStock: OwnedStock = {
+        let newOwnedStock: StockOwned = {
           stock_id: transaction.stock_id,
           user_name,
           stock_name: "Stock Name Here", // Why needed? Another query just fetch this? :(
-          quantity_owned: transaction.quantity,
+          current_quantity: transaction.quantity,
         };
         newOwnedStock = await stockOwnedRepository.save(newOwnedStock);
       }
@@ -384,7 +384,7 @@ const service = {
 
     let committedPartialSellTx: StockTransaction | null = null;
     if (isPartial) {
-      parentTransaction.order_status = ORDER_STATUS.PARTIALLY_COMPLETED;
+      parentTransaction = { ...parentTransaction, order_status: ORDER_STATUS.PARTIALLY_COMPLETED };
 
       // Creates a new transaction with the parent_stock_tx_id linking to the original limit sell transaction with status COMPLETED
       try {
@@ -399,6 +399,7 @@ const service = {
           stock_price: price,
           quantity: sold_quantity,
           time_stamp: new Date(),
+          user_name,
         });
       } catch (error) {
         throw new Error(
@@ -410,7 +411,7 @@ const service = {
     // Must check `isComplete` after checking `isPartial` b/c
     // we overwrites the partially completed status to complete
     if (isComplete) {
-      parentTransaction.order_status = ORDER_STATUS.COMPLETED;
+      parentTransaction = { ...parentTransaction, order_status: ORDER_STATUS.COMPLETED };
     }
 
     // Add whatever the sold amount was to the wallet. No distinction between partial and complete

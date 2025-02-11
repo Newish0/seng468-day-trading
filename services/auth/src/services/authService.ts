@@ -40,8 +40,10 @@ const service = {
     if (existingUser) {
       throw new Error("User already exists");
     }
-
-    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const hashedPassword = await Bun.password.hash(password, {
+      algorithm: "bcrypt",
+      cost: SALT_ROUNDS,
+    });
 
     const newUser: User = {
       user_name: username,
@@ -78,7 +80,7 @@ const service = {
     }
     let isPasswordValid;
     try {
-      isPasswordValid = await bcrypt.compare(password, user.password);
+      isPasswordValid = await Bun.password.verify(password, user.password);
     } catch (error) {
       throw new Error("An error has occured validating passwords");
     }

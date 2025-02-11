@@ -4,7 +4,7 @@ import authRoutes from "./routes/authRoutes";
 const port = Bun.env.PORT || 3000;
 const app = new Hono();
 
-app.route("/", authRoutes);
+app.route("/authentication", authRoutes);
 
 Bun.serve({
   fetch: app.fetch,

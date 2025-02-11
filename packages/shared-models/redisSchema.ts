@@ -1,4 +1,4 @@
-import { Schema } from "redis-om";
+import { Schema, type Entity } from "redis-om";
 
 type InferSchema<T extends Record<string, { type: string }>> = {
   [K in keyof T]: T[K]["type"] extends "string"
@@ -42,6 +42,20 @@ const walletTransactionSchemaObject = {
 const WalletTransactionSchema = new Schema("wallet_transactions", walletTransactionSchemaObject);
 export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
 
+export interface StockTransaction extends Entity {
+  user_name: string;
+  stock_tx_id: string;
+  stock_id: string;
+  wallet_tx_id: string | null;
+  order_status: string;
+  is_buy: boolean;
+  order_type: string;
+  stock_price: number;
+  quantity: number;
+  parent_tx_id: string;
+  time_stamp: Date;
+}
+
 const stockTransactionSchemaObject = {
   user_name: { type: "string" },
   stock_tx_id: { type: "string" },
@@ -55,8 +69,10 @@ const stockTransactionSchemaObject = {
   parent_tx_id: { type: "string" },
   time_stamp: { type: "date" },
 } as const;
-const StockTransactionSchema = new Schema("stock_transactions", stockTransactionSchemaObject);
-export type StockTransaction = InferSchema<typeof stockTransactionSchemaObject>;
+const StockTransactionSchema = new Schema<StockTransaction>(
+  "stock_transactions",
+  stockTransactionSchemaObject
+);
 
 const userSchemaObject = {
   user_name: { type: "string" },

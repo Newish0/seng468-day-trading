@@ -13,6 +13,8 @@ services:
   gateway:
     image: nginx:latest
     container_name: gateway
+    networks:
+      - day-trading-network
     ports:
       - "8080:80"
     volumes:
@@ -66,7 +68,7 @@ services:
   # # Order Service
   # order:
   #     build:
-  #         context: ./services/order
+  #         context: . # Use the project root as the build context for packages to work
   #         dockerfile: Dockerfile
   #     environment:
   #         - PORT=3002

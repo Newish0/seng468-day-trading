@@ -12,10 +12,8 @@
   let loading = false;
 
   async function login() {
-    // TODO: revisit once auth service is in and add types
     const res = await makeInternalRequest<any, any>({
       body: { user_name: username, password },
-      //@ts-ignore
     })("auth", "login");
 
     if (res.success) {

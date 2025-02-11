@@ -41,17 +41,18 @@
   <table>
     <thead>
       <tr>
-        <th>Stock</th>
+        <th>Transaction</th>
         <th>Used Debit</th>
         <th>Amount</th>
         <th>Time</th>
       </tr>
     </thead>
     <tbody>
-      {#each transactions as transaction}
+      {#each transactions as transaction, i}
         <tr>
           <!-- TODO: Don't have access to the stock name currently, schema needs to change if we want it -->
           <!-- <td>{transaction.stock}</td> -->
+          <td>{i}</td>
           <td>{transaction.is_debit}</td>
           <td>${transaction.amount}</td>
           <td>{transaction.time_stamp}</td>

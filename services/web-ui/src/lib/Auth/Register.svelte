@@ -14,14 +14,12 @@
 
   async function register() {
     loading = true;
-    // TODO: revisit once auth service is in and add types
     const res = await makeInternalRequest<any, any>({
       body: {
         user_name: username,
         password,
         name,
       },
-      //@ts-ignore
     })("auth", "register");
 
     if (res.success) {

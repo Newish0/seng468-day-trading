@@ -78,6 +78,17 @@ const internalEndpoints = {
       requestMethod: "DELETE",
     },
   },
+  auth: {
+    host: getEnvVariable("AUTH_HOST", "http://localhost:3003"),
+    login: {
+      path: "/login",
+      requestMethod: "POST",
+    },
+    register: {
+      path: "/register",
+      requestMethod: "POST",
+    },
+  },
 } as const;
 
 type FetchOptions<TBody> = {

@@ -4,6 +4,7 @@ export type OwnedStock = {
   stock_id: string;
   stock_name: string;
   quantity_owned: number;
+  user_name: string;
 };
 export function isOwnedStock(obj: any): obj is OwnedStock {
   return (

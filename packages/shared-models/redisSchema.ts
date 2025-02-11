@@ -35,7 +35,7 @@ const walletTransactionSchemaObject = {
   wallet_tx_id: { type: "string" },
   stock_tx_id: { type: "string" },
   is_debit: { type: "boolean" },
-  quantity: { type: "number" },
+  amount: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
 
@@ -68,9 +68,9 @@ const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;
 
 export {
-  stockSchema,
   ownedStockSchema,
-  WalletTransactionSchema,
+  stockSchema,
   StockTransactionSchema,
   userSchema,
+  WalletTransactionSchema,
 };

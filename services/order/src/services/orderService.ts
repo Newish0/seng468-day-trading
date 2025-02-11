@@ -191,6 +191,7 @@ const service = {
         is_debit: true,
         amount: result.data.price_total,
         time_stamp: new Date(),
+        user_name,
       };
       new_wallet_transaction = await walletTransactionRepository.save(new_wallet_transaction);
     } catch (error) {
@@ -425,6 +426,7 @@ const service = {
         is_debit: false,
         amount,
         time_stamp: new Date(),
+        user_name,
       });
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction

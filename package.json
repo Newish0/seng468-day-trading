@@ -5,7 +5,8 @@
     "packages/*",
     "services/foobar-service",
     "services/user-api",
-    "services/order"
+    "services/order",
+    "services/auth"
   ],
   "devDependencies": {
     "@types/bun": "latest"

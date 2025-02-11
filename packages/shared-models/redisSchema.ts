@@ -1,6 +1,6 @@
 import { Schema, type Entity } from "redis-om";
 
-type InferSchema<T extends Record<string, { type: string }>> = {
+type InferSchema<T extends Record<string, { type: string }>> = Entity & {
   [K in keyof T]: T[K]["type"] extends "string"
     ? string
     : T[K]["type"] extends "string[]"
@@ -18,8 +18,9 @@ const stockSchemaObject = {
   stock_id: { type: "string" },
   stock_name: { type: "string" },
 } as const;
-const stockSchema = new Schema("stocks", stockSchemaObject);
+
 export type Stock = InferSchema<typeof stockSchemaObject>;
+const stockSchema = new Schema<Stock>("stocks", stockSchemaObject);
 
 const ownedStockSchemaObject = {
   user_name: { type: "string" },
@@ -27,8 +28,9 @@ const ownedStockSchemaObject = {
   stock_name: { type: "string" },
   current_quantity: { type: "number" },
 } as const;
-const ownedStockSchema = new Schema("owned_stocks", ownedStockSchemaObject);
+
 export type StockOwned = InferSchema<typeof ownedStockSchemaObject>;
+const ownedStockSchema = new Schema<StockOwned>("owned_stocks", ownedStockSchemaObject);
 
 const walletTransactionSchemaObject = {
   user_name: { type: "string" },
@@ -39,8 +41,11 @@ const walletTransactionSchemaObject = {
   time_stamp: { type: "date" },
 } as const;
 
-const WalletTransactionSchema = new Schema("wallet_transactions", walletTransactionSchemaObject);
 export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
+const WalletTransactionSchema = new Schema<WalletTransaction>(
+  "wallet_transactions",
+  walletTransactionSchemaObject
+);
 
 export interface StockTransaction extends Entity {
   user_name: string;
@@ -69,6 +74,7 @@ const stockTransactionSchemaObject = {
   parent_tx_id: { type: "string" },
   time_stamp: { type: "date" },
 } as const;
+
 const StockTransactionSchema = new Schema<StockTransaction>(
   "stock_transactions",
   stockTransactionSchemaObject
@@ -80,8 +86,9 @@ const userSchemaObject = {
   name: { type: "string" },
   wallet_balance: { type: "number" },
 } as const;
-const userSchema = new Schema("users", userSchemaObject);
+
 export type User = InferSchema<typeof userSchemaObject>;
+const userSchema = new Schema<User>("users", userSchemaObject);
 
 export {
   stockSchema,

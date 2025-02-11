@@ -65,21 +65,21 @@ services:
     networks:
       - day-trading-network
 
-  # # Order Service
-  # order:
-  #     build:
-  #         context: . # Use the project root as the build context for packages to work
-  #         dockerfile: Dockerfile
-  #     environment:
-  #         - PORT=3002
-  #         - REDIS_HOST=redis
-  #         - REDIS_PORT=6379
-  #         - MATCHING_ENGINE_URL=http://matching-engine:3003
-  #     depends_on:
-  #         - redis
-  #         - matching-engine
-  #     networks:
-  #         - day-trading-network
+  # Order Service
+  order:
+      build:
+          context: . # Use the project root as the build context for packages to work
+          dockerfile: Dockerfile
+      environment:
+          - PORT=3002
+          - REDIS_HOST=redis
+          - REDIS_PORT=6379
+          - MATCHING_ENGINE_URL=http://matching-engine:3003
+      depends_on:
+          - redis
+          - matching-engine
+      networks:
+          - day-trading-network
 
   # Matching Engine (Rust)
   matching-engine:

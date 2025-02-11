@@ -5,4 +5,3 @@ WORKDIR /app/services/auth
 RUN bun install
 EXPOSE 3000
 CMD ["bun", "run", "src/index.ts"]
-# to build: run from monorepo root with `docker build -f services/auth/Dockerfile -t user-api-image .` 

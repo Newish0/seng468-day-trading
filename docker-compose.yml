@@ -11,18 +11,16 @@ volumes:
 
 services:
   gateway:
-    image: nginx:latest
-    container_name: gateway
-    networks:
-      - day-trading-network
+    build:
+      context: ./services # Need the entire services folder as context to copy from web-ui
+      dockerfile: ./gateway/Dockerfile
     ports:
       - "8080:80"
-    volumes:
-      - ./services/gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./services/gateway/html:/usr/share/nginx/html:ro
     depends_on:
       - user-api
       - auth
+    networks:
+      - day-trading-network
 
   user-api:
     build:
@@ -64,24 +62,23 @@ services:
       - redis
     networks:
       - day-trading-network
+      # Order Service
+      # order:
+      #   build:
+      #     context: . # Use the project root as the build context for packages to work
+      #     dockerfile: Dockerfile
+      #   environment:
+      #     - PORT=3002
+      #     - REDIS_HOST=redis
+      #     - REDIS_PORT=6379
+      #     - MATCHING_ENGINE_URL=http://matching-engine:3003
+      #   depends_on:
+      #     - redis
+      #     - matching-engine
+      #   networks:
+      #     - day-trading-network
 
-  # Order Service
-  order:
-      build:
-          context: . # Use the project root as the build context for packages to work
-          dockerfile: Dockerfile
-      environment:
-          - PORT=3002
-          - REDIS_HOST=redis
-          - REDIS_PORT=6379
-          - MATCHING_ENGINE_URL=http://matching-engine:3003
-      depends_on:
-          - redis
-          - matching-engine
-      networks:
-          - day-trading-network
-
-  # Matching Engine (Rust)
+      # Matching Engine (Rust)
   matching-engine:
     build:
       context: ./services/matching-engine

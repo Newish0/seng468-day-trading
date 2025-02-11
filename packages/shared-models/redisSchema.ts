@@ -38,6 +38,7 @@ const walletTransactionSchemaObject = {
   quantity: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
+
 const WalletTransactionSchema = new Schema("wallet_transactions", walletTransactionSchemaObject);
 export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
 

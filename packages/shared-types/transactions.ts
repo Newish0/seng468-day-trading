@@ -2,6 +2,8 @@ export enum ORDER_STATUS {
   PENDING = "PENDING",
   PARTIALLY_COMPLETED = "PARTIALLY_COMPLETED",
   COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  IN_PROGRESS = "IN_PROGRESS",
 }
 export function isValidOrderStatus(obj: any): obj is ORDER_STATUS {
   return (

@@ -5,6 +5,7 @@
     "packages/*",
     "services/foobar-service",
     "services/user-api",
+    "services/order",
     "services/auth"
   ],
   "devDependencies": {

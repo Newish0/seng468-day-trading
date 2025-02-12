@@ -28,8 +28,7 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     environment:
       - PORT=3000
-      # - REDIS_HOST=redis
-      # - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
       # - ORDER_SERVICE_URL=http://order:3002
     container_name: user-api
     networks:
@@ -58,6 +57,7 @@ services:
       dockerfile: ./services/auth/Dockerfile
     environment:
       - PORT=3000
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
     networks:
@@ -69,8 +69,6 @@ services:
       #     dockerfile: Dockerfile
       #   environment:
       #     - PORT=3002
-      #     - REDIS_HOST=redis
-      #     - REDIS_PORT=6379
       #     - MATCHING_ENGINE_URL=http://matching-engine:3003
       #   depends_on:
       #     - redis

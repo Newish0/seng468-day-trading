@@ -1,16 +1,27 @@
+import { Repository } from "redis-om";
+import { RedisInstance } from "shared-models/RedisInstance";
 import {
-  redisConnection,
-  setupRedisConnection,
-  userRepository,
-  walletTransactionRepository,
-} from "./userApiService";
+  userSchema,
+  WalletTransactionSchema,
+  type User,
+  type WalletTransaction,
+} from "shared-models/redisSchema";
 import userService from "./userService";
+
+// Creating connection here due to the implementation of RedisInstance.ts
+// This is probably NOT good - causes multiple connection creation?
+let redisConnection: RedisInstance = new RedisInstance();
+try {
+  redisConnection.connect();
+} catch (error) {
+  throw new Error("Error starting database server");
+}
+const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
+const walletTransactionRepository: Repository<WalletTransaction> =
+  await redisConnection.createRepository(WalletTransactionSchema);
 
 const walletService = {
   addMoneyToWallet: async (userId: string, amount: number) => {
-    if (!redisConnection) {
-      setupRedisConnection();
-    }
     if (amount < 0) {
       throw new Error("Amount cannot be negative");
     }
@@ -27,11 +38,8 @@ const walletService = {
     }
   },
   async getUserWalletTransactions(userId: string) {
-    if (!redisConnection) {
-      await setupRedisConnection();
-    }
     try {
-      const userWalletTransactions = await walletTransactionRepository!
+      const userWalletTransactions = await walletTransactionRepository
         .search()
         .where("user_name")
         .equals(userId)

@@ -3,6 +3,7 @@ import {
   type GetStockPricesResponse,
 } from "shared-types/dtos/order/getStockPrices";
 import type { ContextWithUser } from "shared-types/hono";
+import { handleError } from "shared-utils";
 import { makeInternalRequest } from "shared-utils/internalCommunication";
 import stockService from "../services/stockService";
 
@@ -13,7 +14,12 @@ const stockController = {
         body: undefined,
       })("orderService", "getStockPrices");
       if (!response.success || !response.data.success) {
-        return c.json({ success: false, data: null }, 400);
+        return handleError(
+          c,
+          new Error("Failed to get stock prices"),
+          "Failed to get stock prices",
+          400
+        );
       }
       const sortedData = response.data.data.sort((stock1, stock2) => {
         const stockName1Upper = stock1.stock_name.toUpperCase();
@@ -28,7 +34,7 @@ const stockController = {
       });
       return c.json({ success: true, data: sortedData });
     } catch (e) {
-      return c.json({ success: false, data: null }, 500);
+      return handleError(c, e, "Failed to get stock prices", 400);
     }
   },
   getStockPortfolio: async (c: ContextWithUser) => {
@@ -54,7 +60,7 @@ const stockController = {
         });
       return c.json({ success: true, data: userStocksOwned });
     } catch (e) {
-      return c.json({ success: false, data: null }, 500);
+      return handleError(c, e, "Failed to get stock portfolio", 400);
     }
   },
   getStockTransactions: async (c: ContextWithUser) => {
@@ -75,7 +81,7 @@ const stockController = {
       }));
       return c.json({ success: true, data: userStockTransactionsFormatted });
     } catch (e) {
-      return c.json({ success: false, data: null }, 500);
+      return handleError(c, e, "Failed to get stock transactions", 400);
     }
   },
 };

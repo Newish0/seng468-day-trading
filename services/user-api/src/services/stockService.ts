@@ -24,8 +24,8 @@ const stockService = {
       stock_id: crypto.randomUUID(),
       stock_name,
     };
-    const stock_id = await stockRepository!.save(stock);
-    return stock_id;
+    const saved_stock = await stockRepository!.save(stock);
+    return saved_stock.stock_id;
   },
   async getUserStockPortfolio(userName: string) {
     if (!redisConnection) {

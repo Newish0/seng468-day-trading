@@ -1,4 +1,4 @@
-import { test, expect, beforeAll } from "bun:test";
+import { beforeAll, expect, test } from "bun:test";
 import { apiRequest, uniqueUser } from "./utils";
 
 let test_user;
@@ -28,7 +28,6 @@ beforeAll(async () => {
 test("POST /setup/createStock successfully creates a stock", async () => {
   const payload = { stock_name: `Stock ${Date.now()}` };
   const response = await apiRequest("POST", "/setup/createStock", payload, withAuth(validToken));
-  console.log(response);
   expect(response.success).toBe(true);
   expect(response.data).toHaveProperty("stock_id");
   expect(typeof response.data.stock_id).toBe("string");
@@ -45,7 +44,7 @@ test("POST /setup/createStock fails with invalid token", async () => {
   });
 
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /setup/createStock fails with missing stock_name", async () => {
@@ -54,7 +53,7 @@ test("POST /setup/createStock fails with missing stock_name", async () => {
   const response = await apiRequest("POST", "/setup/createStock", payload, withAuth(validToken));
 
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /setup/createStock fails with invalid stock_name type", async () => {
@@ -63,5 +62,5 @@ test("POST /setup/createStock fails with invalid stock_name type", async () => {
   const response = await apiRequest("POST", "/setup/createStock", payload, withAuth(validToken));
 
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });

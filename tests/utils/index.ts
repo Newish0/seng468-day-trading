@@ -18,7 +18,6 @@ export async function apiRequest(
       ...(extraOptions.headers || {}),
     },
     body: body ? JSON.stringify(body) : undefined,
-    ...extraOptions,
   };
 
   const response = await fetch(`${BASE_URL}${endpoint}`, options);

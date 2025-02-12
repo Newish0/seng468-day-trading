@@ -17,7 +17,7 @@ import type { User } from "shared-types/user";
 import { MatchingEngineService } from "./matchingEngineService";
 
 const matEngSvc = new MatchingEngineService(
-  Bun.env.MATCHING_ENGINE_URL || "http://matching-engine:3000"
+  Bun.env.MATCHING_ENGINE_HOST || "http://matching-engine:3000"
 );
 
 const redisConnection: RedisInstance = new RedisInstance();

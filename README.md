@@ -56,6 +56,13 @@ End to end test script uses Bun's built-in test runner (bun:test).
    ```
 
 2. Run the tests
+
+   To run all the tests:
    ```
    bun test
+   ```
+
+   To run a specific test file:
+   ```
+   bun test {filename}
    ```

@@ -29,7 +29,7 @@ services:
     environment:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-      # - ORDER_SERVICE_URL=http://order:3002
+      - ORDER_SERVICE_HOST=http://order:3002
     container_name: user-api
     networks:
       - day-trading-network
@@ -37,8 +37,7 @@ services:
       - "3000"
     depends_on:
       - redis
-    # - order
-
+      - order
     # Redis Database
   redis:
     image: redis/redis-stack:latest
@@ -62,21 +61,21 @@ services:
       - redis
     networks:
       - day-trading-network
-      # Order Service
-      # order:
-      #   build:
-      #     context: . # Use the project root as the build context for packages to work
-      #     dockerfile: Dockerfile
-      #   environment:
-      #     - PORT=3002
-      #     - MATCHING_ENGINE_URL=http://matching-engine:3003
-      #   depends_on:
-      #     - redis
-      #     - matching-engine
-      #   networks:
-      #     - day-trading-network
-
-      # Matching Engine (Rust)
+  # Order Service
+  order:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/order/Dockerfile
+    environment:
+      - PORT=3002
+      - MATCHING_ENGINE_URL=http://matching-engine:3003
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - matching-engine
+    networks:
+      - day-trading-network
+  # Matching Engine (Rust)
   matching-engine:
     build:
       context: ./services/matching-engine

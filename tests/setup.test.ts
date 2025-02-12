@@ -1,13 +1,9 @@
 import { beforeAll, expect, test } from "bun:test";
-import { apiRequest, uniqueUser } from "./utils";
+import { apiRequest, uniqueUser, withAuth } from "./utils";
 
 let test_user;
 let validToken: string = "";
 const invalidHeaders = { Authorization: "Bearer invalidToken" };
-
-function withAuth(token: string) {
-  return { headers: { Authorization: `Bearer ${token}` } };
-}
 
 beforeAll(async () => {
   test_user = uniqueUser();

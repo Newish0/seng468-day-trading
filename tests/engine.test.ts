@@ -1,13 +1,19 @@
 import { test, expect, beforeAll } from "bun:test";
-import { apiRequest, TEST_USER } from "./utils";
+import { apiRequest, uniqueUser, withAuth } from "./utils";
+
+let test_user;
+let validToken: string = "";
+const invalidHeaders = { Authorization: "Bearer invalidToken" };
 
 let googleStockId: string = "";
 
 beforeAll(async () => {
+  test_user = uniqueUser();
+
   // Obtain a valid token
   const loginResponse = await apiRequest("POST", "/authentication/login", {
-    user_name: TEST_USER.user_name,
-    password: TEST_USER.password,
+    user_name: test_user.user_name,
+    password: test_user.password,
   });
   validToken = loginResponse.data.token;
 
@@ -116,23 +122,6 @@ test("POST /engine/placeStockOrder fails for partial buy order with invalid quan
   );
   expect(response.success).toBe(false);
   expect(response).toHaveProperty("error", "Invalid quantity");
-});
-
-// Set up a valid token for tests that require authentication.
-let validToken: string = "";
-const invalidHeaders = { Authorization: "Bearer invalidToken" };
-
-function withAuth(token: string) {
-  return { headers: { Authorization: `Bearer ${token}` } };
-}
-
-beforeAll(async () => {
-  // Login to obtain a valid token.
-  const loginResponse = await apiRequest("POST", "/authentication/login", {
-    user_name: TEST_USER.user_name,
-    password: TEST_USER.password,
-  });
-  validToken = loginResponse.data.token;
 });
 
 //

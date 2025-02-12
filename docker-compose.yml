@@ -29,7 +29,7 @@ services:
     environment:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-      - ORDER_SERVICE_HOST=http://order:3002
+      - ORDER_SERVICE_URL=http://order:3002
     container_name: user-api
     networks:
       - day-trading-network

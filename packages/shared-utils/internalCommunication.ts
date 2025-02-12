@@ -1,6 +1,6 @@
 const internalEndpoints = {
   orderService: {
-    host: Bun.env.ORDER_SERVICE_HOST || "http://localhost:3000",
+    host: Bun.env.ORDER_SERVICE_URL || "http://localhost:3000",
     placeMarketBuy: {
       path: "/placeMarketBuy",
       requestMethod: "POST",

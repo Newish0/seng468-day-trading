@@ -1,5 +1,4 @@
 export const BASE_URL = "http://localhost:8080";
-export const TEST_USER = { user_name: "test", password: "test", name: "Test User" };
 
 let authToken: string = "";
 
@@ -27,4 +26,12 @@ export async function apiRequest(
 
   const response = await fetch(`${BASE_URL}${endpoint}`, options);
   return response.json();
+}
+
+export function uniqueUser() {
+  return {
+    user_name: `test_user_${Date.now()}`, // append timestamp for uniqueness
+    name: "Test User",
+    password: "password",
+  };
 }

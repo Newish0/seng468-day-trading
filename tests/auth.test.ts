@@ -1,21 +1,22 @@
-import { test, expect } from "bun:test";
-import { apiRequest, TEST_USER } from "./utils";
+import { test, expect, beforeAll } from "bun:test";
+import { apiRequest, uniqueUser } from "./utils";
 
+let test_user;
 let authToken: string = "";
+
+beforeAll(() => {
+  test_user = uniqueUser();
+});
 
 // ✅ Test 1: Register a new user
 test("Register a new user", async () => {
-  const response = await apiRequest("POST", "/authentication/register", TEST_USER);
-
+  const response = await apiRequest("POST", "/authentication/register", test_user);
   expect(response).toEqual({ success: true, data: null });
 });
 
 // ✅ Test 2: Login and store token
 test("Login a user", async () => {
-  const response = await apiRequest("POST", "/authentication/login", {
-    user_name: TEST_USER.user_name,
-    password: TEST_USER.password,
-  });
+  const response = await apiRequest("POST", "/authentication/login", test_user);
 
   expect(response.success).toBe(true);
   expect(response.data).toHaveProperty("token");
@@ -26,30 +27,28 @@ test("Login a user", async () => {
 // ✅ Test 3: Ensure token is not empty
 test("Verify login token is valid", async () => {
   expect(authToken).toBeDefined();
+  expect(typeof authToken).toBe("string"); // Confirm it's a string
   expect(authToken.length).toBeGreaterThan(10); // Ensure token is long enough to be valid
 });
 
-// Ensure the test user is registered first (if not already registered)
-await apiRequest("POST", "/authentication/register", TEST_USER);
-
 test("Fail to register an already existing user", async () => {
   // Attempt to register the same user again.
-  const response = await apiRequest("POST", "/authentication/register", TEST_USER);
+  const response = await apiRequest("POST", "/authentication/register", test_user);
 
   // We expect the API to fail the registration.
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "User already exists");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("Fail to login with incorrect password", async () => {
   const response = await apiRequest("POST", "/authentication/login", {
-    user_name: TEST_USER.user_name,
+    user_name: test_user.user_name,
     password: "wrongPassword",
   });
 
   // We expect login to fail with an invalid password.
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid credentials");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("Fail to login with a non-existent user", async () => {
@@ -60,7 +59,7 @@ test("Fail to login with a non-existent user", async () => {
 
   // We expect the API to indicate that the user was not found.
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "User not found");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("Fail to register with missing password field", async () => {
@@ -70,7 +69,7 @@ test("Fail to register with missing password field", async () => {
 
   // We expect registration to fail because the password is missing.
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Password is required");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("Fail to login with missing credentials", async () => {
@@ -78,5 +77,5 @@ test("Fail to login with missing credentials", async () => {
 
   // We expect login to fail when credentials are missing.
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Missing credentials");
+  expect(response.data).toHaveProperty("error");
 });

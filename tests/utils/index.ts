@@ -31,3 +31,7 @@ export function uniqueUser() {
     password: "password",
   };
 }
+
+export function withAuth(token: string) {
+  return { headers: { Authorization: `Bearer ${token}` } };
+}

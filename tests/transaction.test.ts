@@ -13,6 +13,7 @@ beforeAll(async () => {
   test_user = uniqueUser();
   // Register the new user
   await apiRequest("POST", "/authentication/register", test_user);
+
   // Login to obtain a valid token
   const loginResponse = await apiRequest("POST", "/authentication/login", {
     user_name: test_user.user_name,
@@ -41,6 +42,20 @@ beforeAll(async () => {
       is_buy: true,
       order_type: "MARKET",
       quantity: 10,
+    },
+    withAuth(validToken)
+  );
+
+  // Create a sell order (limit sell) for the stock
+  await apiRequest(
+    "POST",
+    "/engine/placeStockOrder",
+    {
+      stock_id: googleStockId,
+      is_buy: false,
+      order_type: "LIMIT",
+      quantity: 5,
+      price: 100, // Set a limit price for the sell order
     },
     withAuth(validToken)
   );

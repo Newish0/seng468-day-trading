@@ -19,7 +19,7 @@ const controller = {
   },
 
   placeMarketBuy: async (c: Context) => {
-    const { stock_id, quantity, user_name} = await c.req.json();
+    const { stock_id, quantity, user_name } = await c.req.json();
 
     try {
       await service.placeMarketBuyOrder(stock_id, quantity, user_name);
@@ -31,12 +31,9 @@ const controller = {
 
   getStockPrices: async (c: Context) => {
     try {
-      const response = await service.getStockPrices();
-      if (!response.ok) {
-        throw new Error("Failed to fetch stock prices");
-      }
+      const data = await service.getStockPrices();
+
       // REVIEW: lexiographic ordering of stocks?
-      const data = await response.json();
       return c.json({ success: true, data }, 200);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred while fetching stock prices");

@@ -1,7 +1,5 @@
 export const BASE_URL = "http://localhost:8080";
 
-let authToken: string = "";
-
 // Helper function to make API requests
 export async function apiRequest(
   method: string,
@@ -11,7 +9,6 @@ export async function apiRequest(
 ) {
   const defaultHeaders: HeadersInit = {
     "Content-Type": "application/json",
-    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
   };
 
   const options: RequestInit = {

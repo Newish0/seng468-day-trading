@@ -22,7 +22,7 @@ const setupController = {
       await stockService.addStockToUser(username, stock_id, quantity);
       return c.json({ success: true, data: null });
     } catch (e) {
-      return c.json({ success: false, data: null }, 500);
+      return handleError(c, e, "Failed to add stock to user", 500);
     }
   },
 };

@@ -41,6 +41,52 @@ const stockService = {
     const saved_stock = await stockRepository!.save(stock);
     return saved_stock.stock_id;
   },
+  async addStockToUser(userName: string, stockId: string, qty: number) {
+    let existingStock: Stock | null;
+    try {
+      existingStock = await stockRepository
+        .search()
+        .where("stock_id")
+        .equals(stockId)
+        .returnFirst();
+    } catch (err) {
+      throw new Error(`Failed to get stock "${stockId}"`, {
+        cause: err,
+      });
+    }
+
+    if (!existingStock) {
+      throw new Error("Stock does not exists");
+    }
+
+    let existingOwnedStock: StockOwned | null;
+    try {
+      existingOwnedStock = await ownedStockRepository
+        .search()
+        .where("stock_id")
+        .equals(stockId)
+        .returnFirst();
+    } catch (err) {
+      throw new Error(`Failed to get stock owned while searching for stock ID "${stockId}"`, {
+        cause: err,
+      });
+    }
+
+    const newQty = (existingOwnedStock?.current_quantity ?? 0) + qty;
+
+    try {
+      await ownedStockRepository.save({
+        user_name: userName,
+        current_quantity: newQty,
+        stock_id: stockId,
+        stock_name: existingStock.stock_name,
+      });
+    } catch (err) {
+      throw new Error(`Failed to update owned stock "${stockId}" on user "${userName}"`, {
+        cause: err,
+      });
+    }
+  },
   async getUserStockPortfolio(userName: string) {
     try {
       const userStocks = await ownedStockRepository

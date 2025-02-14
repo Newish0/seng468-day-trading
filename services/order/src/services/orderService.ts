@@ -121,7 +121,7 @@ const service = {
 
     if (ownedStock.current_quantity < quantity) {
       const transactionEntityId = transaction[EntityId];
-      if (transactionEntityId) await stockOwnedRepository.remove(transactionEntityId);
+      if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
       throw new Error(
         `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
       );

@@ -105,24 +105,30 @@ const service = {
       throw new Error("Error saving limit sell transaction into database");
     }
 
-    const result = await matEngSvc.placeLimitSellOrder(limitSellRequest);
+    let ownedStock: StockOwned | null;
+    try {
+      ownedStock = await stockOwnedRepository
+        .search()
+        .where("stock_id")
+        .equals(stock_id)
+        .and("user_name")
+        .equals(user_name)
+        .returnFirst();
+      if (!ownedStock) throw new Error("User does not own this stock (placeLimitSellOrder)");
+    } catch (err) {
+      throw new Error("Error fetching owned stock data from database");
+    }
 
-    if (result.success) {
-      let ownedStock: StockOwned | null;
-      try {
-        ownedStock = await stockOwnedRepository
-          .search()
-          .where("stock_id")
-          .equals(stock_id)
-          .and("user_name")
-          .equals(user_name)
-          .returnFirst();
-        if (!ownedStock) throw new Error("User does not own this stock (placeLimitSellOrder)");
-      } catch (err) {
-        throw new Error("Error fetching owned stock data from database");
-      }
+    if (ownedStock.current_quantity < quantity) {
+      throw new Error(
+        `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
+      );
+    }
 
-      if (ownedStock.current_quantity <= quantity) {
+    const limitSellResponse = await matEngSvc.placeLimitSellOrder(limitSellRequest);
+
+    if (limitSellResponse.success) {
+      if (ownedStock.current_quantity - quantity === 0) {
         // If the quantity to sell equals the owned quantity, delete the record
         try {
           const ownedStockEntityId = (ownedStock as any)[EntityId]; // HACK: Get's the Entity id of ownedStock and bypasses ts typecheck

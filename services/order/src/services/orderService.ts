@@ -127,23 +127,25 @@ const service = {
 
     const limitSellResponse = await matEngSvc.placeLimitSellOrder(limitSellRequest);
 
-    if (limitSellResponse.success) {
-      if (ownedStock.current_quantity - quantity === 0) {
-        // If the quantity to sell equals the owned quantity, delete the record
-        try {
-          const ownedStockEntityId = (ownedStock as any)[EntityId]; // HACK: Get's the Entity id of ownedStock and bypasses ts typecheck
-          await stockOwnedRepository.remove(ownedStockEntityId);
-        } catch (err) {
-          throw new Error("Error deleting owned stock record from database");
-        }
-      } else {
-        // If there's more stock left, just decrease the quantity
-        ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
-        try {
-          await stockOwnedRepository.save(ownedStock);
-        } catch (err) {
-          throw new Error("Error updating owned stock quantity in database");
-        }
+    if (!limitSellResponse.success) {
+      throw new Error("Failed to place limit sell order through matching engine.");
+    }
+
+    if (ownedStock.current_quantity - quantity === 0) {
+      // If the quantity to sell equals the owned quantity, delete the record
+      try {
+        const ownedStockEntityId = (ownedStock as any)[EntityId]; // HACK: Get's the Entity id of ownedStock and bypasses ts typecheck
+        await stockOwnedRepository.remove(ownedStockEntityId);
+      } catch (err) {
+        throw new Error("Error deleting owned stock record from database");
+      }
+    } else {
+      // If there's more stock left, just decrease the quantity
+      ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
+      try {
+        await stockOwnedRepository.save(ownedStock);
+      } catch (err) {
+        throw new Error("Error updating owned stock quantity in database");
       }
     }
   },

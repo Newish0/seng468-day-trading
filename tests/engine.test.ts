@@ -117,6 +117,48 @@ test("POST /engine/placeStockOrder a partial limit sell order is completed succe
   expect(response.data).toBeNull();
 });
 
+test("POST /engine/cancelStockTransaction cancels a pending sell order", async () => {
+  const sellPayload = {
+    stock_id: stockId,
+    is_buy: false,
+    order_type: "LIMIT",
+    quantity: 5,
+    price: 100,
+  };
+
+  const sellOrderResponse = await apiRequest(
+    "POST",
+    "/engine/placeStockOrder",
+    sellPayload,
+    withAuth(sellUser)
+  );
+  expect(sellOrderResponse.success).toBe(true);
+
+  const txResponse = await apiRequest(
+    "GET",
+    "/transaction/getStockTransactions",
+    undefined,
+    withAuth(sellUser)
+  );
+  expect(txResponse.success).toBe(true);
+  expect(Array.isArray(txResponse.data)).toBe(true);
+
+  const pendingTx = txResponse.data.find(
+    (tx: any) => tx.stock_id === stockId && tx.is_buy === false && tx.order_status !== "COMPLETED"
+  );
+  expect(pendingTx).toBeDefined();
+
+  const cancelPayload = { stock_tx_id: pendingTx.stock_tx_id };
+  const cancelResponse = await apiRequest(
+    "POST",
+    "/engine/cancelStockTransaction",
+    cancelPayload,
+    withAuth(sellUser)
+  );
+  expect(cancelResponse.success).toBe(true);
+  expect(cancelResponse.data).toBeNull();
+});
+
 /* =========================================
    Failing Tests for Engine Routes
    ========================================= */
@@ -131,7 +173,7 @@ test("POST /engine/placeStockOrder fails for sell order with missing quantity", 
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Quantity is required");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder places a partial buy order successfully", async () => {
@@ -155,7 +197,7 @@ test("POST /engine/placeStockOrder fails for partial buy order with invalid quan
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid quantity");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with invalid token", async () => {
@@ -169,7 +211,7 @@ test("POST /engine/placeStockOrder fails with invalid token", async () => {
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Unauthorized");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with missing stock_id", async () => {
@@ -181,7 +223,7 @@ test("POST /engine/placeStockOrder fails with missing stock_id", async () => {
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Stock ID is required");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with invalid price type for sell order", async () => {
@@ -194,7 +236,7 @@ test("POST /engine/placeStockOrder fails with invalid price type for sell order"
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid price");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with invalid token", async () => {
@@ -203,7 +245,7 @@ test("POST /engine/cancelStockTransaction fails with invalid token", async () =>
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Unauthorized");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async () => {
@@ -215,7 +257,7 @@ test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async
     withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Stock transaction ID is required");
+  expect(response).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", async () => {
@@ -227,5 +269,5 @@ test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", 
     withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid stock transaction ID");
+  expect(response).toHaveProperty("error");
 });

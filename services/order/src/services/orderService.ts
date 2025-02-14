@@ -1,16 +1,23 @@
 import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
-import type { StockOwned, StockTransaction, WalletTransaction } from "shared-models/redisSchema";
+import type {
+  Stock,
+  StockOwned,
+  StockTransaction,
+  WalletTransaction,
+} from "shared-models/redisSchema";
 import {
   ownedStockSchema,
   StockTransactionSchema,
   userSchema,
   WalletTransactionSchema,
+  stockSchema,
 } from "shared-models/redisSchema";
 import type {
   CancelSellRequest,
   LimitSellOrderRequest,
   MarketBuyRequest,
+  StockPricesResponse,
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
@@ -34,6 +41,8 @@ const walletTransactionRepository: Repository<WalletTransaction> =
 const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
   ownedStockSchema
 );
+
+const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -76,6 +85,7 @@ const service = {
 
     // Constructs a limit sell transaction
     let transaction: StockTransaction = {
+      user_name,
       stock_tx_id: txId,
       stock_id,
       wallet_tx_id: null,
@@ -159,6 +169,7 @@ const service = {
 
     // New buyer transaction that has NOT been approved by Matching Engine yet
     let new_user_transaction: StockTransaction = {
+      user_name,
       stock_tx_id: buyTxId,
       parent_tx_id: null,
       stock_id: stock_id,
@@ -257,7 +268,40 @@ const service = {
    * @throws {Error} - Throws error if the fetch request fails or if the response cannot be parsed.
    */
   getStockPrices: async () => {
-    return await matEngSvc.getStockPrices();
+    try {
+      const response = await matEngSvc.getStockPrices();
+
+      if (!response.success || !response.data) {
+        throw new Error("Failed to fetch stock prices or no data found.");
+      }
+
+      const stockDataWithNames = await Promise.all(
+        response.data.map(async (stock: StockPricesResponse) => {
+          // Query Redis to get the stock_name for the stock_id
+          const stockRecord = await stockRepository
+            .search()
+            .where("stock_id")
+            .eq(stock.stock_id)
+            .return.first();
+
+          if (!stockRecord) {
+            throw new Error(`Stock record for stock_id ${stock.stock_id} not found in Redis.`);
+          }
+
+          // Combine the stock price with the stock name
+          return {
+            stock_id: stock.stock_id,
+            stock_name: stockRecord.stock_name,
+            current_price: stock.current_price,
+          };
+        })
+      );
+
+      return stockDataWithNames;
+    } catch (error) {
+      console.error("Error fetching stock data:", error);
+      throw error;
+    }
   },
 
   /**

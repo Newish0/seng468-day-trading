@@ -29,14 +29,13 @@ const engineController = {
           422
         );
       }
-      const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({
+      const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
         body: {
           stock_id,
           quantity,
-          price,
           user_name,
         },
-      })("orderService", "placeLimitSell");
+      })("orderService", "placeMarketBuy");
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
@@ -51,13 +50,14 @@ const engineController = {
           422
         );
       }
-      const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
+      const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({
         body: {
           stock_id,
           quantity,
+          price,
           user_name,
         },
-      })("orderService", "placeMarketBuy");
+      })("orderService", "placeLimitSell");
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {

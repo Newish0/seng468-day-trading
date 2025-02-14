@@ -8,4 +8,7 @@
     "[json]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode" // Ensure Prettier for JSON
     },
+    "[dockercompose]": {
+        "editor.defaultFormatter": "ms-azuretools.vscode-docker" // Use Docker formatter
+    },
 }

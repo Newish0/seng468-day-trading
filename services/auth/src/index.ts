@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import authRoutes from "./routes/authRoutes";
 
-const port = Bun.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 const app = new Hono();
 
 app.route("/authentication", authRoutes);

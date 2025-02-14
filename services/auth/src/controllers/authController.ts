@@ -1,6 +1,6 @@
 import service from "../services/authService";
 import type { Context } from "hono";
-import type { RegisterRequest, LoginRequest } from "shared-types/dtos/auth/auth"
+import type { RegisterRequest, LoginRequest } from "shared-types/dtos/auth/auth";
 
 const controller = {
   register: async (c: Context) => {
@@ -12,7 +12,7 @@ const controller = {
           success: false,
           data: { error: "Username, password, and name are required" },
         },
-        400,
+        400
       );
     }
 
@@ -33,13 +33,13 @@ const controller = {
           success: false,
           data: { error: "Username and password are required" },
         },
-        400,
+        400
       );
     }
 
     try {
       const token = await service.login(user_name, password);
-      return c.json({ success: true, data: { token } });
+      return c.json({ success: true, data: token });
     } catch (error) {
       return c.json(handleError(error), 400);
     }

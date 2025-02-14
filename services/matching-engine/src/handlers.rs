@@ -169,7 +169,7 @@ pub async fn market_buy(
         }
 
         // Get the base url from the environment variable, with a default if not found
-        let base_url = env::var("ORDER_SERVICE_URL")
+        let base_url = env::var("ORDER_SERVICE_HOST")
             .unwrap_or_else(|_| "http://order:3000".to_string());
 
         // DEBUG: Output the request to order service

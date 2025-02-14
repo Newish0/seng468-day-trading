@@ -1,122 +1,87 @@
-import { test, expect, beforeAll } from "bun:test";
-import { apiRequest, uniqueUser } from "./utils";
+import { beforeAll, test, expect } from "bun:test";
+import { apiRequest, createUniqueUser, uniqueUser, withAuth } from "./utils";
 
-let wallet_test_user;
-let wallet_user_token: string = "";
-
-let test_user;
-let test_user2;
-let validToken: string = "";
-let validToken2: string = "";
+let walletUser: string;
+let sellUser: string;
+let buyUser: string;
+let stockId: string;
 const invalidHeaders = { Authorization: "Bearer invalidToken" };
 
-function withAuth(token: string) {
-  return { headers: { Authorization: `Bearer ${token}` } };
-}
-
 beforeAll(async () => {
-  wallet_test_user = uniqueUser();
-  test_user = uniqueUser();
-  test_user2 = uniqueUser();
+  sellUser = (await createUniqueUser()).token;
+  buyUser = (await createUniqueUser()).token;
+  walletUser = (await createUniqueUser()).token;
 
-  // Register both users
-  await apiRequest("POST", "/authentication/register", wallet_test_user);
-  await apiRequest("POST", "/authentication/register", test_user);
-  await apiRequest("POST", "/authentication/register", test_user2);
-
-  // Login both users to obtain valid tokens
-
-  const loginResponse = await apiRequest("POST", "/authentication/login", {
-    user_name: wallet_test_user.user_name,
-    password: wallet_test_user.password,
-  });
-  wallet_user_token = loginResponse.data.token;
-
-  const loginResponse1 = await apiRequest("POST", "/authentication/login", {
-    user_name: test_user.user_name,
-    password: test_user.password,
-  });
-  validToken = loginResponse1.data.token;
-
-  const loginResponse2 = await apiRequest("POST", "/authentication/login", {
-    user_name: test_user2.user_name,
-    password: test_user2.password,
-  });
-  validToken2 = loginResponse2.data.token;
-
-  // Fund the user's wallet so transactions can occur
   await apiRequest(
     "POST",
     "/transaction/addMoneyToWallet",
     { amount: 1000 },
-    withAuth(validToken2)
+    withAuth(buyUser),
+    true
   );
 
-  // Ensure a stock exists (create if necessary)
-  const stockResponse = await apiRequest(
-    "POST",
-    "/setup/createStock",
-    { stock_name: `Stock ${Date.now()}` },
-    withAuth(validToken)
-  );
-  const googleStockId = stockResponse.success ? stockResponse.data.stock_id : "fallback-stock-id";
+  // create stock
+  const stockId = (
+    await apiRequest(
+      "POST",
+      "/setup/createStock",
+      { stock_name: `Stock ${Date.now()}` },
+      withAuth(sellUser),
+      true
+    )
+  ).data.stock_id;
 
+  // add stock to sell user
   await apiRequest(
     "POST",
     "/setup/addStockToUser",
-    { stock_id: googleStockId, quantity: 20 },
-    withAuth(validToken)
+    { stock_id: stockId, quantity: 20 },
+    withAuth(sellUser),
+    true
   );
 
-  // Create a sell order (limit sell) for the stock
-  const sellResponse = await apiRequest(
+  // sell user limit sell
+  await apiRequest(
     "POST",
     "/engine/placeStockOrder",
     {
-      stock_id: googleStockId,
+      stock_id: stockId,
       is_buy: false,
       order_type: "LIMIT",
       quantity: 5,
-      price: 10, // Set a limit price for the sell order
+      price: 10,
     },
-    withAuth(validToken)
+    withAuth(sellUser),
+    true
   );
 
-  if (!sellResponse.success) {
-    console.error("Failed to make a sell order", sellResponse.data.error);
-  }
-
-  // Create a stock transaction by placing a buy order (generates stock & wallet transactions)
-  const buyResponse = await apiRequest(
+  // buy user market buy
+  await apiRequest(
     "POST",
     "/engine/placeStockOrder",
     {
-      stock_id: googleStockId,
+      stock_id: stockId,
       is_buy: true,
       order_type: "MARKET",
       quantity: 5,
-      price: 0, // TODO, to be removed
+      price: 0, // Price not used for buy market orders
     },
-    withAuth(validToken2)
+    withAuth(buyUser),
+    true
   );
-
-  if (!buyResponse.success) {
-    console.error("Failed to make a buy order", buyResponse.data.error);
-  }
 });
 
-//
-// Test getting transactions
-//
+/* =========================
+   Transaction Functional Tests
+   ========================= */
 
 test("GET /transaction/getStockPrices returns valid stock prices", async () => {
   const response = await apiRequest(
     "GET",
     "/transaction/getStockPrices",
     undefined,
-    withAuth(validToken)
+    withAuth(sellUser)
   );
-
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
   expect(response.data.length).toBeGreaterThan(0);
@@ -135,7 +100,7 @@ test("GET /transaction/getStockPortfolio returns a valid stock portfolio", async
     "GET",
     "/transaction/getStockPortfolio",
     undefined,
-    withAuth(validToken)
+    withAuth(buyUser)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
@@ -155,7 +120,7 @@ test("GET /transaction/getWalletTransactions returns valid wallet transactions",
     "GET",
     "/transaction/getWalletTransactions",
     undefined,
-    withAuth(validToken)
+    withAuth(buyUser)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
@@ -179,7 +144,7 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
     "GET",
     "/transaction/getStockTransactions",
     undefined,
-    withAuth(validToken)
+    withAuth(buyUser)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
@@ -201,22 +166,22 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
     expect(typeof tx.stock_price).toBe("number");
     expect(tx).toHaveProperty("quantity");
     expect(typeof tx.quantity).toBe("number");
-    expect(tx).toHaveProperty("parent_tx_id"); // may be null or string
+    expect(tx).toHaveProperty("parent_tx_id");
     expect(tx).toHaveProperty("time_stamp");
     expect(typeof tx.time_stamp).toBe("string");
   });
 });
 
-//
-// Test wallet
-//
+/* =========================
+   Wallet Functional Tests
+   ========================= */
 
 test("GET /transaction/getWalletBalance returns valid wallet balance", async () => {
   const response = await apiRequest(
     "GET",
     "/transaction/getWalletBalance",
     undefined,
-    withAuth(wallet_user_token)
+    withAuth(walletUser)
   );
   expect(response.success).toBe(true);
   expect(response.data).toHaveProperty("balance");
@@ -225,22 +190,22 @@ test("GET /transaction/getWalletBalance returns valid wallet balance", async () 
 });
 
 test("POST /transaction/addMoneyToWallet adds money successfully", async () => {
-  const response = await apiRequest(
+  const addMoneyResp = await apiRequest(
     "POST",
     "/transaction/addMoneyToWallet",
     { amount: 100 },
-    withAuth(wallet_user_token)
+    withAuth(walletUser)
   );
-  expect(response.success).toBe(true);
-  expect(response.data).toBeNull();
+  expect(addMoneyResp.success).toBe(true);
+  expect(addMoneyResp.data).toBeNull();
 });
 
-test("GET /transaction/getWalletBalance returns valid wallet balance after adding money", async () => {
+test("GET /transaction/getWalletBalance returns updated balance", async () => {
   const response = await apiRequest(
     "GET",
     "/transaction/getWalletBalance",
     undefined,
-    withAuth(wallet_user_token)
+    withAuth(walletUser)
   );
   expect(response.success).toBe(true);
   expect(response.data).toHaveProperty("balance");
@@ -248,9 +213,9 @@ test("GET /transaction/getWalletBalance returns valid wallet balance after addin
   expect(response.data.balance).toBe(100);
 });
 
-//
-// Failing Tests
-//
+/* =========================
+   Failing Tests
+   ========================= */
 
 // GET endpoints with invalid token
 test("GET /transaction/getStockPrices fails with invalid token", async () => {
@@ -299,7 +264,7 @@ test("POST /transaction/addMoneyToWallet fails when 'amount' field is missing", 
     "POST",
     "/transaction/addMoneyToWallet",
     {},
-    withAuth(validToken)
+    withAuth(sellUser)
   );
   expect(response.success).toBe(false);
   expect(response.data).toHaveProperty("error");
@@ -310,7 +275,7 @@ test("POST /transaction/addMoneyToWallet fails when 'amount' is not a number", a
     "POST",
     "/transaction/addMoneyToWallet",
     { amount: "notANumber" },
-    withAuth(validToken)
+    withAuth(sellUser)
   );
   expect(response.success).toBe(false);
   expect(response.data).toHaveProperty("error");

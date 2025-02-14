@@ -1,4 +1,4 @@
-import { EntityId, Repository } from "redis-om";
+import { EntityId, Repository, type Entity } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import type {
   Stock,
@@ -120,6 +120,8 @@ const service = {
     }
 
     if (ownedStock.current_quantity < quantity) {
+      const transactionEntityId = transaction[EntityId];
+      if (transactionEntityId) await stockOwnedRepository.remove(transactionEntityId);
       throw new Error(
         `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
       );
@@ -132,10 +134,11 @@ const service = {
     }
 
     if (ownedStock.current_quantity - quantity === 0) {
+      const ownedStockEntityId = ownedStock[EntityId];
+
       // If the quantity to sell equals the owned quantity, delete the record
       try {
-        const ownedStockEntityId = (ownedStock as any)[EntityId]; // HACK: Get's the Entity id of ownedStock and bypasses ts typecheck
-        await stockOwnedRepository.remove(ownedStockEntityId);
+        if (ownedStockEntityId) await stockOwnedRepository.remove(ownedStockEntityId);
       } catch (err) {
         throw new Error("Error deleting owned stock record from database");
       }

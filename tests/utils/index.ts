@@ -24,12 +24,15 @@ export async function apiRequest(
   return response.json();
 }
 
+const users: any[] = [];
 export function uniqueUser() {
-  return {
-    user_name: `test_user_${Date.now()}`, // append timestamp for uniqueness
+  const user = {
+    user_name: `test_user_${Date.now() + users.length}`, // append timestamp for uniqueness
     name: "Test User",
     password: "password",
   };
+  users.push(user);
+  return user;
 }
 
 export function withAuth(token: string) {

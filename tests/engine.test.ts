@@ -173,7 +173,7 @@ test("POST /engine/placeStockOrder fails for sell order with missing quantity", 
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder places a partial buy order successfully", async () => {
@@ -197,7 +197,7 @@ test("POST /engine/placeStockOrder fails for partial buy order with invalid quan
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with invalid token", async () => {
@@ -211,7 +211,7 @@ test("POST /engine/placeStockOrder fails with invalid token", async () => {
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with missing stock_id", async () => {
@@ -223,7 +223,7 @@ test("POST /engine/placeStockOrder fails with missing stock_id", async () => {
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with invalid price type for sell order", async () => {
@@ -236,7 +236,7 @@ test("POST /engine/placeStockOrder fails with invalid price type for sell order"
   };
   const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with invalid token", async () => {
@@ -245,7 +245,7 @@ test("POST /engine/cancelStockTransaction fails with invalid token", async () =>
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async () => {
@@ -257,7 +257,7 @@ test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async
     withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", async () => {
@@ -269,5 +269,5 @@ test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", 
     withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error");
+  expect(response.data).toHaveProperty("error");
 });

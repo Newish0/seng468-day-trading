@@ -76,6 +76,7 @@ const stockService = {
 
     try {
       await ownedStockRepository.save({
+        ...existingOwnedStock, // Make this an update if it already exists
         user_name: userName,
         current_quantity: newQty,
         stock_id: stockId,

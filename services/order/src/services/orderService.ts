@@ -1,4 +1,4 @@
-import { EntityId, Repository, type Entity } from "redis-om";
+import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import type {
   Stock,

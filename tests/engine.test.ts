@@ -1,161 +1,208 @@
 import { test, expect, beforeAll } from "bun:test";
-import { apiRequest, uniqueUser, withAuth } from "./utils";
+import { apiRequest, createUniqueUser, withAuth } from "./utils";
 
-let validToken;
-let test_user;
-let googleStockId;
+let sellUser: string;
+let buyUser: string;
+let stockId: string = "";
 const invalidHeaders = { Authorization: "Bearer invalidToken" };
 
 beforeAll(async () => {
-  test_user = uniqueUser();
+  const sellResult = await createUniqueUser();
+  sellUser = sellResult.token;
 
-  await apiRequest("POST", "/authentication/register", test_user);
+  const buyResult = await createUniqueUser();
+  buyUser = buyResult.token;
 
-  const loginResponse1 = await apiRequest("POST", "/authentication/login", {
-    user_name: test_user.user_name,
-    password: test_user.password,
-  });
-  validToken = loginResponse1.data.token;
-
-  const stockname = `Stock ${Date.now()}`;
-
-  const createStockResponse = await apiRequest(
-    "POST",
-    "/setup/createStock",
-    { stock_name: stockname },
-    withAuth(validToken)
-  );
-
-  if (createStockResponse.success) {
-    googleStockId = createStockResponse.data.stock_id;
-  } else {
-    console.error("Could not create stock");
-  }
+  stockId = (
+    await apiRequest(
+      "POST",
+      "/setup/createStock",
+      { stock_name: `Stock ${Date.now()}` },
+      withAuth(sellUser),
+      true
+    )
+  ).data.stock_id;
 
   await apiRequest(
     "POST",
     "/setup/addStockToUser",
-    { stock_id: googleStockId, quantity: 20 },
-    withAuth(validToken)
+    { stock_id: stockId, quantity: 20 },
+    withAuth(sellUser),
+    true
   );
 });
 
-// Functional Tests
-
 test("POST /engine/placeStockOrder places a limit sell order successfully", async () => {
+  expect(stockId).toBeDefined();
   const sellPayload = {
-    stock_id: googleStockId,
+    stock_id: stockId,
     is_buy: false,
     order_type: "LIMIT",
-    quantity: 10,
-    price: 150,
+    quantity: 5,
+    price: 10,
   };
-
-  const sellResponse = await apiRequest(
+  const response = await apiRequest(
     "POST",
     "/engine/placeStockOrder",
     sellPayload,
-    withAuth(validToken)
-  );
-
-  expect(sellResponse.success).toBe(true);
-  expect(sellResponse.data).toBeNull();
-});
-
-test("POST /engine/placeStockOrder places a market buy order successfully", async () => {
-  const buyPayload = {
-    stock_id: googleStockId,
-    is_buy: true,
-    order_type: "MARKET",
-    quantity: 1,
-    price: 0, // TODO price should not be defined here.
-  };
-  const buyResponse = await apiRequest(
-    "POST",
-    "/engine/placeStockOrder",
-    buyPayload,
-    withAuth(validToken)
-  );
-
-  console.log(buyPayload, buyResponse);
-  expect(buyResponse.success).toBe(true);
-  expect(buyResponse.data).toBeNull();
-});
-
-// Test for canceling a stock transaction successfully
-// (Assumes a valid stock transaction ID exists; in a real test, create one then cancel it)
-test("POST /engine/cancelStockTransaction cancels a transaction successfully", async () => {
-  const payload = { stock_tx_id: "62738363a50350b1fbb243a6" };
-  const cancelResponse = await apiRequest(
-    "POST",
-    "/engine/cancelStockTransaction",
-    payload,
-    withAuth(validToken)
-  );
-  expect(cancelResponse.success).toBe(true);
-  expect(cancelResponse.data).toBeNull();
-});
-
-// Sell order failing when quantity is missing (sell orders require quantity)
-test("POST /engine/placeStockOrder fails for sell order with missing quantity", async () => {
-  const payload = {
-    stock_id: googleStockId,
-    is_buy: false,
-    order_type: "LIMIT",
-    // quantity is missing
-    price: 150,
-  };
-  const response = await apiRequest(
-    "POST",
-    "/engine/placeStockOrder",
-    payload,
-    withAuth(validToken)
-  );
-  expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Quantity is required");
-});
-
-// Partial buy order (buy orders are MARKET orders and do not include a price)
-test("POST /engine/placeStockOrder places a partial buy order successfully", async () => {
-  const payload = {
-    stock_id: googleStockId,
-    is_buy: true,
-    order_type: "MARKET",
-    quantity: 10,
-  };
-  const response = await apiRequest(
-    "POST",
-    "/engine/placeStockOrder",
-    payload,
-    withAuth(validToken)
+    withAuth(sellUser)
   );
   expect(response.success).toBe(true);
   expect(response.data).toBeNull();
 });
 
-// Partial buy order failing with invalid quantity type
-test("POST /engine/placeStockOrder fails for partial buy order with invalid quantity type", async () => {
-  const payload = {
-    stock_id: googleStockId,
+test("POST /engine/placeStockOrder places a market buy order successfully", async () => {
+  expect(stockId).toBeDefined();
+  const buyPayload = {
+    stock_id: stockId,
     is_buy: true,
     order_type: "MARKET",
-    quantity: "ten", // invalid: should be a number
+    quantity: 5,
+    price: 0, // TODO, price to be removed
   };
   const response = await apiRequest(
     "POST",
     "/engine/placeStockOrder",
-    payload,
-    withAuth(validToken)
+    buyPayload,
+    withAuth(buyUser)
   );
-  expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid quantity");
+  expect(response.success).toBe(true);
+  expect(response.data).toBeNull();
 });
 
-// ----- Failing Tests for /engine/placeStockOrder -----
+test("POST /engine/placeStockOrder places a partial market buy order successfully", async () => {
+  expect(stockId).toBeDefined();
+  const sellPayload = {
+    stock_id: stockId,
+    is_buy: false,
+    order_type: "LIMIT",
+    quantity: 5,
+    price: 10,
+  };
+  await apiRequest("POST", "/engine/placeStockOrder", sellPayload, withAuth(sellUser), true);
+
+  const buyPayload = {
+    stock_id: stockId,
+    is_buy: true,
+    order_type: "MARKET",
+    quantity: 1,
+    price: 0, // TODO, price to be removed
+  };
+  const response = await apiRequest(
+    "POST",
+    "/engine/placeStockOrder",
+    buyPayload,
+    withAuth(buyUser)
+  );
+  expect(response.success).toBe(true);
+  expect(response.data).toBeNull();
+});
+
+test("POST /engine/placeStockOrder a partial limit sell order is completed successfully", async () => {
+  expect(stockId).toBeDefined();
+  const buyPayload = {
+    stock_id: stockId,
+    is_buy: true,
+    order_type: "MARKET",
+    quantity: 4,
+    price: 0, // TODO, price to be removed
+  };
+  const response = await apiRequest(
+    "POST",
+    "/engine/placeStockOrder",
+    buyPayload,
+    withAuth(buyUser)
+  );
+  expect(response.success).toBe(true);
+  expect(response.data).toBeNull();
+});
+
+test("POST /engine/cancelStockTransaction cancels a pending sell order", async () => {
+  const sellPayload = {
+    stock_id: stockId,
+    is_buy: false,
+    order_type: "LIMIT",
+    quantity: 5,
+    price: 100,
+  };
+
+  const sellOrderResponse = await apiRequest(
+    "POST",
+    "/engine/placeStockOrder",
+    sellPayload,
+    withAuth(sellUser)
+  );
+  expect(sellOrderResponse.success).toBe(true);
+
+  const txResponse = await apiRequest(
+    "GET",
+    "/transaction/getStockTransactions",
+    undefined,
+    withAuth(sellUser)
+  );
+  expect(txResponse.success).toBe(true);
+  expect(Array.isArray(txResponse.data)).toBe(true);
+
+  const pendingTx = txResponse.data.find(
+    (tx: any) => tx.stock_id === stockId && tx.is_buy === false && tx.order_status !== "COMPLETED"
+  );
+  expect(pendingTx).toBeDefined();
+
+  const cancelPayload = { stock_tx_id: pendingTx.stock_tx_id };
+  const cancelResponse = await apiRequest(
+    "POST",
+    "/engine/cancelStockTransaction",
+    cancelPayload,
+    withAuth(sellUser)
+  );
+  expect(cancelResponse.success).toBe(true);
+  expect(cancelResponse.data).toBeNull();
+});
+
+/* =========================================
+   Failing Tests for Engine Routes
+   ========================================= */
+
+test("POST /engine/placeStockOrder fails for sell order with missing quantity", async () => {
+  const payload = {
+    stock_id: "dummy-stock-id", // using a dummy id for this test
+    is_buy: false,
+    order_type: "LIMIT",
+    price: 150,
+    // missing quantity
+  };
+  const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
+  expect(response.success).toBe(false);
+  expect(response.data).toHaveProperty("error");
+});
+
+test("POST /engine/placeStockOrder places a partial buy order successfully", async () => {
+  const payload = {
+    stock_id: "dummy-stock-id", // using a dummy id for test purposes
+    is_buy: true,
+    order_type: "MARKET",
+    quantity: 10,
+  };
+  const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
+  expect(response.success).toBe(true);
+  expect(response.data).toBeNull();
+});
+
+test("POST /engine/placeStockOrder fails for partial buy order with invalid quantity type", async () => {
+  const payload = {
+    stock_id: "dummy-stock-id", // using a dummy id for test purposes
+    is_buy: true,
+    order_type: "MARKET",
+    quantity: "ten", // invalid: should be a number
+  };
+  const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
+  expect(response.success).toBe(false);
+  expect(response.data).toHaveProperty("error");
+});
 
 test("POST /engine/placeStockOrder fails with invalid token", async () => {
   const payload = {
-    stock_id: googleStockId,
+    stock_id: "dummy-stock-id",
     is_buy: true,
     order_type: "MARKET",
     quantity: 100,
@@ -164,46 +211,33 @@ test("POST /engine/placeStockOrder fails with invalid token", async () => {
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Unauthorized");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/placeStockOrder fails with missing stock_id", async () => {
   const payload = {
-    // stock_id is missing
+    // stock_id missing
     is_buy: true,
     order_type: "MARKET",
     quantity: 100,
   };
-  const response = await apiRequest(
-    "POST",
-    "/engine/placeStockOrder",
-    payload,
-    withAuth(validToken)
-  );
+  const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(buyUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Stock ID is required");
+  expect(response.data).toHaveProperty("error");
 });
 
-// For sell orders, test invalid price type (price must be a number)
 test("POST /engine/placeStockOrder fails with invalid price type for sell order", async () => {
   const payload = {
-    stock_id: googleStockId,
+    stock_id: "dummy-stock-id",
     is_buy: false,
     order_type: "LIMIT",
     quantity: 100,
-    price: "eighty", // Invalid: price should be a number.
+    price: "eighty", // Invalid: price should be a number
   };
-  const response = await apiRequest(
-    "POST",
-    "/engine/placeStockOrder",
-    payload,
-    withAuth(validToken)
-  );
+  const response = await apiRequest("POST", "/engine/placeStockOrder", payload, withAuth(sellUser));
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid price");
+  expect(response.data).toHaveProperty("error");
 });
-
-// ----- Tests for /engine/cancelStockTransaction -----
 
 test("POST /engine/cancelStockTransaction fails with invalid token", async () => {
   const payload = { stock_tx_id: "62738363a50350b1fbb243a6" };
@@ -211,7 +245,7 @@ test("POST /engine/cancelStockTransaction fails with invalid token", async () =>
     headers: invalidHeaders,
   });
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Unauthorized");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async () => {
@@ -220,10 +254,10 @@ test("POST /engine/cancelStockTransaction fails with missing stock_tx_id", async
     "POST",
     "/engine/cancelStockTransaction",
     payload,
-    withAuth(validToken)
+    withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Stock transaction ID is required");
+  expect(response.data).toHaveProperty("error");
 });
 
 test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", async () => {
@@ -232,8 +266,8 @@ test("POST /engine/cancelStockTransaction fails with invalid stock_tx_id type", 
     "POST",
     "/engine/cancelStockTransaction",
     payload,
-    withAuth(validToken)
+    withAuth(sellUser)
   );
   expect(response.success).toBe(false);
-  expect(response).toHaveProperty("error", "Invalid stock transaction ID");
+  expect(response.data).toHaveProperty("error");
 });

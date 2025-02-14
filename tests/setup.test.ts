@@ -1,20 +1,11 @@
 import { beforeAll, expect, test } from "bun:test";
-import { apiRequest, uniqueUser, withAuth } from "./utils";
+import { apiRequest, createUniqueUser, uniqueUser, withAuth } from "./utils";
 
-let test_user;
 let validToken: string = "";
 const invalidHeaders = { Authorization: "Bearer invalidToken" };
 
 beforeAll(async () => {
-  test_user = uniqueUser();
-  // Register the new user
-  await apiRequest("POST", "/authentication/register", test_user);
-  // Login to obtain a valid token
-  const loginResponse = await apiRequest("POST", "/authentication/login", {
-    user_name: test_user.user_name,
-    password: test_user.password,
-  });
-  validToken = loginResponse.data.token;
+  validToken = (await createUniqueUser()).token;
 });
 
 //

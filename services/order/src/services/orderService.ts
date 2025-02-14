@@ -263,20 +263,16 @@ const service = {
   /**
    * Fetches the current stock prices from the matching engine.
    *
-   * @returns {Promise<Object>} - Resolves with the stock prices data fetched from the matching engine.
+   * @returns  - Resolves with the stock prices data fetched from the matching engine.
    *
    * @throws {Error} - Throws error if the fetch request fails or if the response cannot be parsed.
    */
   getStockPrices: async () => {
     try {
-      const response = await matEngSvc.getStockPrices();
-
-      if (!response.success || !response.data) {
-        throw new Error("Failed to fetch stock prices or no data found.");
-      }
+      const stockPrices = await matEngSvc.getStockPrices();
 
       const stockDataWithNames = await Promise.all(
-        response.data.map(async (stock: StockPricesResponse) => {
+        stockPrices.map(async (stock: StockPricesResponse) => {
           // Query Redis to get the stock_name for the stock_id
           const stockRecord = await stockRepository
             .search()

@@ -34,7 +34,7 @@ beforeAll(async () => {
   const googleStockId = stockResponse.success ? stockResponse.data.stock_id : "fallback-stock-id";
 
   // Create a stock transaction by placing a buy order (generates stock & wallet transactions)
-  await apiRequest(
+  const buyResponse = await apiRequest(
     "POST",
     "/engine/placeStockOrder",
     {
@@ -46,8 +46,11 @@ beforeAll(async () => {
     withAuth(validToken)
   );
 
+  if (!buyResponse.success) {
+    console.error("Failed to make a buy order", buyResponse.data.error);
+  }
   // Create a sell order (limit sell) for the stock
-  await apiRequest(
+  const sellResponse = await apiRequest(
     "POST",
     "/engine/placeStockOrder",
     {
@@ -59,6 +62,10 @@ beforeAll(async () => {
     },
     withAuth(validToken)
   );
+
+  if (!sellResponse.success) {
+    console.error("Failed to make a sell order", sellResponse.data.error);
+  }
 });
 
 //
@@ -72,10 +79,10 @@ test("GET /transaction/getStockPrices returns valid stock prices", async () => {
     undefined,
     withAuth(validToken)
   );
-  console.log(response);
+
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
-  expect(response.data).toBeGreaterThan(0);
+  expect(response.data.length).toBeGreaterThan(0);
   response.data.forEach((stock: any) => {
     expect(stock).toHaveProperty("stock_id");
     expect(typeof stock.stock_id).toBe("number");
@@ -107,7 +114,7 @@ test("GET /transaction/getStockPortfolio returns a valid stock portfolio", async
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
-  expect(response.data).toBeGreaterThan(0);
+  expect(response.data.length).toBeGreaterThan(0);
   response.data.forEach((item: any) => {
     expect(item).toHaveProperty("stock_id");
     expect(typeof item.stock_id).toBe("number");
@@ -127,7 +134,7 @@ test("GET /transaction/getWalletTransactions returns valid wallet transactions",
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
-  expect(response.data).toBeGreaterThan(0);
+  expect(response.data.length).toBeGreaterThan(0);
   response.data.forEach((tx: any) => {
     expect(tx).toHaveProperty("wallet_tx_id");
     expect(typeof tx.wallet_tx_id).toBe("string");
@@ -151,7 +158,7 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
-  expect(response.data).toBeGreaterThan(0);
+  expect(response.data.length).toBeGreaterThan(0);
   response.data.forEach((tx: any) => {
     expect(tx).toHaveProperty("stock_tx_id");
     expect(typeof tx.stock_tx_id).toBe("string");

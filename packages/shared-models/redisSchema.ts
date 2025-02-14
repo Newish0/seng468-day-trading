@@ -57,7 +57,7 @@ export interface StockTransaction extends Entity {
   order_type: string;
   stock_price: number;
   quantity: number;
-  parent_tx_id: string;
+  parent_tx_id: string | null;
   time_stamp: Date;
 }
 

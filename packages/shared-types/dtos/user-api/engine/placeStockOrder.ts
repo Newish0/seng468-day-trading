@@ -20,9 +20,7 @@ export function isPlaceStockOrderRequest(obj: any): obj is PlaceStockOrderReques
     isValidOrderType(obj.order_type) &&
     "quantity" in obj &&
     typeof obj.quantity === "number" &&
-    !obj.is_buy &&
-    "price" in obj &&
-    typeof obj.price === "number"
+    (obj.is_buy ? true : "price" in obj && typeof obj.price === "number")
   );
 }
 

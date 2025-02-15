@@ -46,6 +46,13 @@ pub struct LimitSellRequest {
     pub stock_tx_id: String,
     pub user_name: String, 
 }
+#[derive(Deserialize, Debug)]
+pub struct LimitSellCancelRequest {
+    pub stock_id: String,
+    pub quantity: u32,
+    pub price: f64,
+    pub stock_tx_id: String,
+}
 
 #[derive(Serialize)]
 pub struct LimitSellResponse {

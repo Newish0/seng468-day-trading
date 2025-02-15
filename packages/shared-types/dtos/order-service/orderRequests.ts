@@ -21,6 +21,24 @@ export type CancelSellRequest = {
   stock_tx_id: string;
 };
 
+export type CancelSellRequestResponse =
+  | {
+      success: true;
+      data: {
+        stock_id: string;
+        stock_tx_id: string;
+        partially_sold: boolean;
+        ori_quantity: number;
+        cur_quantity: number;
+        sold_quantity: number;
+        price: number;
+      };
+    }
+  | {
+      success: false;
+      data?: null;
+    };
+
 // Response from Matching Engine for /stockPrices
 export type StockPricesResponse = {
   stock_id: string;

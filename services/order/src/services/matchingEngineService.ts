@@ -1,5 +1,6 @@
 import type {
   CancelSellRequest,
+  CancelSellRequestResponse,
   LimitSellOrderRequest,
   MarketBuyRequest,
   StockPricesResponse,
@@ -163,7 +164,9 @@ export class MatchingEngineService {
         throw error;
       }
 
-      return response;
+      const json: CancelSellRequestResponse = await response.json();
+
+      return json.data!; // Must have data if not error
     });
   }
 }

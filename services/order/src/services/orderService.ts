@@ -324,11 +324,20 @@ const service = {
     let transaction: StockTransaction | null;
 
     try {
-      transaction = await stockTransactionRepository
-        .search()
-        .where("stock_tx_id")
-        .equals(stock_tx_id)
-        .returnFirst();
+      // Get root most transaction
+      while (true) {
+        transaction = await stockTransactionRepository
+          .search()
+          .where("stock_tx_id")
+          .equals(stock_tx_id)
+          .returnFirst();
+
+        if (transaction && transaction.parent_tx_id) {
+          stock_tx_id = transaction.parent_tx_id;
+        } else {
+          break;
+        }
+      }
     } catch (error) {
       throw new Error("Error fetching the transaction to cancel (cancelStockTransaction");
     }
@@ -345,7 +354,9 @@ const service = {
     };
 
     // Query the matching engine to cancel the limit order
-    await matEngSvc.cancelSellOrder(cancelSellRequest);
+    const sellRes = await matEngSvc.cancelSellOrder(cancelSellRequest);
+
+    console.log(sellRes);
 
     // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
     try {
@@ -362,7 +373,7 @@ const service = {
       let ownedStock: StockOwned | null = await stockOwnedRepository
         .search()
         .where("stock_id")
-        .equals(transaction.stock_tx_id)
+        .equals(transaction.stock_id)
         .and("user_name")
         .equals(user_name)
         .returnFirst();
@@ -370,21 +381,34 @@ const service = {
       if (ownedStock) {
         ownedStock = {
           ...ownedStock,
-          current_quantity: ownedStock.current_quantity + transaction.quantity,
+
+          // Return the quantity that has NOT been sold back to the user
+          current_quantity: ownedStock.current_quantity + sellRes.cur_quantity,
         };
         await stockOwnedRepository.save(ownedStock);
       } else {
+        const stock = await stockRepository
+          .search()
+          .where("stock_id")
+          .equals(transaction.stock_id)
+          .returnFirst();
+        if (!stock) {
+          throw new Error("Error fetching stock record (cancelStockTransaction)");
+        }
+
         // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        let newOwnedStock: StockOwned = {
+        await stockOwnedRepository.save({
           stock_id: transaction.stock_id,
           user_name,
-          stock_name: "Stock Name Here", // Why needed? Another query just fetch this? :(
-          current_quantity: transaction.quantity,
-        };
-        newOwnedStock = await stockOwnedRepository.save(newOwnedStock);
+          stock_name: stock.stock_name,
+
+          // Return the quantity that has NOT been sold back to the user
+          current_quantity: sellRes.cur_quantity,
+        });
       }
     } catch (error) {
-      throw new Error("Error checking or updating user's owned stock (placeMarketBuyOrder)");
+      console.log(error);
+      throw new Error("Error checking or updating user's owned stock (cancelStockTransaction)");
     }
   },
 
@@ -414,6 +438,10 @@ const service = {
     stock_tx_id: string,
     user_name: string
   ) => {
+    console.log(
+      `updateSale: stock_id=${stock_id}, sold_quantity=${sold_quantity}, remaining_quantity=${remaining_quantity}, price=${price}, stock_tx_id=${stock_tx_id}, user_name=${user_name}`
+    );
+
     let parentTransaction: StockTransaction | null;
     try {
       parentTransaction = await stockTransactionRepository
@@ -434,6 +462,10 @@ const service = {
     const walletTxId = crypto.randomUUID();
     const partialSellTxId = crypto.randomUUID();
 
+    console.log(
+      `isComplete=${isComplete}, isPartial=${isPartial}, walletTxId=${walletTxId}, partialSellTxId=${partialSellTxId}`
+    );
+
     let committedPartialSellTx: StockTransaction | null = null;
     if (isPartial) {
       parentTransaction = { ...parentTransaction, order_status: ORDER_STATUS.PARTIALLY_COMPLETED };
@@ -446,8 +478,8 @@ const service = {
           stock_id: stock_id,
           wallet_tx_id: walletTxId, // Optimistically include wallet transaction id
           order_status: ORDER_STATUS.COMPLETED,
-          is_buy: true,
-          order_type: ORDER_TYPE.MARKET,
+          is_buy: false,
+          order_type: ORDER_TYPE.LIMIT,
           stock_price: price,
           quantity: sold_quantity,
           time_stamp: new Date(),
@@ -464,6 +496,13 @@ const service = {
     // we overwrites the partially completed status to complete
     if (isComplete) {
       parentTransaction = { ...parentTransaction, order_status: ORDER_STATUS.COMPLETED };
+    }
+
+    // Update the parent transaction
+    try {
+      await stockTransactionRepository.save(parentTransaction);
+    } catch (error) {
+      throw new Error("Error updating parent transaction (updateSales)");
     }
 
     // Add whatever the sold amount was to the wallet. No distinction between partial and complete

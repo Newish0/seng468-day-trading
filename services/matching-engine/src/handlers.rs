@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 use crate::{
     matching_pq::SellOrder,
     models::{
-        LimitSellCancelData, LimitSellCancelResponse, LimitSellRequest, LimitSellResponse,
+        LimitSellCancelData, LimitSellCancelRequest, LimitSellCancelResponse, LimitSellRequest, LimitSellResponse,
         MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice, StockPricesResponse,
     },
     order_service::{self, OrderService, OrderServiceConfig, OrderUpdate},
@@ -53,6 +53,8 @@ pub async fn market_buy(
     // between ensuring we have enough shares and the actual buy/sell process.
     let mut state = state.write().await;
 
+    // println!("Market buy request");
+
     // Total number of shares on sale excluding those from the user requesting the buy order.
     let available_shares: u32 = state
         .matching_pq
@@ -62,14 +64,21 @@ pub async fn market_buy(
         .map(|sell_order| sell_order.cur_quantity)
         .sum();
 
+    // println!("Available shares: {available_shares}");
+
     // Check available shares
     let mut shares_to_buy = payload.quantity;
     if shares_to_buy > available_shares {
+        
+        println!("Not enough shares to buy");
+
         return Json(MarketBuyResponse {
             success: false,
             data: None,
         });
     }
+
+    // println!("Buying {shares_to_buy} shares");
 
     // Dry-run: Clone the priority queue to calculate total cost without modifying state
     // OPTIMIZE: This implementation is wildly inefficient but future problem it is!
@@ -84,6 +93,8 @@ pub async fn market_buy(
             data: None,
         });
     };
+
+    // println!("Starting dry run");
 
     let mut cloned_queue = original_queue;
     let mut total_price_dry = 0.0;
@@ -104,13 +115,20 @@ pub async fn market_buy(
         }
     }
 
+    // println!("Dry run complete");
+
     // Budget validation
     if total_price_dry > payload.budget {
+
+        // println!("Not enough budget to buy");
+
         return Json(MarketBuyResponse {
             success: false,
             data: None,
         });
     }
+
+    // println!("Budget check passed");
 
     // Proceed with actual purchase processing
     let mut total_price = 0.0;
@@ -224,14 +242,25 @@ pub async fn limit_sell(
 
 pub async fn cancel_limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
-    Json(payload): Json<LimitSellRequest>,
+    Json(payload): Json<LimitSellCancelRequest>,
 ) -> Json<LimitSellCancelResponse> {
+
+    println!("Cancel limit sell request {:?}", payload);
+
+
+
     let some_sell_order = {
         let mut state = state.write().await;
+
+        let trans = state.matching_pq.get_all_orders(&payload.stock_id);
+        println!("All orders {:?}", trans);
+
         state
             .matching_pq
             .remove_order(&payload.stock_id, &payload.stock_tx_id)
     }; // minimize lock time
+
+    println!("Cancel limit sell: Got sell order {:?}", some_sell_order);
 
     match some_sell_order {
         Some(sell_order) => Json(LimitSellCancelResponse {

@@ -73,8 +73,11 @@ const engineController = {
       CancelStockTransactionRequest,
       CancelStockTransactionResponse
     >({
-      body: { stock_tx_id },
+      body: { stock_tx_id, user_name: c.get("user").username },
     })("orderService", "cancelStockTransaction");
+
+    console.log("cancelStockTransaction response", response);
+
     if (response.success) {
       return c.json({ success: true, data: null });
     } else {

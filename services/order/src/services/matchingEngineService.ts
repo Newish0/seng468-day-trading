@@ -1,5 +1,6 @@
 import type {
   CancelSellRequest,
+  CancelSellRequestResponse,
   LimitSellOrderRequest,
   MarketBuyRequest,
   StockPricesResponse,
@@ -101,11 +102,16 @@ export class MatchingEngineService {
    */
   async placeMarketBuyOrder(marketBuyRequest: MarketBuyRequest) {
     return this.withRetry(async () => {
+      console.log("marketBuyRequest", marketBuyRequest);
+      console.log("To endpoint", `${this.baseUrl}/marketBuy`);
+
       const response = await fetch(`${this.baseUrl}/marketBuy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(marketBuyRequest),
       });
+
+      console.log("response", response);
 
       if (!response.ok) {
         const error = new Error(`HTTP error! status: ${response.status}`);
@@ -114,6 +120,8 @@ export class MatchingEngineService {
       }
 
       const result = await response.json();
+
+      console.log("result", result);
 
       if (!result || !result.success) {
         throw new Error("Market buy order failed");
@@ -151,11 +159,16 @@ export class MatchingEngineService {
    */
   async cancelSellOrder(cancelSellRequest: CancelSellRequest) {
     return this.withRetry(async () => {
+      console.log("cancelSellRequest", cancelSellRequest);
+      console.log("To endpoint", `${this.baseUrl}/limitSell`);
+
       const response = await fetch(`${this.baseUrl}/limitSell`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cancelSellRequest),
       });
+
+      console.log("response", response);
 
       if (!response.ok) {
         const error = new Error(`HTTP error! status: ${response.status}`);
@@ -163,7 +176,11 @@ export class MatchingEngineService {
         throw error;
       }
 
-      return response;
+      const json: CancelSellRequestResponse = await response.json();
+
+      console.log("cancelSell json ", json);
+
+      return json.data!; // Must have data if not error
     });
   }
 }

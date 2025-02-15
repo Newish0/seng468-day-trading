@@ -9,9 +9,7 @@ export type PlaceStockOrderRequest = {
   quantity: number;
   price: number;
 };
-export function isPlaceStockOrderRequest(
-  obj: any
-): obj is PlaceStockOrderRequest {
+export function isPlaceStockOrderRequest(obj: any): obj is PlaceStockOrderRequest {
   return (
     isObject(obj) &&
     "stock_id" in obj &&
@@ -22,14 +20,13 @@ export function isPlaceStockOrderRequest(
     isValidOrderType(obj.order_type) &&
     "quantity" in obj &&
     typeof obj.quantity === "number" &&
+    obj.is_buy &&
     "price" in obj &&
     typeof obj.price === "number"
   );
 }
 
 export type PlaceStockOrderResponse = ReturnType<void>;
-export function isPlaceStockOrderResponse(
-  obj: any
-): obj is PlaceStockOrderResponse {
+export function isPlaceStockOrderResponse(obj: any): obj is PlaceStockOrderResponse {
   return isValidReturnType(obj);
 }

@@ -1,6 +1,47 @@
+import { getEnvVariable } from "./env";
+
 const internalEndpoints = {
+  userApi: {
+    host: getEnvVariable("USER_API_HOST", "http://localhost:3000"),
+    getStockPrices: {
+      path: "/transaction/getStockPrices",
+      requestMethod: "GET",
+    },
+    getStockPortfolio: {
+      path: "/transaction/getStockPortfolio",
+      requestMethod: "GET",
+    },
+    getStockTransactions: {
+      path: "/transaction/getStockTransactions",
+      requestMethod: "GET",
+    },
+    getWalletBalance: {
+      path: "/transaction/getWalletBalance",
+      requestMethod: "GET",
+    },
+    getWalletTransactions: {
+      path: "/transaction/getWalletTransactions",
+      requestMethod: "GET",
+    },
+    addMoneyToWallet: {
+      path: "/transaction/addMoneyToWallet",
+      requestMethod: "POST",
+    },
+    placeStockOrder: {
+      path: "/engine/placeStockOrder",
+      requestMethod: "POST",
+    },
+    cancelStockTransaction: {
+      path: "/engine/cancelStockTransaction",
+      requestMethod: "POST",
+    },
+    createStock: {
+      path: "/setup/createStock",
+      requestMethod: "POST",
+    },
+  },
   orderService: {
-    host: Bun.env.ORDER_SERVICE_HOST || "http://localhost:3000",
+    host: getEnvVariable("ORDER_SERVICE_HOST", "http://localhost:3001"),
     placeMarketBuy: {
       path: "/placeMarketBuy",
       requestMethod: "POST",
@@ -19,7 +60,7 @@ const internalEndpoints = {
     },
   },
   matchingEngine: {
-    host: Bun.env.MATCHING_ENGINE_HOST || "http://localhost:3001",
+    host: getEnvVariable("MATCHING_ENGINE_HOST", "http://localhost:3002"),
     stockPrices: {
       path: "/stockPrices",
       requestMethod: "GET",
@@ -35,6 +76,17 @@ const internalEndpoints = {
     cancelLimitSell: {
       path: "/cancelLimitSell",
       requestMethod: "DELETE",
+    },
+  },
+  auth: {
+    host: getEnvVariable("AUTH_HOST", "http://localhost:3003"),
+    login: {
+      path: "/login",
+      requestMethod: "POST",
+    },
+    register: {
+      path: "/register",
+      requestMethod: "POST",
     },
   },
 } as const;
@@ -71,22 +123,26 @@ export const makeInternalRequest =
     const host = internalEndpoints[serviceName].host;
     const endpoint = internalEndpoints[serviceName][endpointName] as Endpoint;
 
-    const response = await fetch(`${host}${endpoint}`, {
-      method: endpoint.requestMethod,
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    try {
+      const response = await fetch(`${host}${endpoint.path}`, {
+        method: endpoint.requestMethod,
+        headers: {
+          "Content-Type": "application/json",
+          ...headers,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      return { success: false, status: response.status, error };
+      if (!response.ok) {
+        const error = await response.text();
+        return { success: false, status: response.status, error };
+      }
+
+      const data = (await response.json()) as TResponse;
+      return { success: true, status: response.status, data };
+    } catch (_) {
+      return { success: false, status: 500, error: "Internal server error" };
     }
-
-    const data = (await response.json()) as TResponse;
-    return { success: true, status: response.status, data };
   };
 
 // SAMPLE USAGE
@@ -98,10 +154,7 @@ type PlaceMarketBuyResponse = {
   quantity_bought: number;
 };
 async function sampleUsage() {
-  const response = await makeInternalRequest<
-    PlaceMarketBuyRequest,
-    PlaceMarketBuyResponse
-  >({
+  const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
     body: {
       stock_id: "AAPL",
       quantity: 10,

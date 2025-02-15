@@ -1,17 +1,57 @@
-<div class="p-8 px-12 border rounded-3xl max-w-[500px] flex flex-col gap-4">
+<script lang="ts">
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { auth } from "./auth";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { fade } from "svelte/transition";
+
+  export let mode: "login" | "register" = "register";
+
+  let username = "";
+  let password = "";
+
+  let loading = false;
+
+  async function login() {
+    const res = await makeInternalRequest<any, any>({
+      body: { user_name: username, password },
+    })("auth", "login");
+
+    if (res.success) {
+      const data = res.data;
+      localStorage.setItem("jwt", data.token);
+      auth.set({ token: data.token, username });
+    } else {
+      addToast({ message: `Failed to login`, type: TOAST_TYPES.ERROR });
+    }
+  }
+</script>
+
+<div
+  class="p-8 px-12 border rounded-3xl max-w-[500px] flex flex-col gap-4"
+  in:fade={{ duration: 200, delay: 50 }}
+  out:fade={{ duration: 50 }}
+>
   <h3>Login</h3>
 
   <div class="flex flex-col">
     <label for="username" class="w-max"> Username </label>
-    <input type="text" id="username" />
+    <input type="text" id="username" bind:value={username} />
     <label for="password" class="w-max"> Password </label>
-    <input type="password" id="password" />
+    <input type="password" id="password" bind:value={password} />
   </div>
 
-  <button>Login</button>
+  <button on:click={login} disabled={loading}>
+    {#if loading}
+      Logging in...
+    {:else}
+      Login
+    {/if}
+  </button>
 
-  <p class="text-mono">
-    Have an account?
-    <button class="ghost" on:click> Login instead </button>
+  <p class="text-base flex items-center">
+    New to TradeSimple?
+    <button class="ghost" on:click={() => (mode = "register")} disabled={loading}>
+      Register instead
+    </button>
   </p>
 </div>

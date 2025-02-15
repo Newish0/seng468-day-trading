@@ -5,6 +5,7 @@
     "packages/*",
     "services/foobar-service",
     "services/user-api",
+    "services/web-ui",
     "services/order",
     "services/auth"
   ],

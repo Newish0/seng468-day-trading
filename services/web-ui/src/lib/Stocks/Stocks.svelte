@@ -1,26 +1,35 @@
 <script lang="ts">
-  import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
+  import {
+    type GetStockPricesRequest,
+    type GetStockPricesResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockPrices";
+  import type { AvailableStock } from "shared-types/stocks";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
-  let stocks: any;
+  let stocks: AvailableStock[];
 
-  const getStocks = () => {
-    // to be implemented
+  const getStocks = async () => {
+    const response = await makeInternalRequest<GetStockPricesRequest, GetStockPricesResponse>({
+      headers: $authHeader,
+      body: undefined,
+    })("userApi", "getStockPrices");
 
-    return [
-      {
-        name: "AAPL",
-        price: 5,
-      },
-      {
-        name: "GOOGL",
-        price: 5,
-      },
-    ];
+    if (!response.success) {
+      addToast({ message: "Failed to get stocks", type: TOAST_TYPES.ERROR });
+      return [];
+    }
+
+    return response.data.data;
   };
 
   onMount(() => {
-    stocks = getStocks();
+    getStocks().then((data) => {
+      stocks = data;
+    });
   });
 </script>
 
@@ -38,9 +47,9 @@
     <tbody>
       {#each stocks as stock}
         <tr>
-          <td>{stock.name}</td>
-          <td>{stock.price}</td>
-          <td><BuyStockModal stockName={stock.name} /></td>
+          <td>{stock.stock_id}</td>
+          <td>{stock.current_price}</td>
+          <td><BuyStockModal stockName={stock.stock_name} stockId={stock.stock_id} /></td>
         </tr>
       {/each}
     </tbody>

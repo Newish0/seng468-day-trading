@@ -1,6 +1,47 @@
+import { getEnvVariable } from "./env";
+
 const internalEndpoints = {
+  userApi: {
+    host: getEnvVariable("USER_API_HOST", "http://localhost:3000"),
+    getStockPrices: {
+      path: "/transaction/getStockPrices",
+      requestMethod: "GET",
+    },
+    getStockPortfolio: {
+      path: "/transaction/getStockPortfolio",
+      requestMethod: "GET",
+    },
+    getStockTransactions: {
+      path: "/transaction/getStockTransactions",
+      requestMethod: "GET",
+    },
+    getWalletBalance: {
+      path: "/transaction/getWalletBalance",
+      requestMethod: "GET",
+    },
+    getWalletTransactions: {
+      path: "/transaction/getWalletTransactions",
+      requestMethod: "GET",
+    },
+    addMoneyToWallet: {
+      path: "/transaction/addMoneyToWallet",
+      requestMethod: "POST",
+    },
+    placeStockOrder: {
+      path: "/engine/placeStockOrder",
+      requestMethod: "POST",
+    },
+    cancelStockTransaction: {
+      path: "/engine/cancelStockTransaction",
+      requestMethod: "POST",
+    },
+    createStock: {
+      path: "/setup/createStock",
+      requestMethod: "POST",
+    },
+  },
   orderService: {
-    host: Bun.env.ORDER_SERVICE_HOST || "http://localhost:3000",
+    host: getEnvVariable("ORDER_SERVICE_HOST", "http://localhost:3001"),
     placeMarketBuy: {
       path: "/placeMarketBuy",
       requestMethod: "POST",
@@ -19,7 +60,7 @@ const internalEndpoints = {
     },
   },
   matchingEngine: {
-    host: Bun.env.MATCHING_ENGINE_HOST || "http://localhost:3001",
+    host: getEnvVariable("MATCHING_ENGINE_HOST", "http://localhost:3002"),
     stockPrices: {
       path: "/stockPrices",
       requestMethod: "GET",
@@ -35,6 +76,17 @@ const internalEndpoints = {
     cancelLimitSell: {
       path: "/cancelLimitSell",
       requestMethod: "DELETE",
+    },
+  },
+  auth: {
+    host: getEnvVariable("AUTH_HOST", "http://localhost:3003"),
+    login: {
+      path: "/login",
+      requestMethod: "POST",
+    },
+    register: {
+      path: "/register",
+      requestMethod: "POST",
     },
   },
 } as const;

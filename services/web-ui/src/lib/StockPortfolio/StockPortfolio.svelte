@@ -1,26 +1,37 @@
 <script lang="ts">
-  import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
+  import {
+    type GetStockPortfolioRequest,
+    type GetStockPortfolioResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockPortfolio";
+  import type { OwnedStock } from "shared-types/stocks";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
-  let portfolio: any;
+  let portfolio: OwnedStock[];
 
-  const getPortfolio = () => {
-    // to be implemented
-
-    return [
+  const getPortfolio = async () => {
+    const response = await makeInternalRequest<GetStockPortfolioRequest, GetStockPortfolioResponse>(
       {
-        stock: "AAPL",
-        quantity: 5,
-      },
-      {
-        stock: "GOOGL",
-        quantity: 5,
-      },
-    ];
+        headers: $authHeader,
+        body: undefined,
+      }
+    )("userApi", "getStockPortfolio");
+
+    if (!response.success) {
+      addToast({ message: "Failed to get portfolio", type: TOAST_TYPES.ERROR });
+      return [];
+    }
+
+    return response.data.data;
   };
 
   onMount(() => {
-    portfolio = getPortfolio();
+    getPortfolio().then((data) => {
+      portfolio = data;
+    });
   });
 </script>
 
@@ -38,10 +49,10 @@
     <tbody>
       {#each portfolio as stock}
         <tr>
-          <td>{stock.stock}</td>
-          <td>{stock.quantity}</td>
+          <td>{stock.stock_id}</td>
+          <td>{stock.quantity_owned}</td>
           <td>
-            <SellStockModal stockName={stock.stock} />
+            <SellStockModal stockName={stock.stock_name} stockId={stock.stock_id} />
           </td>
         </tr>
       {/each}

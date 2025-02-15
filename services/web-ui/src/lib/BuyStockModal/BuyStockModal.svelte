@@ -1,15 +1,51 @@
 <script lang="ts">
+  import type {
+    PlaceStockOrderRequest,
+    PlaceStockOrderResponse,
+  } from "shared-types/dtos/user-api/engine/placeStockOrder";
+  import { ORDER_TYPE } from "shared-types/transactions";
+  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import { authHeader } from "../Auth/auth";
+
+  export let stockId: string;
+  export let stockName: string;
+
   let modal: HTMLDialogElement;
+  let quantity: number = 0;
+  let loading = false;
 
   const open = () => {
     modal.showModal();
   };
 
-  const handleAddMoney = () => {
-    // to be implemented
-  };
+  const handleBuyStock = async () => {
+    loading = true;
+    const response = await makeInternalRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
+      headers: $authHeader,
+      body: {
+        stock_id: stockId,
+        quantity,
+        order_type: ORDER_TYPE.MARKET,
+        price: 0,
+        is_buy: true,
+      },
+    })("userApi", "placeStockOrder");
 
-  export let stockName;
+    if (!response.success) {
+      addToast({ message: "Failed to buy stock", type: TOAST_TYPES.ERROR });
+      return;
+    } else {
+      addToast({
+        message: `Successfully bought ${quantity} shares of ${stockName}`,
+        type: TOAST_TYPES.SUCCESS,
+      });
+    }
+
+    quantity = 0;
+    loading = false;
+    modal.close();
+  };
 </script>
 
 <button class="font-medium cursor-pointer" on:click={open}> Buy stock </button>
@@ -27,13 +63,21 @@
       <label>
         Quantity
         <br />
-        <input step="1" type="number" />
+        <input step="1" type="number" min="0" bind:value={quantity} />
       </label>
     </div>
 
-    <form method="dialog" class="self-end">
-      <button class="ghost">Cancel</button>
-      <button on:click={handleAddMoney}>Confirm purchase</button>
-    </form>
+    <div class="flex self-end gap-1">
+      {#if !loading}
+        <button class="ghost" on:click={() => modal.close()}>Cancel</button>
+      {/if}
+      <button on:click={handleBuyStock} disabled={loading}>
+        {#if loading}
+          Adding money...
+        {:else}
+          Add money
+        {/if}
+      </button>
+    </div>
   </div>
 </dialog>

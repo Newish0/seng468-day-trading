@@ -1,6 +1,6 @@
 import { Schema } from "redis-om";
 
-type InferSchema<T extends Record<string, { type: string }>> = {
+export type InferSchema<T extends Record<string, { type: string }>> = {
   [K in keyof T]: T[K]["type"] extends "string"
     ? string
     : T[K]["type"] extends "string[]"
@@ -33,10 +33,10 @@ const walletTransactionSchemaObject = {
   wallet_tx_id: { type: "string" },
   stock_tx_id: { type: "string" },
   is_debit: { type: "boolean" },
-  quantity: { type: "number" },
+  amount: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
-const WalletTransactionSchmea = new Schema(
+const walletTransactionSchema = new Schema(
   "wallet_transactions",
   walletTransactionSchemaObject
 );
@@ -56,7 +56,7 @@ const stockTransactionSchemaObject = {
   parent_tx_id: { type: "string" },
   time_stamp: { type: "date" },
 } as const;
-const StockTransactionSchema = new Schema(
+const stockTransactionSchema = new Schema(
   "stock_transactions",
   stockTransactionSchemaObject
 );
@@ -74,4 +74,4 @@ const userSchemaObject = {
 const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;
 
-export { stockSchema, ownedStockSchema, WalletTransactionSchmea, StockTransactionSchema, userSchema };
+export { stockSchema, ownedStockSchema, walletTransactionSchema, stockTransactionSchema, userSchema };

@@ -1,8 +1,9 @@
 import {Schema, Repository, EntityId} from 'redis-om';
 import { createClient} from 'redis';
+import  {userSchema, ownedStockSchema, stockSchema, walletTransactionSchema, stockTransactionSchema} from './redisSchema';
 import type { RedisClientType, RedisModules } from 'redis'; 
 import type { Entity } from 'redis-om';
-
+import type { InferSchema } from './redisSchema';
 
 //Instantiation object
 class RedisInstance {
@@ -10,6 +11,14 @@ class RedisInstance {
   // May need some help with setting redisClient and repositoryDict as static vars, so we can make sure we have proper
   // Synchronization amoung the microservices
   private redisClient: RedisClientType;
+  private repositoryDict: Record<string, Repository<Entity>> = {};
+  private schemas: Record<string, Schema> = {
+        users: userSchema,
+        ownedStock: ownedStockSchema,
+        stock: stockSchema,
+        walletTransaction: walletTransactionSchema,
+        stockTransaction: stockTransactionSchema
+    };
 
   /**
    * 
@@ -20,17 +29,36 @@ class RedisInstance {
   }
 
   /**
-   * Connects to the Redis server
+   * Connects to the Redis server and initializes the repositorys.
    * @returns {void} - Should return nothing. If a error occurs it should be thrown up
    */
   async connect(): Promise<void> {
     try {
-      await this.redisClient.connect();
-      console.log('Connected to Redis at:', this.redisClient.options?.url);
+      // Here we perform a check to see if the Redis client is connected
+      if (!this.redisClient.isOpen) {
+        await this.redisClient.connect();
+      }
+      
+      for(const [repoKey, schema] of Object.entries(this.schemas)) {
+            // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
+            let repository = new Repository<Entity>(schema, this.redisClient);
+            repository.createIndex();
+            this.repositoryDict[repoKey] = repository;
+            console.log(repoKey);
+            console.log(schema);
+      }
     } catch (error) {
       console.error('Failed to connect to Redis:', error);
       throw error;
-    }
+    }      
+  }
+
+  async getRepositoryDict(): Promise<Record<string, Repository<Entity>>> {
+    return this.repositoryDict;
+  }
+
+  async getRepository(name: string): Promise<Repository<Entity>> {
+    return this.repositoryDict[name];
   }
 
   /**
@@ -87,8 +115,6 @@ class RedisInstance {
     return repository;
   }
 
-
 }
 
 export {RedisInstance};
-

@@ -356,8 +356,6 @@ const service = {
     // Query the matching engine to cancel the limit order
     const sellRes = await matEngSvc.cancelSellOrder(cancelSellRequest);
 
-    console.log(sellRes);
-
     // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
     try {
       transaction = { ...transaction, order_status: ORDER_STATUS.CANCELLED };
@@ -407,7 +405,6 @@ const service = {
         });
       }
     } catch (error) {
-      console.log(error);
       throw new Error("Error checking or updating user's owned stock (cancelStockTransaction)");
     }
   },
@@ -438,10 +435,6 @@ const service = {
     stock_tx_id: string,
     user_name: string
   ) => {
-    console.log(
-      `updateSale: stock_id=${stock_id}, sold_quantity=${sold_quantity}, remaining_quantity=${remaining_quantity}, price=${price}, stock_tx_id=${stock_tx_id}, user_name=${user_name}`
-    );
-
     let parentTransaction: StockTransaction | null;
     try {
       parentTransaction = await stockTransactionRepository
@@ -461,10 +454,6 @@ const service = {
     const isPartial = sold_quantity !== parentTransaction.quantity;
     const walletTxId = crypto.randomUUID();
     const partialSellTxId = crypto.randomUUID();
-
-    console.log(
-      `isComplete=${isComplete}, isPartial=${isPartial}, walletTxId=${walletTxId}, partialSellTxId=${partialSellTxId}`
-    );
 
     let committedPartialSellTx: StockTransaction | null = null;
     if (isPartial) {

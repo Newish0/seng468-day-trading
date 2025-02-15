@@ -41,35 +41,43 @@ const stockService = {
     const saved_stock = await stockRepository!.save(stock);
     return saved_stock.stock_id;
   },
+
   async addStockToUser(userName: string, stockId: string, qty: number) {
-    let existingStock: Stock | null;
-    try {
-      existingStock = await stockRepository
-        .search()
-        .where("stock_id")
-        .equals(stockId)
-        .returnFirst();
-    } catch (err) {
-      throw new Error(`Failed to get stock "${stockId}"`, {
-        cause: err,
-      });
-    }
-
-    if (!existingStock) {
-      throw new Error("Stock does not exists");
-    }
-
     let existingOwnedStock: StockOwned | null;
     try {
       existingOwnedStock = await ownedStockRepository
         .search()
         .where("stock_id")
         .equals(stockId)
+        .and("user_name")
+        .equals(userName)
         .returnFirst();
     } catch (err) {
       throw new Error(`Failed to get stock owned while searching for stock ID "${stockId}"`, {
         cause: err,
       });
+    }
+
+    let stockName = "";
+    if (existingOwnedStock) {
+      stockName = existingOwnedStock.stock_name;
+    } else {
+      let existingStock: Stock | null = null;
+      try {
+        existingStock = await stockRepository
+          .search()
+          .where("stock_id")
+          .equals(stockId)
+          .returnFirst();
+      } catch (err) {
+        throw new Error(`Failed to get stock "${stockId}"`, {
+          cause: err,
+        });
+      }
+
+      if (!existingStock) throw new Error("Stock does not exists");
+
+      stockName = existingStock.stock_name;
     }
 
     const newQty = (existingOwnedStock?.current_quantity ?? 0) + qty;
@@ -80,7 +88,7 @@ const stockService = {
         user_name: userName,
         current_quantity: newQty,
         stock_id: stockId,
-        stock_name: existingStock.stock_name,
+        stock_name: stockName,
       });
     } catch (err) {
       throw new Error(`Failed to update owned stock "${stockId}" on user "${userName}"`, {

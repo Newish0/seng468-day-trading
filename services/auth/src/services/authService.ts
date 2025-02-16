@@ -27,6 +27,7 @@ const service = {
    */
   register: async (username: string, password: string, name: string): Promise<void> => {
     let existingUser: User | null;
+    console.log("REGISTER METHOD");
     try {
       existingUser = await userRepository
         .search()
@@ -34,27 +35,32 @@ const service = {
         .equals(username)
         .returnFirst();
     } catch (error) {
+      console.log("HEELLLL");
       throw new Error("Failed to check if user exists");
     }
-
+    console.log("AFTER ATTEMP TO FETCH ESITING USR");
     if (existingUser) {
+      console.log("EXISTING USER");
       throw new Error("User already exists");
     }
+    console.log("NOT EXISTING USER");
     const hashedPassword = await Bun.password.hash(password, {
       algorithm: "bcrypt",
       cost: SALT_ROUNDS,
     });
-
+    console.log("AFTER HASING PASS");
     const newUser: User = {
       user_name: username,
       password: hashedPassword,
       name,
       wallet_balance: 0,
     };
-
+    console.log("BEFORE SAVING TO DB");
     try {
       await userRepository.save(newUser);
+      console.log("SAVING TO DB");
     } catch (error) {
+      console.log("FAIL SAVING TO DB");
       throw new Error("Failed to register user");
     }
   },

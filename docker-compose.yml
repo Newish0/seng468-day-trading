@@ -39,6 +39,9 @@ services:
     depends_on:
       - redis
       - order
+    volumes: #For Debug (Hot-reload for dev pruporses)
+      - ./services/user-api:/app/services/user-api
+    command: bun run --watch src/index.ts
 
   # Redis Database
   redis:
@@ -63,6 +66,9 @@ services:
       - redis
     networks:
       - day-trading-network
+    volumes: #For Debug (Hot-reload for dev pruporses)
+      - ./services/auth:/app/services/auth
+    command: bun run --watch src/index.ts
 
   # Order Service
   order:
@@ -78,6 +84,9 @@ services:
       - matching-engine
     networks:
       - day-trading-network
+    volumes: #For Debug (Hot-reload for dev pruporses)
+      - ./services/order:/app/services/order
+    command: bun run --watch src/index.ts
 
   # Matching Engine (Rust)
   matching-engine:

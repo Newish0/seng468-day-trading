@@ -18,6 +18,7 @@
     const res = await makeBackendRequest<LoginRequest, any>({
       body: { user_name: username, password },
     })("auth", "login");
+
     if (res.success) {
       const data = res.data.data;
 
@@ -26,6 +27,7 @@
     } else {
       addToast({ message: `Failed to login`, type: TOAST_TYPES.ERROR });
     }
+    loading = false;
   }
 </script>
 

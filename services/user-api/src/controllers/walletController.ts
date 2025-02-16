@@ -22,7 +22,7 @@ const walletController = {
         wallet_tx_id: transaction.wallet_tx_id,
         stock_tx_id: transaction.stock_tx_id,
         is_debit: transaction.is_debit,
-        amount: transaction.quantity,
+        amount: transaction.amount,
         time_stamp: transaction.time_stamp.toISOString(),
       }));
       return c.json({ success: true, data: userWalletTransactionsFormatted });

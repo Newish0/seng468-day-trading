@@ -2,7 +2,7 @@ import { beforeAll, expect, test } from "bun:test";
 import { apiRequest, createUniqueUser, uniqueUser, withAuth } from "./utils";
 
 let validToken: string = "";
-const invalidHeaders = { Authorization: "Bearer invalidToken" };
+const invalidHeaders = { token: "invalidToken" };
 
 beforeAll(async () => {
   validToken = (await createUniqueUser()).token;

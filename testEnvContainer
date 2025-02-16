@@ -1,0 +1,12 @@
+# This is our container to test our integration tests within the VM
+
+FROM oven/bun:latest
+
+WORKDIR /app
+
+COPY . .
+
+RUN bun install
+
+# Default command to run tests
+# CMD ["bun", "test", "--verbose"]

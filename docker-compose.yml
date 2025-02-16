@@ -89,3 +89,17 @@ services:
       - ORDER_SERVICE_HOST=http://order:3002
     networks:
       - day-trading-network
+
+ # Test Runner
+  test-runner:
+    build:
+      context: . # Use the project root as the build context
+      dockerfile: ./testEnvContainer
+    depends_on:
+      - user-api
+      - order
+      - auth
+      - matching-engine
+    networks:
+      - day-trading-network
+    #command: ["bun", "test", "--verbose"]

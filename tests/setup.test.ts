@@ -122,6 +122,5 @@ test("POST /setup/addStockToUser fails with invalid quantity type", async () => 
   const payload = { stock_id: "some-stock-id", quantity: -50 };
   const response = await apiRequest("POST", "/setup/addStockToUser", payload, withAuth(validToken));
   expect(response.success).toBe(false);
-  console.log(response);
   expect(response.data).toHaveProperty("error");
 });

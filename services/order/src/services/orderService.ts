@@ -257,14 +257,22 @@ const service = {
         ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity + quantity };
         await stockOwnedRepository.save(ownedStock);
       } else {
-        // If the user does not own the stock, create a new entry
-        let newOwnedStock: StockOwned = {
+        const stock = await stockRepository
+          .search()
+          .where("stock_id")
+          .equals(stock_id)
+          .returnFirst();
+        if (!stock) {
+          throw new Error("Error fetching stock record (placeMarketBuyOrder)");
+        }
+
+        // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
+        await stockOwnedRepository.save({
           stock_id,
           user_name,
-          stock_name: "Stock Name Here", // Why needed? Another query to just fetch this? :(
+          stock_name: stock.stock_name,
           current_quantity: quantity,
-        };
-        await stockOwnedRepository.save(newOwnedStock);
+        });
       }
     } catch (error) {
       throw new Error("Error checking or updating user's owned stock (placeMarketBuyOrder)");

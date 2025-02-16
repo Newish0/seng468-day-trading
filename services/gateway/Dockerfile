@@ -2,9 +2,9 @@
 FROM oven/bun:latest AS ui-builder
 
 WORKDIR /app
+COPY . .
 
-# Copy web-ui files 
-COPY ./web-ui .
+WORKDIR /app/services/web-ui
 RUN bun install
 RUN bun run build
 
@@ -15,10 +15,10 @@ FROM nginx:alpine
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
 # Copy custom Nginx configuration
-COPY ./gateway/nginx.conf /etc/nginx/conf.d
+COPY ./services/gateway/nginx.conf /etc/nginx/conf.d
 
 # Copy built assets from the ui-builder stage
-COPY --from=ui-builder /app/dist /usr/share/nginx/html
+COPY --from=ui-builder /app/services/web-ui/dist /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

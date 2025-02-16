@@ -1,32 +1,32 @@
-import { beforeAll, test, expect } from "bun:test";
+import { beforeAll, test, expect, afterAll } from "bun:test";
 import { apiRequest, createUniqueUser, uniqueUser, withAuth } from "./utils";
 
 let walletUser: string;
-let sellUser: string;
-let buyUser: string;
-let stockId: string;
+let sellUserTk: string;
+let buyUserTk: string;
+let stockId: string = "";
 const invalidHeaders = { Authorization: "Bearer invalidToken" };
 
 beforeAll(async () => {
-  sellUser = (await createUniqueUser()).token;
-  buyUser = (await createUniqueUser()).token;
+  sellUserTk = (await createUniqueUser()).token;
+  buyUserTk = (await createUniqueUser()).token;
   walletUser = (await createUniqueUser()).token;
 
   await apiRequest(
     "POST",
     "/transaction/addMoneyToWallet",
     { amount: 1000 },
-    withAuth(buyUser),
+    withAuth(buyUserTk),
     true
   );
 
   // create stock
-  const stockId = (
+  stockId = (
     await apiRequest(
       "POST",
       "/setup/createStock",
       { stock_name: `Stock ${Date.now()}` },
-      withAuth(sellUser),
+      withAuth(sellUserTk),
       true
     )
   ).data.stock_id;
@@ -36,11 +36,81 @@ beforeAll(async () => {
     "POST",
     "/setup/addStockToUser",
     { stock_id: stockId, quantity: 20 },
-    withAuth(sellUser),
+    withAuth(sellUserTk),
     true
   );
 
-  // sell user limit sell
+  // // buy user market buy
+  // await apiRequest(
+  //   "POST",
+  //   "/engine/placeStockOrder",
+  //   {
+  //     stock_id: stockId,
+  //     is_buy: true,
+  //     order_type: "MARKET",
+  //     quantity: 5,
+  //   },
+  //   withAuth(buyUserTk),
+  //   true
+  // );
+});
+
+// Clean up: Buy all remaining stocks
+afterAll(async () => {
+  // Add money to buy user's wallet
+  await apiRequest(
+    "POST",
+    "/transaction/addMoneyToWallet",
+    { amount: 1000000 },
+    withAuth(buyUserTk),
+    true
+  );
+
+  const stockPricesRes = await apiRequest(
+    "GET",
+    "/transaction/getStockPrices",
+    undefined,
+    withAuth(sellUserTk)
+  );
+
+  for (const stock of stockPricesRes.data) {
+    const buyPayload = {
+      stock_id: stock.stock_id,
+      is_buy: true,
+      order_type: "MARKET",
+      quantity: 1,
+    };
+
+    while (true) {
+      const response = await apiRequest(
+        "POST",
+        "/engine/placeStockOrder",
+        buyPayload,
+        withAuth(buyUserTk)
+      );
+      if (!response.success) break;
+    }
+  }
+});
+
+/* =========================
+   Transaction Functional Tests
+   ========================= */
+
+test("GET /transaction/getStockPrices returns empty stock prices when sells exist", async () => {
+  const response = await apiRequest(
+    "GET",
+    "/transaction/getStockPrices",
+    undefined,
+    withAuth(sellUserTk)
+  );
+  expect(response.success).toBe(true);
+  expect(Array.isArray(response.data)).toBe(true);
+  expect(response.data.length).toBe(0);
+});
+
+test("GET /transaction/getStockPrices returns valid stock prices", async () => {
+  // Create a limit sell order
   await apiRequest(
     "POST",
     "/engine/placeStockOrder",
@@ -48,14 +118,41 @@ beforeAll(async () => {
       stock_id: stockId,
       is_buy: false,
       order_type: "LIMIT",
-      quantity: 5,
-      price: 10,
+      quantity: 1,
+      price: 88.75,
     },
-    withAuth(sellUser),
+    withAuth(sellUserTk),
     true
   );
 
-  // buy user market buy
+  const response = await apiRequest(
+    "GET",
+    "/transaction/getStockPrices",
+    undefined,
+    withAuth(sellUserTk)
+  );
+  expect(response.success).toBe(true);
+  expect(Array.isArray(response.data)).toBe(true);
+  expect(response.data.length).toBeGreaterThan(0);
+
+  // Validate stock data in response matches format
+  response.data.forEach((stock: any) => {
+    expect(stock).toHaveProperty("stock_id");
+    expect(typeof stock.stock_id).toBe("string");
+    expect(stock).toHaveProperty("stock_name");
+    expect(typeof stock.stock_name).toBe("string");
+    expect(stock).toHaveProperty("current_price");
+    expect(typeof stock.current_price).toBe("number");
+  });
+
+  // Expect the only stock to be the one we just created
+  const ourStock = response.data.find((stock: any) => stock.stock_id === stockId);
+  expect(ourStock).toBeDefined();
+  expect(ourStock.current_price).toBe(88.75);
+});
+
+test("GET /transaction/getStockPortfolio returns a valid stock portfolio", async () => {
+  // Buy the one stock from "GET /transaction/getStockPrices returns valid stock prices"
   await apiRequest(
     "POST",
     "/engine/placeStockOrder",
@@ -63,51 +160,24 @@ beforeAll(async () => {
       stock_id: stockId,
       is_buy: true,
       order_type: "MARKET",
-      quantity: 5,
-      price: 0, // Price not used for buy market orders
+      quantity: 1,
     },
-    withAuth(buyUser),
+    withAuth(buyUserTk),
     true
   );
-});
 
-/* =========================
-   Transaction Functional Tests
-   ========================= */
-
-test("GET /transaction/getStockPrices returns valid stock prices", async () => {
-  const response = await apiRequest(
-    "GET",
-    "/transaction/getStockPrices",
-    undefined,
-    withAuth(sellUser)
-  );
-  expect(response.success).toBe(true);
-  expect(Array.isArray(response.data)).toBe(true);
-  expect(response.data.length).toBeGreaterThan(0);
-  response.data.forEach((stock: any) => {
-    expect(stock).toHaveProperty("stock_id");
-    expect(typeof stock.stock_id).toBe("number");
-    expect(stock).toHaveProperty("stock_name");
-    expect(typeof stock.stock_name).toBe("string");
-    expect(stock).toHaveProperty("current_price");
-    expect(typeof stock.current_price).toBe("number");
-  });
-});
-
-test("GET /transaction/getStockPortfolio returns a valid stock portfolio", async () => {
   const response = await apiRequest(
     "GET",
     "/transaction/getStockPortfolio",
     undefined,
-    withAuth(buyUser)
+    withAuth(buyUserTk)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
   expect(response.data.length).toBeGreaterThan(0);
   response.data.forEach((item: any) => {
     expect(item).toHaveProperty("stock_id");
-    expect(typeof item.stock_id).toBe("number");
+    expect(typeof item.stock_id).toBe("string");
     expect(item).toHaveProperty("stock_name");
     expect(typeof item.stock_name).toBe("string");
     expect(item).toHaveProperty("quantity_owned");
@@ -120,7 +190,7 @@ test("GET /transaction/getWalletTransactions returns valid wallet transactions",
     "GET",
     "/transaction/getWalletTransactions",
     undefined,
-    withAuth(buyUser)
+    withAuth(buyUserTk)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
@@ -144,7 +214,7 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
     "GET",
     "/transaction/getStockTransactions",
     undefined,
-    withAuth(buyUser)
+    withAuth(buyUserTk)
   );
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
@@ -153,7 +223,7 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
     expect(tx).toHaveProperty("stock_tx_id");
     expect(typeof tx.stock_tx_id).toBe("string");
     expect(tx).toHaveProperty("stock_id");
-    expect(typeof tx.stock_id).toBe("number");
+    expect(typeof tx.stock_id).toBe("string");
     expect(tx).toHaveProperty("wallet_tx_id");
     expect(typeof tx.wallet_tx_id).toBe("string");
     expect(tx).toHaveProperty("order_status");
@@ -200,6 +270,7 @@ test("POST /transaction/addMoneyToWallet adds money successfully", async () => {
   expect(addMoneyResp.data).toBeNull();
 });
 
+// NOTE: This test ties with the "POST /transaction/addMoneyToWallet" test
 test("GET /transaction/getWalletBalance returns updated balance", async () => {
   const response = await apiRequest(
     "GET",
@@ -264,7 +335,7 @@ test("POST /transaction/addMoneyToWallet fails when 'amount' field is missing", 
     "POST",
     "/transaction/addMoneyToWallet",
     {},
-    withAuth(sellUser)
+    withAuth(sellUserTk)
   );
   expect(response.success).toBe(false);
   expect(response.data).toHaveProperty("error");
@@ -275,7 +346,7 @@ test("POST /transaction/addMoneyToWallet fails when 'amount' is not a number", a
     "POST",
     "/transaction/addMoneyToWallet",
     { amount: "notANumber" },
-    withAuth(sellUser)
+    withAuth(sellUserTk)
   );
   expect(response.success).toBe(false);
   expect(response.data).toHaveProperty("error");

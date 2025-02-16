@@ -192,7 +192,6 @@ test("GET /transaction/getWalletTransactions returns valid wallet transactions",
     undefined,
     withAuth(buyUserTk)
   );
-  console.log(response.data);
   expect(response.success).toBe(true);
   expect(Array.isArray(response.data)).toBe(true);
   expect(response.data.length).toBeGreaterThan(0);

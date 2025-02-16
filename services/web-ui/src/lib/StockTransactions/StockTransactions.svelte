@@ -57,8 +57,8 @@
     }
 
     addToast({ message: "Successfully cancelled transaction", type: TOAST_TYPES.SUCCESS });
-    // TODO: Should we refetch at this point or should this be sufficient given we have a success response?
     transactions = transactions.filter((transaction) => transaction.stock_tx_id !== stock_tx_id);
+    window.location.reload();
   };
 </script>
 
@@ -85,8 +85,8 @@
           <td>${transaction.stock_price}</td>
           <td>{transaction.time_stamp}</td>
           <td>{transaction.order_status}</td>
-          <td>
-            {#if transaction.order_status !== ORDER_STATUS.COMPLETED || transaction.order_status !== ORDER_STATUS.CANCELLED}
+          <td class="min-w-12">
+            {#if transaction.order_status !== ORDER_STATUS.COMPLETED && transaction.order_status !== ORDER_STATUS.CANCELLED}
               <ConfirmModal
                 on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}
                 >Cancel</ConfirmModal

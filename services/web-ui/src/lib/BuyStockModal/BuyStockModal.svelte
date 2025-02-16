@@ -34,16 +34,14 @@
 
     if (!response.success) {
       addToast({ message: "Failed to buy stock", type: TOAST_TYPES.ERROR });
-    } else {
-      addToast({
-        message: `Successfully bought ${quantity} shares of ${stockName}`,
-        type: TOAST_TYPES.SUCCESS,
-      });
+      loading = false;
+      return;
     }
 
     quantity = 0;
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 
@@ -51,12 +49,7 @@
 
 <dialog bind:this={modal}>
   <div class="flex flex-col gap-4">
-    <h3>
-      Buy stock -
-      <span class="font-mono">
-        {stockName}
-      </span>
-    </h3>
+    <h3>Buy stock</h3>
 
     <div class="flex flex-col w-max">
       <label>

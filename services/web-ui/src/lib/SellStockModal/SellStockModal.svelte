@@ -39,13 +39,9 @@
       return;
     }
 
-    addToast({
-      message: `Successfully placed ${quantity} shares of ${stockName} for sale for $${price}`,
-      type: TOAST_TYPES.SUCCESS,
-    });
-
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 
@@ -53,10 +49,7 @@
 
 <dialog bind:this={modal}>
   <div class="flex flex-col gap-4">
-    <h3>
-      Sell stock -
-      <span class="font-mono">{stockName}</span>
-    </h3>
+    <h3>Sell stock</h3>
 
     <div class="flex flex-col w-max">
       <label>

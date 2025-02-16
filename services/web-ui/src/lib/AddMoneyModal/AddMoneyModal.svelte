@@ -26,13 +26,14 @@
 
     if (!response.success) {
       addToast({ message: `Failed to add $${amount} to wallet`, type: TOAST_TYPES.ERROR });
-      // TODO: user balance and all app state will need to be put into stores and updated with queries
-    } else {
-      addToast({ message: `Successfully added $${amount} to wallet`, type: TOAST_TYPES.SUCCESS });
+      loading = false;
+      return;
     }
+
     amount = 0;
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 

@@ -1,5 +1,8 @@
 <script lang="ts">
-  import type { RegisterRequest } from "./../../../../../packages/shared-types/dtos/auth/auth.ts";
+  import type {
+    LoginRequest,
+    RegisterRequest,
+  } from "./../../../../../packages/shared-types/dtos/auth/auth.ts";
   import { makeBackendRequest } from "../utils/makeBackendRequest.js";
   import { auth } from "./auth";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
@@ -24,17 +27,29 @@
     })("auth", "register");
 
     if (res.success) {
-      const data = res.data;
-
-      localStorage.setItem("jwt", data.token);
-      auth.set({ token: data.token, username: data.user });
-      addToast({ message: `Successfully registered ${data.user}`, type: TOAST_TYPES.SUCCESS });
-      mode = "login";
+      addToast({ message: `Successfully registered ${username}`, type: TOAST_TYPES.SUCCESS });
+      await login();
     } else {
       addToast({ message: `Failed to register`, type: TOAST_TYPES.ERROR });
     }
 
     loading = false;
+  }
+
+  async function login() {
+    const res = await makeBackendRequest<LoginRequest, any>({
+      body: { user_name: username, password },
+    })("auth", "login");
+
+    if (res.success) {
+      const data = res.data.data;
+
+      localStorage.setItem("jwt", data.token);
+      auth.set({ token: data.token, username });
+    } else {
+      addToast({ message: `Failed to login`, type: TOAST_TYPES.ERROR });
+      mode = "login";
+    }
   }
 </script>
 

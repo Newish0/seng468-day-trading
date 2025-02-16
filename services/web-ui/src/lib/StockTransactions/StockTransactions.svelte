@@ -30,7 +30,7 @@
       return [] as StockTransaction[];
     }
 
-    return response.data.data;
+    return response.data;
   };
 
   onMount(() => {

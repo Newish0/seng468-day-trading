@@ -42,7 +42,7 @@
     })("auth", "login");
 
     if (res.success) {
-      const data = res.data.data;
+      const data = res.data;
 
       localStorage.setItem("jwt", data.token);
       auth.set({ token: data.token, username });

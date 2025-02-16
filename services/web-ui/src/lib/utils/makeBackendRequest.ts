@@ -66,7 +66,7 @@ export const makeBackendRequest =
   >(
     serviceName: TService,
     endpointName: TEndpoint
-  ): Promise<InternalResponse<TResponse>> => {
+  ): Promise<TResponse | { success: false; status: number; error: string }> => {
     const host = window.location.origin;
     const endpoint = backendEndpoints[serviceName][endpointName] as Endpoint;
 
@@ -86,7 +86,7 @@ export const makeBackendRequest =
       }
 
       const data = (await response.json()) as TResponse;
-      return { success: true, status: response.status, data };
+      return data;
     } catch (e) {
       console.error("Backend request error:", e);
       return { success: false, status: 500, error: "Backend server error" };

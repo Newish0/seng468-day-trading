@@ -30,7 +30,7 @@
       return 0;
     }
 
-    return response.data.data.balance;
+    return response.data.balance;
   };
 </script>
 

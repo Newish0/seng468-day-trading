@@ -13,8 +13,7 @@
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
   import { authHeader } from "../Auth/auth";
-
-  let transactions: StockTransaction[];
+  import { stockTransactions } from "../utils/sessionStores";
 
   const getStockTransactions = async () => {
     const response = await makeBackendRequest<
@@ -34,9 +33,9 @@
   };
 
   onMount(() => {
-    transactions = []; // No-data value
+    $stockTransactions = []; // No-data value
     getStockTransactions().then((data) => {
-      transactions = data;
+      $stockTransactions = data;
     });
   });
 
@@ -58,7 +57,9 @@
 
     addToast({ message: "Successfully cancelled transaction", type: TOAST_TYPES.SUCCESS });
     // TODO: Should we refetch at this point or should this be sufficient given we have a success response?
-    transactions = transactions.filter((transaction) => transaction.stock_tx_id !== stock_tx_id);
+    $stockTransactions = $stockTransactions.filter(
+      (transaction) => transaction.stock_tx_id !== stock_tx_id
+    );
   };
 </script>
 
@@ -78,7 +79,7 @@
     </thead>
     <tbody>
       <!-- TODO: Partial sell transactions ideally could be grouped together and put under say an accordion -->
-      {#each transactions as transaction}
+      {#each $stockTransactions as transaction}
         <tr>
           <td>{transaction.stock_id}</td>
           <td>{transaction.order_type}</td>

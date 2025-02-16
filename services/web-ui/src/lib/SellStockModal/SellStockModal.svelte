@@ -44,6 +44,8 @@
       type: TOAST_TYPES.SUCCESS,
     });
 
+    // TODO make calls to update stock portfolio, transactions, etc
+
     loading = false;
     modal.close();
   };

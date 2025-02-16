@@ -6,6 +6,7 @@
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
   import { makeBackendRequest } from "../utils/makeBackendRequest";
+  import { walletBalance } from "../utils/sessionStores";
 
   let modal: HTMLDialogElement;
   let amount: number = 0;
@@ -29,6 +30,7 @@
       // TODO: user balance and all app state will need to be put into stores and updated with queries
     } else {
       addToast({ message: `Successfully added $${amount} to wallet`, type: TOAST_TYPES.SUCCESS });
+      $walletBalance = $walletBalance + amount;
     }
     amount = 0;
     loading = false;

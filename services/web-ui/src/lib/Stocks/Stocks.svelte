@@ -9,8 +9,7 @@
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
   import { authHeader } from "../Auth/auth";
-
-  let stocks: AvailableStock[];
+  import { stocks } from "../utils/sessionStores";
 
   const getStocks = async () => {
     const response = await makeBackendRequest<GetStockPricesRequest, GetStockPricesResponse>({
@@ -28,7 +27,7 @@
 
   onMount(() => {
     getStocks().then((data) => {
-      stocks = data;
+      $stocks = data;
     });
   });
 </script>
@@ -45,7 +44,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each stocks as stock}
+      {#each $stocks as stock}
         <tr>
           <td>{stock.stock_id}</td>
           <td>{stock.current_price}</td>

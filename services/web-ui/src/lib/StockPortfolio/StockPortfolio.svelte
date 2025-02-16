@@ -9,8 +9,7 @@
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import SellStockModal from "./../SellStockModal/SellStockModal.svelte";
   import { authHeader } from "../Auth/auth";
-
-  let portfolio: OwnedStock[];
+  import { stockPortfolio } from "../utils/sessionStores";
 
   const getPortfolio = async () => {
     const response = await makeBackendRequest<GetStockPortfolioRequest, GetStockPortfolioResponse>({
@@ -28,7 +27,7 @@
 
   onMount(() => {
     getPortfolio().then((data) => {
-      portfolio = data;
+      $stockPortfolio = data;
     });
   });
 </script>
@@ -45,7 +44,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each portfolio as stock}
+      {#each $stockPortfolio as stock}
         <tr>
           <td>{stock.stock_id}</td>
           <td>{stock.quantity_owned}</td>

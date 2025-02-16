@@ -40,6 +40,8 @@
         message: `Successfully bought ${quantity} shares of ${stockName}`,
         type: TOAST_TYPES.SUCCESS,
       });
+
+      // TODO make calls to update stock portfolio, transactions, etc
     }
 
     quantity = 0;

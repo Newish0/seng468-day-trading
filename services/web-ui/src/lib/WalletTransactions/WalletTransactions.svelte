@@ -8,8 +8,7 @@
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
-
-  let transactions: WalletTransaction[];
+  import { walletTransactions } from "../utils/sessionStores";
 
   const getWalletTransactions = async () => {
     const response = await makeBackendRequest<
@@ -30,7 +29,7 @@
 
   onMount(() => {
     getWalletTransactions().then((data) => {
-      transactions = data;
+      $walletTransactions = data;
     });
   });
 </script>
@@ -48,7 +47,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each transactions as transaction, i}
+      {#each $walletTransactions as transaction, i}
         <tr>
           <!-- TODO: Don't have access to the stock name currently, schema needs to change if we want it -->
           <!-- <td>{transaction.stock}</td> -->

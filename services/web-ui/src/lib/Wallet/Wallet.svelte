@@ -8,13 +8,13 @@
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
   import { authHeader } from "../Auth/auth";
+  import { walletBalance } from "../utils/sessionStores";
 
   let fetched = false;
-  let balance: number;
 
   onMount(() => {
     getBalance().then((data) => {
-      balance = data;
+      $walletBalance = data;
       fetched = true;
     });
   });
@@ -41,7 +41,7 @@
     Loading...
   {:else}
     <div class="flex items-center gap-10">
-      <p class="text-2xl">Balance: ${balance}</p>
+      <p class="text-2xl">Balance: ${$walletBalance}</p>
 
       <AddMoneyModal />
     </div>

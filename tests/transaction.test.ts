@@ -236,7 +236,7 @@ test("GET /transaction/getStockTransactions returns valid stock transactions", a
     expect(typeof tx.stock_price).toBe("number");
     expect(tx).toHaveProperty("quantity");
     expect(typeof tx.quantity).toBe("number");
-    expect(tx).toHaveProperty("parent_tx_id");
+    expect(tx).toHaveProperty("parent_stock_tx_id");
     expect(tx).toHaveProperty("time_stamp");
     expect(typeof tx.time_stamp).toBe("string");
   });

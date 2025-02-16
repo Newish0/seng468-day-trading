@@ -18,13 +18,24 @@ const walletController = {
     const { username } = c.get("user");
     try {
       const userWalletTransactions = await walletService.getUserWalletTransactions(username);
-      const userWalletTransactionsFormatted = userWalletTransactions.map((transaction) => ({
-        wallet_tx_id: transaction.wallet_tx_id,
-        stock_tx_id: transaction.stock_tx_id,
-        is_debit: transaction.is_debit,
-        amount: transaction.amount,
-        time_stamp: transaction.time_stamp.toISOString(),
-      }));
+      const userWalletTransactionsFormatted = userWalletTransactions
+        .map((transaction) => ({
+          wallet_tx_id: transaction.wallet_tx_id,
+          stock_tx_id: transaction.stock_tx_id,
+          is_debit: transaction.is_debit,
+          amount: transaction.amount,
+          time_stamp: transaction.time_stamp.toISOString(),
+        }))
+        .sort((transaction1, transaction2) => {
+          if (transaction1.time_stamp < transaction2.time_stamp) {
+            return -1;
+          }
+          if (transaction1.time_stamp > transaction2.time_stamp) {
+            return 1;
+          }
+          return 0;
+        });
+
       return c.json({ success: true, data: userWalletTransactionsFormatted });
     } catch (e) {
       return handleError(c, e, "Failed to get wallet transactions", 400);

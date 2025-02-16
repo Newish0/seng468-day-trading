@@ -8,7 +8,7 @@
     type GetStockTransactionsResponse,
   } from "shared-types/dtos/user-api/transaction/getStockTransactions";
   import { ORDER_STATUS, type StockTransaction } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
@@ -17,7 +17,7 @@
   let transactions: StockTransaction[];
 
   const getStockTransactions = async () => {
-    const response = await makeInternalRequest<
+    const response = await makeBackendRequest<
       GetStockTransactionsRequest,
       GetStockTransactionsResponse
     >({
@@ -41,7 +41,7 @@
   });
 
   const cancelTransaction = async ({ stock_tx_id }: Pick<StockTransaction, "stock_tx_id">) => {
-    const response = await makeInternalRequest<
+    const response = await makeBackendRequest<
       CancelStockTransactionRequest,
       CancelStockTransactionResponse
     >({

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import type { RegisterRequest } from "./../../../../../packages/shared-types/dtos/auth/auth.ts";
+  import { makeBackendRequest } from "../utils/makeBackendRequest.js";
   import { auth } from "./auth";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { fade } from "svelte/transition";
@@ -14,7 +15,7 @@
 
   async function register() {
     loading = true;
-    const res = await makeInternalRequest<any, any>({
+    const res = await makeBackendRequest<RegisterRequest, any>({
       body: {
         user_name: username,
         password,
@@ -27,7 +28,8 @@
 
       localStorage.setItem("jwt", data.token);
       auth.set({ token: data.token, username: data.user });
-      mode = "register";
+      addToast({ message: `Successfully registered ${data.user}`, type: TOAST_TYPES.SUCCESS });
+      mode = "login";
     } else {
       addToast({ message: `Failed to register`, type: TOAST_TYPES.ERROR });
     }

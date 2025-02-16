@@ -4,7 +4,7 @@
     PlaceStockOrderResponse,
   } from "shared-types/dtos/user-api/engine/placeStockOrder";
   import { ORDER_TYPE } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
 
@@ -21,7 +21,7 @@
 
   const handleBuyStock = async () => {
     loading = true;
-    const response = await makeInternalRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
+    const response = await makeBackendRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
       headers: $authHeader,
       body: {
         stock_id: stockId,

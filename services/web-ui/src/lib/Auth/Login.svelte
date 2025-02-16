@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { auth } from "./auth";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { fade } from "svelte/transition";
+  import type { LoginRequest } from "shared-types/dtos/auth/auth";
 
   export let mode: "login" | "register" = "register";
 
@@ -12,17 +13,21 @@
   let loading = false;
 
   async function login() {
-    const res = await makeInternalRequest<any, any>({
+    loading = true;
+
+    const res = await makeBackendRequest<LoginRequest, any>({
       body: { user_name: username, password },
     })("auth", "login");
 
     if (res.success) {
       const data = res.data;
+
       localStorage.setItem("jwt", data.token);
       auth.set({ token: data.token, username });
     } else {
       addToast({ message: `Failed to login`, type: TOAST_TYPES.ERROR });
     }
+    loading = false;
   }
 </script>
 

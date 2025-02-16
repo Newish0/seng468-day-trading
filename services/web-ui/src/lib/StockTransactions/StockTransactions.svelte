@@ -8,7 +8,7 @@
     type GetStockTransactionsResponse,
   } from "shared-types/dtos/user-api/transaction/getStockTransactions";
   import { ORDER_STATUS, type StockTransaction } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
@@ -17,7 +17,7 @@
   let transactions: StockTransaction[];
 
   const getStockTransactions = async () => {
-    const response = await makeInternalRequest<
+    const response = await makeBackendRequest<
       GetStockTransactionsRequest,
       GetStockTransactionsResponse
     >({
@@ -30,7 +30,7 @@
       return [] as StockTransaction[];
     }
 
-    return response.data.data;
+    return response.data;
   };
 
   onMount(() => {
@@ -41,7 +41,7 @@
   });
 
   const cancelTransaction = async ({ stock_tx_id }: Pick<StockTransaction, "stock_tx_id">) => {
-    const response = await makeInternalRequest<
+    const response = await makeBackendRequest<
       CancelStockTransactionRequest,
       CancelStockTransactionResponse
     >({
@@ -57,8 +57,8 @@
     }
 
     addToast({ message: "Successfully cancelled transaction", type: TOAST_TYPES.SUCCESS });
-    // TODO: Should we refetch at this point or should this be sufficient given we have a success response?
     transactions = transactions.filter((transaction) => transaction.stock_tx_id !== stock_tx_id);
+    window.location.reload();
   };
 </script>
 
@@ -85,8 +85,8 @@
           <td>${transaction.stock_price}</td>
           <td>{transaction.time_stamp}</td>
           <td>{transaction.order_status}</td>
-          <td>
-            {#if transaction.order_status !== ORDER_STATUS.COMPLETED}
+          <td class="min-w-12">
+            {#if transaction.order_status !== ORDER_STATUS.COMPLETED && transaction.order_status !== ORDER_STATUS.CANCELLED}
               <ConfirmModal
                 on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}
                 >Cancel</ConfirmModal

@@ -1,45 +1,7 @@
 import { getEnvVariable } from "./env";
+import type { FetchOptions, InternalResponse, Endpoint } from "../shared-types/dtos/index";
 
 const internalEndpoints = {
-  userApi: {
-    host: getEnvVariable("USER_API_HOST", "http://localhost:3000"),
-    getStockPrices: {
-      path: "/transaction/getStockPrices",
-      requestMethod: "GET",
-    },
-    getStockPortfolio: {
-      path: "/transaction/getStockPortfolio",
-      requestMethod: "GET",
-    },
-    getStockTransactions: {
-      path: "/transaction/getStockTransactions",
-      requestMethod: "GET",
-    },
-    getWalletBalance: {
-      path: "/transaction/getWalletBalance",
-      requestMethod: "GET",
-    },
-    getWalletTransactions: {
-      path: "/transaction/getWalletTransactions",
-      requestMethod: "GET",
-    },
-    addMoneyToWallet: {
-      path: "/transaction/addMoneyToWallet",
-      requestMethod: "POST",
-    },
-    placeStockOrder: {
-      path: "/engine/placeStockOrder",
-      requestMethod: "POST",
-    },
-    cancelStockTransaction: {
-      path: "/engine/cancelStockTransaction",
-      requestMethod: "POST",
-    },
-    createStock: {
-      path: "/setup/createStock",
-      requestMethod: "POST",
-    },
-  },
   orderService: {
     host: getEnvVariable("ORDER_SERVICE_HOST", "http://localhost:3001"),
     placeMarketBuy: {
@@ -78,38 +40,8 @@ const internalEndpoints = {
       requestMethod: "DELETE",
     },
   },
-  auth: {
-    host: getEnvVariable("AUTH_HOST", "http://localhost:3003"),
-    login: {
-      path: "/login",
-      requestMethod: "POST",
-    },
-    register: {
-      path: "/register",
-      requestMethod: "POST",
-    },
-  },
 } as const;
 
-type FetchOptions<TBody> = {
-  headers?: Record<string, string>;
-  body: TBody;
-};
-type Endpoint = {
-  path: string;
-  requestMethod: "GET" | "POST" | "PUT" | "DELETE";
-};
-type InternalResponse<T> =
-  | {
-      success: true;
-      status: number;
-      data: T;
-    }
-  | {
-      success: false;
-      status: number;
-      error: string;
-    };
 export const makeInternalRequest =
   <TRequest, TResponse>(options: FetchOptions<TRequest>) =>
   async <

@@ -4,7 +4,7 @@
     type PlaceStockOrderResponse,
   } from "shared-types/dtos/user-api/engine/placeStockOrder";
   import { ORDER_TYPE } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
 
@@ -22,7 +22,7 @@
 
   const handleSellStock = async () => {
     loading = true;
-    const response = await makeInternalRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
+    const response = await makeBackendRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
       headers: $authHeader,
       body: {
         stock_id: stockId,
@@ -39,13 +39,9 @@
       return;
     }
 
-    addToast({
-      message: `Successfully placed ${quantity} shares of ${stockName} for sale for $${price}`,
-      type: TOAST_TYPES.SUCCESS,
-    });
-
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 
@@ -53,10 +49,7 @@
 
 <dialog bind:this={modal}>
   <div class="flex flex-col gap-4">
-    <h3>
-      Sell stock -
-      <span class="font-mono">{stockName}</span>
-    </h3>
+    <h3>Sell stock</h3>
 
     <div class="flex flex-col w-max">
       <label>

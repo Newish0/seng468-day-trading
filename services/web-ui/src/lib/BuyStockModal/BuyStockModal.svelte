@@ -4,7 +4,7 @@
     PlaceStockOrderResponse,
   } from "shared-types/dtos/user-api/engine/placeStockOrder";
   import { ORDER_TYPE } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
 
@@ -21,7 +21,7 @@
 
   const handleBuyStock = async () => {
     loading = true;
-    const response = await makeInternalRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
+    const response = await makeBackendRequest<PlaceStockOrderRequest, PlaceStockOrderResponse>({
       headers: $authHeader,
       body: {
         stock_id: stockId,
@@ -34,17 +34,14 @@
 
     if (!response.success) {
       addToast({ message: "Failed to buy stock", type: TOAST_TYPES.ERROR });
+      loading = false;
       return;
-    } else {
-      addToast({
-        message: `Successfully bought ${quantity} shares of ${stockName}`,
-        type: TOAST_TYPES.SUCCESS,
-      });
     }
 
     quantity = 0;
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 
@@ -52,12 +49,7 @@
 
 <dialog bind:this={modal}>
   <div class="flex flex-col gap-4">
-    <h3>
-      Buy stock -
-      <span class="font-mono">
-        {stockName}
-      </span>
-    </h3>
+    <h3>Buy stock</h3>
 
     <div class="flex flex-col w-max">
       <label>
@@ -73,9 +65,9 @@
       {/if}
       <button on:click={handleBuyStock} disabled={loading}>
         {#if loading}
-          Adding money...
+          Buying stock...
         {:else}
-          Add money
+          Buy stock
         {/if}
       </button>
     </div>

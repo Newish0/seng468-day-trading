@@ -34,7 +34,6 @@
 
     if (!response.success) {
       addToast({ message: "Failed to buy stock", type: TOAST_TYPES.ERROR });
-      return;
     } else {
       addToast({
         message: `Successfully bought ${quantity} shares of ${stockName}`,
@@ -73,9 +72,9 @@
       {/if}
       <button on:click={handleBuyStock} disabled={loading}>
         {#if loading}
-          Adding money...
+          Buying stock...
         {:else}
-          Add money
+          Buy stock
         {/if}
       </button>
     </div>

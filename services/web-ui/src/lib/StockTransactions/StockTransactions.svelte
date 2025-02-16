@@ -86,7 +86,7 @@
           <td>{transaction.time_stamp}</td>
           <td>{transaction.order_status}</td>
           <td>
-            {#if transaction.order_status !== ORDER_STATUS.COMPLETED}
+            {#if transaction.order_status !== ORDER_STATUS.COMPLETED || transaction.order_status !== ORDER_STATUS.CANCELLED}
               <ConfirmModal
                 on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}
                 >Cancel</ConfirmModal

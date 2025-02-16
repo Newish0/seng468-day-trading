@@ -4,7 +4,7 @@ import { apiRequest, createUniqueUser, withAuth } from "./utils";
 let sellUserTk: string;
 let buyUserTk: string;
 let stockId: string = "";
-const invalidHeaders = { Authorization: "Bearer invalidToken" };
+const invalidHeaders = { token: "invalidToken" };
 
 beforeAll(async () => {
   const sellResult = await createUniqueUser();

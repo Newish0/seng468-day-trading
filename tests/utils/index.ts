@@ -44,7 +44,7 @@ export function uniqueUser() {
 }
 
 export function withAuth(token: string) {
-  return { headers: { Authorization: `Bearer ${token}` } };
+  return { headers: { token: token } };
 }
 
 export async function createUniqueUser() {

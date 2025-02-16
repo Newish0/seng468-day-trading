@@ -5,7 +5,7 @@ let walletUser: string;
 let sellUserTk: string;
 let buyUserTk: string;
 let stockId: string = "";
-const invalidHeaders = { Authorization: "Bearer invalidToken" };
+const invalidHeaders = { token: "invalidToken" };
 
 beforeAll(async () => {
   sellUserTk = (await createUniqueUser()).token;

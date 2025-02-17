@@ -45,7 +45,7 @@ const walletController = {
     const { username } = c.get("user");
     const { amount } = c.req.valid("json");
     try {
-      walletService.addMoneyToWallet(username, amount);
+      await walletService.addMoneyToWallet(username, amount);
       return c.json({ success: true, data: null });
     } catch (e) {
       return handleError(c, e, "Failed to add money to wallet", 400);

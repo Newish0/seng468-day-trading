@@ -37,19 +37,27 @@ services:
     ports:
       - "3000"
     depends_on:
-      - redis
-      - order
+      order:
+        condition: service_started
+      redis:
+        condition: service_healthy
 
   # Redis Database
   redis:
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
-      - "8001:8001" # REVIEW: For RedisInsight I think... We can remove this for production maybe?
+      - "8001:8001"
     networks:
       - day-trading-network
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
   # Auth Service
   auth:
@@ -60,7 +68,8 @@ services:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - day-trading-network
 
@@ -74,8 +83,10 @@ services:
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - redis
-      - matching-engine
+      matching-engine:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - day-trading-network
 

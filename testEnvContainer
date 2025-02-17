@@ -8,5 +8,13 @@ COPY . .
 
 RUN bun install
 
+RUN apt-get update && apt-get install -y iputils-ping
+
+RUN apt-get update
+
+RUN apt-get install curl
+
+RUN apt-get install net-tools
+
 # Default command to run tests
-# CMD ["bun", "test", "--verbose"]
+CMD ["sh", "-c", "sleep infinity"]

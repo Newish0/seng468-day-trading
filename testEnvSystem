@@ -1,0 +1,20 @@
+# Use an appropriate base image that has Docker and Docker Compose
+FROM docker:20.10.7-dind
+
+# Install dependencies like curl, bash, docker-compose using apk (Alpine's package manager)
+RUN apk update && apk add curl bash docker-compose
+
+# Install Bun (the JavaScript runtime)
+RUN curl -fsSL https://bun.sh/installer | bash
+
+# Add Bun to the PATH
+ENV PATH="/root/.bun/bin:${PATH}"
+
+# Set the working directory inside the container
+WORKDIR /workspace
+
+# Copy the current working directory (including the docker-compose.yml file) into the container
+COPY . .
+
+# Command to run docker-compose within the container (specifying the correct file name)
+CMD ["docker-compose", "-f", "testenvSystem.yml", "up", "--build"]

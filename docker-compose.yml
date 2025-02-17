@@ -102,4 +102,4 @@ services:
       - matching-engine
     networks:
       - day-trading-network
-    #command: ["bun", "test", "--verbose"]
+    command: sh -c "sleep infinity"

@@ -36,7 +36,6 @@ const service = {
     } catch (error) {
       throw new Error("Failed to check if user exists");
     }
-
     if (existingUser) {
       throw new Error("User already exists");
     }
@@ -44,14 +43,12 @@ const service = {
       algorithm: "bcrypt",
       cost: SALT_ROUNDS,
     });
-
     const newUser: User = {
       user_name: username,
       password: hashedPassword,
       name,
       wallet_balance: 0,
     };
-
     try {
       await userRepository.save(newUser);
     } catch (error) {

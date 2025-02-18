@@ -194,12 +194,12 @@ test("POST /engine/placeStockOrder places a partial market buy order successfull
       tx.order_status === "PARTIALLY_COMPLETED" &&
       tx.quantity === 6 &&
       tx.is_buy === false &&
-      tx.parent_tx_id === null
+      tx.parent_stock_tx_id === null
   );
   expect(rootTx).toBeDefined();
 
   // Check partial transaction
-  const partialTx = txResponse.data.find((tx: any) => tx.parent_tx_id === rootTx.stock_tx_id);
+  const partialTx = txResponse.data.find((tx: any) => tx.parent_stock_tx_id === rootTx.stock_tx_id);
   expect(partialTx).toBeDefined();
   expect(partialTx.quantity).toBe(1);
   expect(partialTx.order_status).toBe("COMPLETED");
@@ -243,14 +243,14 @@ test("POST /engine/placeStockOrder a partial limit sell order is completed succe
       tx.order_status === "COMPLETED" &&
       tx.quantity === 6 &&
       tx.is_buy === false &&
-      tx.parent_tx_id === null
+      tx.parent_stock_tx_id === null
   );
   expect(rootTx).toBeDefined();
 
   // Check partial transaction
   const partialTx = txResponse.data
     .toSorted((a: any, b: any) => b.time_stamp - a.time_stamp)
-    .findLast((tx: any) => tx.parent_tx_id === rootTx.stock_tx_id);
+    .findLast((tx: any) => tx.parent_stock_tx_id === rootTx.stock_tx_id);
   expect(partialTx).toBeDefined();
   expect(partialTx.quantity).toBe(5);
   expect(partialTx.order_status).toBe("COMPLETED");

@@ -18,13 +18,16 @@ const walletController = {
     const { username } = c.get("user");
     try {
       const userWalletTransactions = await walletService.getUserWalletTransactions(username);
-      const userWalletTransactionsFormatted = userWalletTransactions.map((transaction) => ({
-        wallet_tx_id: transaction.wallet_tx_id,
-        stock_tx_id: transaction.stock_tx_id,
-        is_debit: transaction.is_debit,
-        amount: transaction.amount,
-        time_stamp: transaction.time_stamp.toISOString(),
-      }));
+      const userWalletTransactionsFormatted = userWalletTransactions
+        .map((transaction) => ({
+          wallet_tx_id: transaction.wallet_tx_id,
+          stock_tx_id: transaction.stock_tx_id,
+          is_debit: transaction.is_debit,
+          amount: transaction.amount,
+          time_stamp: transaction.time_stamp.toISOString(),
+        }))
+        .sort((t1, t2) => t1.time_stamp.localeCompare(t2.time_stamp));
+
       return c.json({ success: true, data: userWalletTransactionsFormatted });
     } catch (e) {
       return handleError(c, e, "Failed to get wallet transactions", 400);
@@ -34,7 +37,7 @@ const walletController = {
     const { username } = c.get("user");
     const { amount } = c.req.valid("json");
     try {
-      walletService.addMoneyToWallet(username, amount);
+      await walletService.addMoneyToWallet(username, amount);
       return c.json({ success: true, data: null });
     } catch (e) {
       return handleError(c, e, "Failed to add money to wallet", 400);

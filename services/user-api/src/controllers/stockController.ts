@@ -67,18 +67,20 @@ const stockController = {
     const { username } = c.get("user");
     try {
       const userStockTransactions = await stockService.getUserStockTransactions(username);
-      const userStockTransactionsFormatted = userStockTransactions.map((transaction) => ({
-        stock_tx_id: transaction.stock_tx_id,
-        stock_id: transaction.stock_id,
-        wallet_tx_id: transaction.wallet_tx_id,
-        order_status: transaction.order_status,
-        is_buy: transaction.is_buy,
-        order_type: transaction.order_type,
-        stock_price: transaction.stock_price,
-        quantity: transaction.quantity,
-        parent_tx_id: transaction.parent_tx_id,
-        time_stamp: transaction.time_stamp.toISOString(),
-      }));
+      const userStockTransactionsFormatted = userStockTransactions
+        .map((transaction) => ({
+          stock_tx_id: transaction.stock_tx_id,
+          stock_id: transaction.stock_id,
+          wallet_tx_id: transaction.wallet_tx_id,
+          order_status: transaction.order_status,
+          is_buy: transaction.is_buy,
+          order_type: transaction.order_type,
+          stock_price: transaction.stock_price,
+          quantity: transaction.quantity,
+          parent_stock_tx_id: transaction.parent_tx_id, // HACK: Spec require 'parent_stock_tx_id', so it's been added here but not applied globally yet
+          time_stamp: transaction.time_stamp.toISOString(),
+        }))
+        .sort((t1, t2) => t1.time_stamp.localeCompare(t2.time_stamp));
       return c.json({ success: true, data: userStockTransactionsFormatted });
     } catch (e) {
       return handleError(c, e, "Failed to get stock transactions", 400);

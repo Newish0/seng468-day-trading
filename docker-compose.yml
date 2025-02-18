@@ -39,7 +39,6 @@ services:
     depends_on:
       - redis
       - order
-
   # Redis Database
   redis:
     image: redis/redis-stack:latest
@@ -63,7 +62,6 @@ services:
       - redis
     networks:
       - day-trading-network
-
   # Order Service
   order:
     build:

@@ -26,15 +26,7 @@ const walletController = {
           amount: transaction.amount,
           time_stamp: transaction.time_stamp.toISOString(),
         }))
-        .sort((transaction1, transaction2) => {
-          if (transaction1.time_stamp < transaction2.time_stamp) {
-            return -1;
-          }
-          if (transaction1.time_stamp > transaction2.time_stamp) {
-            return 1;
-          }
-          return 0;
-        });
+        .sort((t1, t2) => t1.time_stamp.localeCompare(t2.time_stamp));
 
       return c.json({ success: true, data: userWalletTransactionsFormatted });
     } catch (e) {

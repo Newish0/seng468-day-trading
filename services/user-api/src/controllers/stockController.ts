@@ -77,18 +77,10 @@ const stockController = {
           order_type: transaction.order_type,
           stock_price: transaction.stock_price,
           quantity: transaction.quantity,
-          parent_stock_tx_id: transaction.parent_tx_id,
+          parent_stock_tx_id: transaction.parent_tx_id, // HACK: Spec require 'parent_stock_tx_id', so it's been added here but not applied globally yet
           time_stamp: transaction.time_stamp.toISOString(),
         }))
-        .sort((transaction1, transaction2) => {
-          if (transaction1.time_stamp < transaction2.time_stamp) {
-            return -1;
-          }
-          if (transaction1.time_stamp > transaction2.time_stamp) {
-            return 1;
-          }
-          return 0;
-        });
+        .sort((t1, t2) => t1.time_stamp.localeCompare(t2.time_stamp));
       return c.json({ success: true, data: userStockTransactionsFormatted });
     } catch (e) {
       return handleError(c, e, "Failed to get stock transactions", 400);

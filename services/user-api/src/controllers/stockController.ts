@@ -34,7 +34,7 @@ const stockController = {
       });
       return c.json({ success: true, data: sortedData });
     } catch (e) {
-      return handleError(c, e, "Failed to get stock prices", 400);
+      return handleError(c, e, "Failed to get stock prices", 500);
     }
   },
   getStockPortfolio: async (c: ContextWithUser) => {
@@ -60,7 +60,7 @@ const stockController = {
         });
       return c.json({ success: true, data: userStocksOwned });
     } catch (e) {
-      return handleError(c, e, "Failed to get stock portfolio", 400);
+      return handleError(c, e, "Failed to get stock portfolio", 500);
     }
   },
   getStockTransactions: async (c: ContextWithUser) => {
@@ -83,7 +83,7 @@ const stockController = {
         .sort((t1, t2) => t1.time_stamp.localeCompare(t2.time_stamp));
       return c.json({ success: true, data: userStockTransactionsFormatted });
     } catch (e) {
-      return handleError(c, e, "Failed to get stock transactions", 400);
+      return handleError(c, e, "Failed to get stock transactions", 500);
     }
   },
 };

@@ -22,6 +22,6 @@ export const jwtAuthorize = async (c: Context, next: Next) => {
 
     return await next();
   } catch (error) {
-    return handleError(c, error, "An unknown error has occured with token authorization", 500);
+    return handleError(c, error, "An unknown error has occured with token authorization");
   }
 };

@@ -20,7 +20,7 @@ const controller = {
       await service.register(user_name, password, name);
       return c.json({ success: true, data: null });
     } catch (error) {
-      return handleError(c, error, "An unknown error has occured with registration", 500);
+      return handleError(c, error, "An unknown error has occured with registration");
     }
   },
 
@@ -40,7 +40,7 @@ const controller = {
       const token = await service.login(user_name, password);
       return c.json({ success: true, data: token });
     } catch (error) {
-      return handleError(c, error, "An unknown error has occured with login", 500);
+      return handleError(c, error, "An unknown error has occured with login");
     }
   },
 };

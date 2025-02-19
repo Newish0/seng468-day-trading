@@ -11,7 +11,7 @@ const walletController = {
       const user = await userService.getUserFromId(username);
       return c.json({ success: true, data: { balance: user.wallet_balance } });
     } catch (e) {
-      return handleError(c, e, "Failed to get wallet balance", 400);
+      return handleError(c, e, "Failed to get wallet balance", 500);
     }
   },
   getWalletTransactions: async (c: ContextWithUser) => {
@@ -30,7 +30,7 @@ const walletController = {
 
       return c.json({ success: true, data: userWalletTransactionsFormatted });
     } catch (e) {
-      return handleError(c, e, "Failed to get wallet transactions", 400);
+      return handleError(c, e, "Failed to get wallet transactions", 500);
     }
   },
   addMoneyToWallet: async (c: ContextWithUser<WrappedInput<AddMoneyToWalletRequest>>) => {
@@ -40,7 +40,7 @@ const walletController = {
       await walletService.addMoneyToWallet(username, amount);
       return c.json({ success: true, data: null });
     } catch (e) {
-      return handleError(c, e, "Failed to add money to wallet", 400);
+      return handleError(c, e, "Failed to add money to wallet", 500);
     }
   },
 };

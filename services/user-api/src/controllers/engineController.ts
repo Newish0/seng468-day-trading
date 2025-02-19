@@ -26,7 +26,7 @@ const engineController = {
           c,
           new Error("Only market buy orders are supported"),
           "Invalid order type",
-          422
+          400
         );
       }
       const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
@@ -47,7 +47,7 @@ const engineController = {
           c,
           new Error("Only limit sell orders are supported"),
           "Invalid order type",
-          422
+          400
         );
       }
       const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({

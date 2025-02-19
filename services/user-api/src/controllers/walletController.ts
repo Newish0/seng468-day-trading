@@ -40,7 +40,7 @@ const walletController = {
       await walletService.addMoneyToWallet(username, amount);
       return c.json({ success: true, data: null });
     } catch (e) {
-      return handleError(c, e, "Failed to add money to wallet", 500);
+      return handleError(c, e, "Failed to add money to wallet", 400);
     }
   },
 };

@@ -3,7 +3,7 @@
     GetWalletBalanceRequest,
     GetWalletBalanceResponse,
   } from "shared-types/dtos/user-api/transaction/getWalletBalance";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import AddMoneyModal from "./../AddMoneyModal/AddMoneyModal.svelte";
@@ -20,7 +20,7 @@
   });
 
   const getBalance = async () => {
-    const response = await makeInternalRequest<GetWalletBalanceRequest, GetWalletBalanceResponse>({
+    const response = await makeBackendRequest<GetWalletBalanceRequest, GetWalletBalanceResponse>({
       headers: $authHeader,
       body: undefined,
     })("userApi", "getWalletBalance");
@@ -30,7 +30,7 @@
       return 0;
     }
 
-    return response.data.data.balance;
+    return response.data.balance;
   };
 </script>
 

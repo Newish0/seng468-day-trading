@@ -30,8 +30,8 @@
     <StockPortfolio />
     <StockTransactions />
     <Stocks />
-    <Toast />
   {/if}
+  <Toast />
 
   <div class="absolute top-2 right-2 !flex !items-center !gap-2">
     <ThemeToggle />

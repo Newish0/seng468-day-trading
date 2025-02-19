@@ -3,9 +3,9 @@
     type AddMoneyToWalletRequest,
     type AddMoneyToWalletResponse,
   } from "shared-types/dtos/user-api/transaction/addMoneyToWallet";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
 
   let modal: HTMLDialogElement;
   let amount: number = 0;
@@ -17,7 +17,7 @@
 
   const handleAddMoney = async () => {
     loading = true;
-    const response = await makeInternalRequest<AddMoneyToWalletRequest, AddMoneyToWalletResponse>({
+    const response = await makeBackendRequest<AddMoneyToWalletRequest, AddMoneyToWalletResponse>({
       headers: $authHeader,
       body: {
         amount,
@@ -26,12 +26,14 @@
 
     if (!response.success) {
       addToast({ message: `Failed to add $${amount} to wallet`, type: TOAST_TYPES.ERROR });
-    } else {
-      addToast({ message: `Successfully added $${amount} to wallet`, type: TOAST_TYPES.SUCCESS });
+      loading = false;
+      return;
     }
+
     amount = 0;
     loading = false;
     modal.close();
+    window.location.reload();
   };
 </script>
 

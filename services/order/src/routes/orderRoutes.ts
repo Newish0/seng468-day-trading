@@ -1,5 +1,5 @@
-import { Hono } from "hono";
 import controller from "@/controllers/orderController";
+import { Hono } from "hono";
 
 const orderRoutes = new Hono();
 
@@ -7,7 +7,7 @@ const orderRoutes = new Hono();
 orderRoutes.post("/placeLimitSell", controller.placeLimitSell);
 orderRoutes.post("/placeMarketBuy", controller.placeMarketBuy);
 
-orderRoutes.post("/getStockPrices", controller.getStockPrices);
+orderRoutes.get("/getStockPrices", controller.getStockPrices);
 orderRoutes.post("/cancelStockTransaction", controller.cancelStockTransaction);
 
 // API requests from matching engine

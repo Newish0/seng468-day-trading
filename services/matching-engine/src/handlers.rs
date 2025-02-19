@@ -6,8 +6,9 @@ use tokio::sync::RwLock;
 use crate::{
     matching_pq::SellOrder,
     models::{
-        LimitSellCancelData, LimitSellCancelResponse, LimitSellRequest, LimitSellResponse,
-        MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice, StockPricesResponse,
+        LimitSellCancelData, LimitSellCancelRequest, LimitSellCancelResponse, LimitSellRequest,
+        LimitSellResponse, MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice,
+        StockPricesResponse,
     },
     order_service::{self, OrderService, OrderServiceConfig, OrderUpdate},
     state::AppState,
@@ -171,7 +172,7 @@ pub async fn market_buy(
 
         // Get the base url from the environment variable, with a default if not found
         let base_url =
-            env::var("ORDER_SERVICE_URL").unwrap_or_else(|_| "http://order:3000".to_string());
+            env::var("ORDER_SERVICE_HOST").unwrap_or_else(|_| "http://order:3000".to_string());
 
         // DEBUG: Output the request to order service
         #[cfg(debug_assertions)]
@@ -231,7 +232,7 @@ pub async fn limit_sell(
 
 pub async fn cancel_limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
-    Json(payload): Json<LimitSellRequest>,
+    Json(payload): Json<LimitSellCancelRequest>,
 ) -> Json<LimitSellCancelResponse> {
     let some_sell_order = {
         let mut state = state.write().await;

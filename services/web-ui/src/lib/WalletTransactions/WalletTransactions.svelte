@@ -4,7 +4,7 @@
     type GetWalletTransactionsResponse,
   } from "shared-types/dtos/user-api/transaction/getWalletTransactions";
   import type { WalletTransaction } from "shared-types/transactions";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import { authHeader } from "../Auth/auth";
@@ -12,7 +12,7 @@
   let transactions: WalletTransaction[];
 
   const getWalletTransactions = async () => {
-    const response = await makeInternalRequest<
+    const response = await makeBackendRequest<
       GetWalletTransactionsRequest,
       GetWalletTransactionsResponse
     >({
@@ -25,7 +25,7 @@
       return [];
     }
 
-    return response.data.data;
+    return response.data;
   };
 
   onMount(() => {

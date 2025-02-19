@@ -44,6 +44,9 @@
             "name": "services/web-ui",
             "path": "../services/web-ui"
         },
+        {
+            "path": "../services/order"
+        }
     ],
     "settings": {
         "files.exclude": {

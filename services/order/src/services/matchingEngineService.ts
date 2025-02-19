@@ -1,7 +1,9 @@
 import type {
+  CancelSellRequest,
+  CancelSellRequestResponse,
   LimitSellOrderRequest,
   MarketBuyRequest,
-  CancelSellRequest,
+  StockPricesResponse,
 } from "shared-types/dtos/order-service/orderRequests";
 
 interface RetryConfig {
@@ -125,9 +127,9 @@ export class MatchingEngineService {
   /**
    * Fetches current stock prices from the matching engine.
    */
-  async getStockPrices() {
+  async getStockPrices(): Promise<StockPricesResponse[]> {
     return this.withRetry(async () => {
-      const response = await fetch(`${this.baseUrl}/getStockPrices`);
+      const response = await fetch(`${this.baseUrl}/stockPrices`);
 
       if (!response.ok) {
         const error = new Error(`HTTP error! status: ${response.status}`);
@@ -135,7 +137,13 @@ export class MatchingEngineService {
         throw error;
       }
 
-      return await response.json();
+      const json: { success: boolean; data: StockPricesResponse[] } = await response.json();
+
+      if (!json.success) {
+        throw new Error("Failed to fetch stock prices");
+      }
+
+      return json.data;
     });
   }
 
@@ -156,7 +164,9 @@ export class MatchingEngineService {
         throw error;
       }
 
-      return response;
+      const json: CancelSellRequestResponse = await response.json();
+
+      return json.data!; // Must have data if not error
     });
   }
 }

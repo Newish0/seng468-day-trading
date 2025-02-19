@@ -13,6 +13,7 @@ import type {
 import type { PlaceStockOrderRequest } from "shared-types/dtos/user-api/engine/placeStockOrder";
 import type { ContextWithUser, WrappedInput } from "shared-types/hono";
 import { ORDER_TYPE } from "shared-types/transactions";
+import { handleError } from "shared-utils";
 import { makeInternalRequest } from "shared-utils/internalCommunication";
 
 const engineController = {
@@ -21,7 +22,33 @@ const engineController = {
     const { stock_id, is_buy: isBuy, order_type: orderType, quantity, price } = c.req.valid("json");
     if (isBuy) {
       if (orderType !== ORDER_TYPE.MARKET) {
-        return c.json({ success: false, data: null }, 422);
+        return handleError(
+          c,
+          new Error("Only market buy orders are supported"),
+          "Invalid order type",
+          422
+        );
+      }
+      const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
+        body: {
+          stock_id,
+          quantity,
+          user_name,
+        },
+      })("orderService", "placeMarketBuy");
+      if (response.success) {
+        return c.json({ success: true, data: null });
+      } else {
+        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
+      }
+    } else {
+      if (orderType !== ORDER_TYPE.LIMIT) {
+        return handleError(
+          c,
+          new Error("Only limit sell orders are supported"),
+          "Invalid order type",
+          422
+        );
       }
       const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({
         body: {
@@ -34,23 +61,7 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return c.json({ success: false, data: null }, 400);
-      }
-    } else {
-      if (orderType !== ORDER_TYPE.LIMIT) {
-        return c.json({ success: false, data: null }, 422);
-      }
-      const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
-        body: {
-          stock_id,
-          quantity,
-          user_name,
-        },
-      })("orderService", "placeMarketBuy");
-      if (response.success) {
-        return c.json({ success: true, data: null });
-      } else {
-        return c.json({ success: false, data: null }, 400);
+        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
       }
     }
   },
@@ -62,12 +73,13 @@ const engineController = {
       CancelStockTransactionRequest,
       CancelStockTransactionResponse
     >({
-      body: { stock_tx_id },
+      body: { stock_tx_id, user_name: c.get("user").username },
     })("orderService", "cancelStockTransaction");
+
     if (response.success) {
       return c.json({ success: true, data: null });
     } else {
-      return c.json({ success: false, data: null }, 400);
+      return handleError(c, new Error("Failed to cancel order"), "Failed to cancel order", 400);
     }
   },
 };

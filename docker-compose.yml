@@ -1,0 +1,101 @@
+# To run docker compose: `docker-compose up --build`
+
+networks:
+  day-trading-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+
+
+services:
+  # Frontend and reverse proxy api gateway
+  gateway:
+    build:
+      context: . # Need the entire services folder as context to copy from web-ui
+      dockerfile: ./services/gateway/Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - user-api
+      - auth
+    networks:
+      - day-trading-network
+
+  # User API
+  user-api:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/user-api/Dockerfile
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - ORDER_SERVICE_HOST=http://order:3002
+    container_name: user-api
+    networks:
+      - day-trading-network
+    ports:
+      - "3000"
+    depends_on:
+      order:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  # Redis Database
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    networks:
+      - day-trading-network
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Auth Service
+  auth:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/auth/Dockerfile
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+  # Order Service
+  order:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/order/Dockerfile
+    environment:
+      - PORT=3002
+      - MATCHING_ENGINE_HOST=http://matching-engine:3003
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      matching-engine:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+
+  # Matching Engine (Rust)
+  matching-engine:
+    build:
+      context: ./services/matching-engine
+      dockerfile: Dockerfile
+    environment:
+      - PORT=3003
+      - ORDER_SERVICE_HOST=http://order:3002
+    networks:
+      - day-trading-network

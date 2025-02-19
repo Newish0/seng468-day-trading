@@ -4,7 +4,7 @@
     type GetStockPricesResponse,
   } from "shared-types/dtos/user-api/transaction/getStockPrices";
   import type { AvailableStock } from "shared-types/stocks";
-  import { makeInternalRequest } from "shared-utils/internalCommunication";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
   import { addToast, TOAST_TYPES } from "../Toast/toastStore";
   import BuyStockModal from "./../BuyStockModal/BuyStockModal.svelte";
@@ -13,7 +13,7 @@
   let stocks: AvailableStock[];
 
   const getStocks = async () => {
-    const response = await makeInternalRequest<GetStockPricesRequest, GetStockPricesResponse>({
+    const response = await makeBackendRequest<GetStockPricesRequest, GetStockPricesResponse>({
       headers: $authHeader,
       body: undefined,
     })("userApi", "getStockPrices");
@@ -23,7 +23,7 @@
       return [];
     }
 
-    return response.data.data;
+    return response.data;
   };
 
   onMount(() => {

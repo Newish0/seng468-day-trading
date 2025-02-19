@@ -14,7 +14,7 @@ class RedisInstance {
    *
    * @param redisUrl - Optional argument to connect to a differnt Redis server
    */
-  constructor(redisUrl: string = "redis://localhost:6379") {
+  constructor(redisUrl: string = process.env.REDIS_URL || "redis://localhost:6379") {
     this.redisClient = createClient({ url: redisUrl });
   }
 

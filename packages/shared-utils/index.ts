@@ -1,15 +1,13 @@
-import { validator } from "hono/validator";
 import { type Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { validator } from "hono/validator";
 
 export function getValidator(fn: (value: any) => boolean) {
   return validator("json", (value, c) => {
     if (!fn(value)) {
-      return c.json({ success: false, data: null }, 400);
+      return handleError(c, new Error("Invalid request body"), "Invalid request body", 400);
     }
-    return {
-      body: value,
-    };
+    return value;
   });
 }
 

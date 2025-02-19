@@ -13,7 +13,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "hono": "^4.6.18",
+    "hono": "4.6.19",
     "redis": "^4.7.0",
     "redis-om": "^0.4.7",
     "shared-models": "workspace:*",

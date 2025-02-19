@@ -1,5 +1,6 @@
 import { type Context, type Next } from "hono";
 import { verify } from "hono/jwt";
+import { handleError } from ".";
 
 // JWT Middleware
 export const jwtAuthorize = async (c: Context, next: Next) => {
@@ -21,6 +22,6 @@ export const jwtAuthorize = async (c: Context, next: Next) => {
 
     return await next();
   } catch (error) {
-    return c.json({ success: false, data: { error: "Invalid token" } }, 401);
+    return handleError(c, error, "An unknown error has occured with token authorization", 500);
   }
 };

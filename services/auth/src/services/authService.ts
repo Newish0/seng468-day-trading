@@ -1,5 +1,4 @@
 import { sign } from "hono/jwt";
-import bcrypt from "bcrypt";
 import { userSchema, type User } from "shared-models/redisSchema";
 import { RedisInstance } from "shared-models/RedisInstance";
 import { Repository } from "redis-om";

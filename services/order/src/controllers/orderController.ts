@@ -7,7 +7,12 @@ const controller = {
     const { stock_id, quantity, price, user_name } = await c.req.json();
 
     if (!stock_id || !quantity || !price || !user_name) {
-      return c.json({ success: false, data: { error: "Missing required parameters" } }, 400);
+      return handleError(
+        c,
+        new Error("Invalid request body: Missing required parameters for limit sell"),
+        "Missing required parameters for limit sell",
+        400
+      );
     }
 
     try {
@@ -32,8 +37,6 @@ const controller = {
   getStockPrices: async (c: Context) => {
     try {
       const data = await service.getStockPrices();
-
-      // REVIEW: lexiographic ordering of stocks?
       return c.json({ success: true, data }, 200);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred while fetching stock prices");
@@ -44,14 +47,19 @@ const controller = {
     const { stock_tx_id, user_name } = await c.req.json();
 
     if (!stock_tx_id) {
-      return c.json({ success: false, data: { error: "Missing stock_tx_id" } }, 400);
+      return handleError(
+        c,
+        new Error("Invalid request body: Missing stock_tx_id"),
+        "Missing stock_tx_id",
+        400
+      );
     }
 
     try {
       await service.cancelStockTransaction(stock_tx_id, user_name);
       return c.json({ success: true, data: null }, 200);
     } catch (error) {
-      return handleError(c, error, "An unknown error has occurred while canceling transaction");
+      return handleError(c, error, "An unknown error has occurred while cancelling transaction");
     }
   },
 

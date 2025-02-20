@@ -1,25 +1,18 @@
-FROM rust:1.75-slim-bookworm as builder
+FROM rust:latest as builder
+WORKDIR /usr/src/matching-engine
 
-WORKDIR /usr/src/app
-
-# Copy the source code
 COPY . .
+RUN cargo install --path .
 
-# Build the application
-RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-WORKDIR /usr/src/app
+# Install OpenSSL and CA certificates because package `reqwest` needs them
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     openssl \
+#     ca-certificates \
+#     && rm -rf /var/lib/apt/lists/*
 
-# Copy the binary from builder
-COPY --from=builder /usr/src/app/target/release/matching-engine .
-
-# Set environment variables
-ENV RABBITMQ_HOST=rabbitmq
-ENV RABBITMQ_PORT=5672
-ENV RABBITMQ_USERNAME=guest
-ENV RABBITMQ_PASSWORD=guest
-
-# Run the binary
-CMD ["./matching-engine"]
+COPY --from=builder /usr/local/cargo/bin/matching-engine /usr/local/bin/matching-engine
+EXPOSE 3000
+CMD ["matching-engine"]

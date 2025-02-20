@@ -1,3 +1,4 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   type PlaceLimitSellRequest,
   type PlaceLimitSellResponse,
@@ -39,7 +40,12 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
+        return handleError(
+          c,
+          new Error("Failed to place order"),
+          "Failed to place order",
+          response.status == 400 ? 400 : 500
+        );
       }
     } else {
       if (orderType !== ORDER_TYPE.LIMIT) {
@@ -61,7 +67,12 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return handleError(c, new Error("Failed to place order"), "Failed to place order", 500);
+        return handleError(
+          c,
+          new Error("Failed to place order"),
+          "Failed to place order",
+          response.status == 400 ? 400 : 500
+        );
       }
     }
   },
@@ -79,7 +90,12 @@ const engineController = {
     if (response.success) {
       return c.json({ success: true, data: null });
     } else {
-      return handleError(c, new Error("Failed to cancel order"), "Failed to cancel order", 500);
+      return handleError(
+        c,
+        new Error("Failed to cancel order"),
+        "Failed to cancel order",
+        response.status == 400 ? 400 : 500
+      );
     }
   },
 };

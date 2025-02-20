@@ -22,6 +22,11 @@ pub struct OrderConsumer {
     rabbitmq_client: Arc<RabbitMQClient>,
 }
 
+struct MarketBuyResult {
+    market_buy_response: MarketBuyResponse,
+    order_updates: Option<Vec<OrderUpdate>>,
+}
+
 impl OrderConsumer {
     pub fn new(state: Arc<RwLock<AppState>>, client: Arc<RabbitMQClient>) -> Self {
         Self {
@@ -34,7 +39,7 @@ impl OrderConsumer {
         self.rabbitmq_client.setup_consumer(self.clone()).await
     }
 
-    async fn process_market_buy(&self, request: MarketBuyRequest) {
+    async fn process_market_buy(&self, request: MarketBuyRequest) -> MarketBuyResult {
         // Need to have lock the entire time to ensure no other sell occurs
         // between ensuring we have enough shares and the actual buy/sell process.
         let mut state = self.state.write().await;
@@ -51,17 +56,13 @@ impl OrderConsumer {
         // Check available shares
         let mut shares_to_buy = request.quantity;
         if shares_to_buy > available_shares {
-            let response = MarketBuyResponse {
-                success: false,
-                data: None,
+            return MarketBuyResult {
+                market_buy_response: MarketBuyResponse {
+                    success: false,
+                    data: None,
+                },
+                order_updates: None,
             };
-
-            // Publish buy completion event (as failure)
-            if let Err(e) = self.rabbitmq_client.publish_buy_completed(&response).await {
-                eprintln!("Failed to publish buy completion event: {}", e);
-            }
-
-            return;
         }
 
         // Dry-run: Clone the priority queue to calculate total cost without modifying state
@@ -72,17 +73,13 @@ impl OrderConsumer {
             .get_stock_queue(&request.stock_id)
             .cloned()
         else {
-            let response = MarketBuyResponse {
-                success: false,
-                data: None,
+            return MarketBuyResult {
+                market_buy_response: MarketBuyResponse {
+                    success: false,
+                    data: None,
+                },
+                order_updates: None,
             };
-
-            // Publish buy completion event (as failure)
-            if let Err(e) = self.rabbitmq_client.publish_buy_completed(&response).await {
-                eprintln!("Failed to publish buy completion event: {}", e);
-            }
-
-            return;
         };
 
         let mut cloned_queue = original_queue;
@@ -107,27 +104,24 @@ impl OrderConsumer {
 
         // Budget validation
         if total_price_dry > request.budget {
-            let response = MarketBuyResponse {
-                success: false,
-                data: None,
+            return MarketBuyResult {
+                market_buy_response: MarketBuyResponse {
+                    success: false,
+                    data: None,
+                },
+                order_updates: None,
             };
-
-            // Publish buy completion event (as failure)
-            if let Err(e) = self.rabbitmq_client.publish_buy_completed(&response).await {
-                eprintln!("Failed to publish buy completion event: {}", e);
-            }
-
-            return;
         }
 
         // Proceed with actual purchase processing
         let mut total_price = 0.0;
         let mut shares_bought = 0;
+        let mut order_updates: Vec<OrderUpdate> = Vec::new();
         while shares_to_buy > 0 {
             // Assume the sell order always exist due to the above shares quantity check.
-            // If it somehow fails, we will break out early
+            // If it somehow fails, we will break out early. But it is a critical issue at this point.
             let Some(mut top_sell_order) = state.matching_pq.pop(&request.stock_id) else {
-                eprintln!("Should not get here.");
+                eprintln!("Performing actual buy when there isn't enough valid shares to buy; should not get here.");
                 break;
             };
 
@@ -139,7 +133,7 @@ impl OrderConsumer {
             let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
 
             // Complete the top sell order or perform partial sell on the top sell order
-            let order_update = if purchase_all {
+            if purchase_all {
                 total_price += top_sell_order.cur_quantity as f64 * top_sell_order.price;
                 shares_bought += top_sell_order.cur_quantity;
                 shares_to_buy -= top_sell_order.cur_quantity;
@@ -147,14 +141,14 @@ impl OrderConsumer {
                 let sold_qty = top_sell_order.cur_quantity;
                 top_sell_order.cur_quantity = 0;
 
-                OrderUpdate {
+                order_updates.push(OrderUpdate {
                     stock_id: top_sell_order.stock_id.clone(),
                     price: top_sell_order.price,
                     remaining_quantity: top_sell_order.cur_quantity,
                     sold_quantity: sold_qty,
                     stock_tx_id: top_sell_order.stock_tx_id.clone(),
                     user_name: top_sell_order.user_name.clone(),
-                }
+                });
             } else {
                 total_price += shares_to_buy as f64 * top_sell_order.price;
                 shares_bought += shares_to_buy;
@@ -165,29 +159,18 @@ impl OrderConsumer {
                 let sold_qty = shares_to_buy;
                 shares_to_buy = 0;
 
-                let update = OrderUpdate {
+                order_updates.push(OrderUpdate {
                     stock_id: top_sell_order.stock_id.clone(),
                     price: top_sell_order.price,
                     remaining_quantity: top_sell_order.cur_quantity,
                     sold_quantity: sold_qty,
                     stock_tx_id: top_sell_order.stock_tx_id.clone(),
                     user_name: top_sell_order.user_name.clone(),
-                };
+                });
 
                 // Reinsert the sell order back into the PQ since it is a partial sell
                 state.matching_pq.insert(top_sell_order);
-
-                update
             };
-
-            // Publish the order update
-            if let Err(e) = self
-                .rabbitmq_client
-                .publish_sale_update(&order_update)
-                .await
-            {
-                eprintln!("Failed to publish order update: {}", e);
-            }
         }
 
         let response = MarketBuyResponse {
@@ -200,10 +183,10 @@ impl OrderConsumer {
             }),
         };
 
-        // Publish buy completion event
-        if let Err(e) = self.rabbitmq_client.publish_buy_completed(&response).await {
-            eprintln!("Failed to publish buy completion event: {}", e);
-        }
+        return MarketBuyResult {
+            market_buy_response: response,
+            order_updates: Some(order_updates),
+        };
     }
 }
 
@@ -230,7 +213,30 @@ impl AsyncConsumer for OrderConsumer {
         match routing_key.as_str() {
             "order.market_buy" => {
                 if let Ok(request) = serde_json::from_slice::<MarketBuyRequest>(&content) {
-                    self.process_market_buy(request).await;
+                    let buy_result = self.process_market_buy(request).await;
+
+                    // Publish buy completion event (as failure or success)
+                    if let Err(e) = self
+                        .rabbitmq_client
+                        .publish_buy_completed(&buy_result.market_buy_response)
+                        .await
+                    {
+                        eprintln!("Failed to publish buy completion event: {}", e);
+                    }
+
+                    // Publish all order updates
+                    match buy_result.order_updates {
+                        Some(order_updates) => {
+                            for order in order_updates {
+                                if let Err(e) =
+                                    self.rabbitmq_client.publish_sale_update(&order).await
+                                {
+                                    eprintln!("Failed to publish order update: {}", e);
+                                }
+                            }
+                        }
+                        None => { /* do nothing */ }
+                    }
                 }
             }
             "order.limit_sell" => {

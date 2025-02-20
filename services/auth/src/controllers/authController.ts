@@ -5,7 +5,7 @@ import { handleError } from "shared-utils";
 
 const controller = {
   register: async (c: Context) => {
-    const { user_name, password, name }: RegisterRequest = await c.req.json();
+    const { user_name, password, name }: Partial<RegisterRequest> = await c.req.json();
 
     if (!user_name || !password || !name) {
       return handleError(
@@ -25,7 +25,7 @@ const controller = {
   },
 
   login: async (c: Context) => {
-    const { user_name, password }: LoginRequest = await c.req.json();
+    const { user_name, password }: Partial<LoginRequest> = await c.req.json();
 
     if (!user_name || !password) {
       return handleError(
@@ -40,7 +40,7 @@ const controller = {
       const token = await service.login(user_name, password);
       return c.json({ success: true, data: token });
     } catch (error) {
-      return handleError(c, error, "An unknown error has occured with login");
+      return handleError(c, error, "Incorrect username and/or password", 400);
     }
   },
 };

@@ -61,7 +61,7 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
+        return handleError(c, new Error("Failed to place order"), "Failed to place order", 500);
       }
     }
   },
@@ -79,7 +79,7 @@ const engineController = {
     if (response.success) {
       return c.json({ success: true, data: null });
     } else {
-      return handleError(c, new Error("Failed to cancel order"), "Failed to cancel order", 400);
+      return handleError(c, new Error("Failed to cancel order"), "Failed to cancel order", 500);
     }
   },
 };

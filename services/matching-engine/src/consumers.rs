@@ -22,6 +22,7 @@ pub struct OrderConsumer {
     rabbitmq_client: Arc<RabbitMQClient>,
 }
 
+#[derive(Debug)]
 struct MarketBuyResult {
     market_buy_response: MarketBuyResponse,
     order_updates: Option<Vec<OrderUpdate>>,
@@ -39,6 +40,7 @@ impl OrderConsumer {
         self.rabbitmq_client.setup_consumer(self.clone()).await
     }
 
+    /// Helper for performing market buy
     async fn process_market_buy(&self, request: MarketBuyRequest) -> MarketBuyResult {
         // Need to have lock the entire time to ensure no other sell occurs
         // between ensuring we have enough shares and the actual buy/sell process.

@@ -1,35 +1,35 @@
 use serde::{Deserialize, Serialize};
 
 // Stock prices types
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct StockPrice {
     pub stock_id: String,
     pub current_price: f64,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct StockPricesResponse {
     pub success: bool,
     pub data: Option<Vec<StockPrice>>,
 }
 
 // Market buy types
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct MarketBuyRequest {
     pub stock_id: String,
     pub quantity: u32,
     pub stock_tx_id: String,
     pub budget: f64,
-    pub user_name: String, 
+    pub user_name: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct MarketBuyResponse {
     pub success: bool,
     pub data: Option<MarketBuyData>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct MarketBuyData {
     pub stock_id: String,
     pub stock_tx_id: String,
@@ -38,13 +38,13 @@ pub struct MarketBuyData {
 }
 
 // Limit sell types
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct LimitSellRequest {
     pub stock_id: String,
     pub quantity: u32,
     pub price: f64,
     pub stock_tx_id: String,
-    pub user_name: String, 
+    pub user_name: String,
 }
 #[derive(Deserialize, Debug)]
 pub struct LimitSellCancelRequest {
@@ -54,18 +54,18 @@ pub struct LimitSellCancelRequest {
     pub stock_tx_id: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct LimitSellResponse {
     pub success: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct LimitSellCancelResponse {
     pub success: bool,
     pub data: Option<LimitSellCancelData>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct LimitSellCancelData {
     pub stock_id: String,
     pub stock_tx_id: String,

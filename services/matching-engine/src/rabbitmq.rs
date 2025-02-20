@@ -31,6 +31,7 @@ impl Default for RabbitMQConfig {
 }
 
 pub struct RabbitMQClient {
+    _connection: Connection,  // Keep connection alive
     channel: Arc<Channel>,
 }
 
@@ -78,6 +79,7 @@ impl RabbitMQClient {
         channel.exchange_declare(stock_prices_exchange_args).await?;
 
         Ok(Self {
+            _connection: connection,  // Store connection
             channel: Arc::new(channel),
         })
     }

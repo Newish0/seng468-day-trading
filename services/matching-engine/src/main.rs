@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Initialize RabbitMQ client
     let rabbitmq_config = RabbitMQConfig {
-        host: env::var("RABBITMQ_HOST").unwrap_or_else(|_| "rabbitmq".to_string()),
+        host: env::var("RABBITMQ_HOST").unwrap_or_else(|_| "localhost".to_string()),
         port: env::var("RABBITMQ_PORT")
             .unwrap_or_else(|_| "5672".to_string())
             .parse()

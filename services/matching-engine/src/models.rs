@@ -75,3 +75,13 @@ pub struct LimitSellCancelData {
     pub sold_quantity: u32,
     pub price: f64,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OrderUpdate {
+    pub stock_id: String,
+    pub sold_quantity: u32,
+    pub remaining_quantity: u32,
+    pub price: f64,
+    pub stock_tx_id: String,
+    pub user_name: String,
+}

@@ -55,6 +55,8 @@ End to end test script uses Bun's built-in test runner (bun:test).
    docker-compose up --build
    ```
 
+After running this, the frontend will be accessible at http://localhost:8080/, and you will also be able to communicate with the backend at http://localhost:8080/
+
 2. Run the tests
 
    To run all the tests:

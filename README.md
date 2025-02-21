@@ -33,7 +33,7 @@ From the root of the project, run the docker compose
 docker-compose up --build
 ```
 
-After running this, the frontend will be accessible at http://localhost:8080/, and you will also be able to communicate with the backend at http://localhost:8080/
+After running this, the frontend will be accessible at http://localhost:8080/, and you will also be able to communicate with the API at http://localhost:8080/
 
 
 

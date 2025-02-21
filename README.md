@@ -25,6 +25,18 @@ seng468-day-trading/
 
 > NOTE: Please do not directly install packages to the root Typescript project. The root `package.json` is only for managing the different workspaces.
 
+## Quick Start
+
+From the root of the project, run the docker compose 
+
+```
+docker-compose up --build
+```
+
+After running this, the frontend will be accessible at http://localhost:8080/, and you will also be able to communicate with the backend at http://localhost:8080/
+
+
+
 ## Workspaces breakdown
 
 This outlines how to use workspaces.
@@ -49,13 +61,11 @@ This outlines how to use workspaces.
 
 End to end test script uses Bun's built-in test runner (bun:test).
 
-1. First run docker compose
+1. First run docker compose (if it's not already running)
 
    ```
    docker-compose up --build
    ```
-
-After running this, the frontend will be accessible at http://localhost:8080/, and you will also be able to communicate with the backend at http://localhost:8080/
 
 2. Run the tests
 

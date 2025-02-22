@@ -31,7 +31,7 @@ impl Default for RabbitMQConfig {
 }
 
 pub struct RabbitMQClient {
-    _connection: Connection,  // Keep connection alive
+    _connection: Connection, // Keep connection alive
     channel: Arc<Channel>,
 }
 
@@ -66,7 +66,7 @@ impl RabbitMQClient {
 
         // Exchange for sending order updates
         let order_update_exchange_args =
-            ExchangeDeclareArguments::new("order_update_exchange", "topic") // HACK: reconsider exchange type
+            ExchangeDeclareArguments::new("order_update_exchange", "direct")
                 .durable(true)
                 .finish();
         channel.exchange_declare(order_update_exchange_args).await?;
@@ -79,7 +79,7 @@ impl RabbitMQClient {
         channel.exchange_declare(stock_prices_exchange_args).await?;
 
         Ok(Self {
-            _connection: connection,  // Store connection
+            _connection: connection, // Store connection
             channel: Arc::new(channel),
         })
     }
@@ -198,14 +198,18 @@ impl RabbitMQClient {
     async fn publish_order_update(
         &self,
         order_type: &str,
-        payload: &serde_json::Value,
+        payload: &impl serde::Serialize,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let routing_key = format!("order.{}", order_type);
-        let args = BasicPublishArguments::new("order_update_exchange", &routing_key);
+        let args = BasicPublishArguments::new("order_update_exchange", &routing_key)
+            .mandatory(true) // Ensure messages are routed
+            .finish();
 
         self.channel
             .basic_publish(
-                BasicProperties::default(),
+                BasicProperties::default()
+                    .with_delivery_mode(2) // Make message persistent
+                    .finish(),
                 serde_json::to_vec(payload)?,
                 args,
             )

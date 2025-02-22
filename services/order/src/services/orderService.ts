@@ -13,7 +13,7 @@ import { publishToQueue } from "./rabbitMqService";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
-const CANCEL_SELL_ROUTING_KEY = "order.market_buy";
+const CANCEL_SELL_ROUTING_KEY = "order.limit_sell_cancellation";
 
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();

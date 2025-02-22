@@ -1,5 +1,5 @@
 import { createAddQtyToOwnedStock } from "@/utils/portfolio";
-import { type InferSchema, Repository } from "redis-om";
+import { Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import {
   ownedStockSchema,

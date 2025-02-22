@@ -9,16 +9,11 @@ import type {
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
-import { MatchingEngineService } from "./matchingEngineService";
 import { publishToQueue } from "./rabbitMqService";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
 const CANCELL_SELL_ROUTING_KEY = "order.market_buy";
-
-const matEngSvc = new MatchingEngineService(
-  Bun.env.MATCHING_ENGINE_HOST || "http://matching-engine:3000"
-);
 
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();

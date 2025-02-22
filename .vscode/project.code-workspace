@@ -46,9 +46,6 @@
         },
         {
             "path": "../services/order"
-        },
-        {
-            "path": "../services/order-initiation"
         }
     ],
     "settings": {

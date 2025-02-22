@@ -34,15 +34,6 @@ const controller = {
     }
   },
 
-  getStockPrices: async (c: Context) => {
-    try {
-      const data = await service.getStockPrices();
-      return c.json({ success: true, data }, 200);
-    } catch (error) {
-      return handleError(c, error, "An unknown error has occurred while fetching stock prices");
-    }
-  },
-
   cancelStockTransaction: async (c: Context) => {
     const { stock_tx_id, user_name } = await c.req.json();
 
@@ -60,26 +51,6 @@ const controller = {
       return c.json({ success: true, data: null }, 200);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred while cancelling transaction");
-    }
-  },
-
-  //  Handle sell updates sent by the Matching Engine
-  updateSale: async (c: Context) => {
-    const { stock_id, sold_quantity, remaining_quantity, price, stock_tx_id, user_name } =
-      await c.req.json();
-
-    try {
-      await service.updateSale(
-        stock_id,
-        sold_quantity,
-        remaining_quantity,
-        price,
-        stock_tx_id,
-        user_name
-      );
-      return c.json({ success: true });
-    } catch (error) {
-      return handleError(c, error, "An error occurred while completing sell");
     }
   },
 };

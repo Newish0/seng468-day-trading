@@ -1,23 +1,11 @@
 import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
-import type {
-  Stock,
-  StockOwned,
-  StockTransaction,
-  WalletTransaction,
-} from "shared-models/redisSchema";
-import {
-  ownedStockSchema,
-  StockTransactionSchema,
-  userSchema,
-  WalletTransactionSchema,
-  stockSchema,
-} from "shared-models/redisSchema";
+import type { StockOwned, StockTransaction } from "shared-models/redisSchema";
+import { ownedStockSchema, StockTransactionSchema, userSchema } from "shared-models/redisSchema";
 import type {
   CancelSellRequest,
   LimitSellOrderRequest,
   MarketBuyRequest,
-  StockPricesResponse,
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
@@ -35,14 +23,9 @@ const stockTransactionRepository: Repository<StockTransaction> =
 
 const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 
-const walletTransactionRepository: Repository<WalletTransaction> =
-  await redisConnection.createRepository(WalletTransactionSchema);
-
 const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
   ownedStockSchema
 );
-
-const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -114,7 +97,11 @@ const service = {
         .and("user_name")
         .equals(user_name)
         .returnFirst();
-      if (!ownedStock) throw new Error("User does not own this stock (placeLimitSellOrder)");
+      if (!ownedStock) {
+        const transactionEntityId = transaction[EntityId];
+        if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+        throw new Error("User does not own this stock (placeLimitSellOrder)");
+      }
     } catch (err) {
       throw new Error("Error fetching owned stock data from database");
     }
@@ -127,30 +114,7 @@ const service = {
       );
     }
 
-    const limitSellResponse = await matEngSvc.placeLimitSellOrder(limitSellRequest);
-
-    if (!limitSellResponse.success) {
-      throw new Error("Failed to place limit sell order through matching engine.");
-    }
-
-    if (ownedStock.current_quantity - quantity === 0) {
-      const ownedStockEntityId = ownedStock[EntityId];
-
-      // If the quantity to sell equals the owned quantity, delete the record
-      try {
-        if (ownedStockEntityId) await stockOwnedRepository.remove(ownedStockEntityId);
-      } catch (err) {
-        throw new Error("Error deleting owned stock record from database");
-      }
-    } else {
-      // If there's more stock left, just decrease the quantity
-      ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
-      try {
-        await stockOwnedRepository.save(ownedStock);
-      } catch (err) {
-        throw new Error("Error updating owned stock quantity in database");
-      }
-    }
+    // TODO: PUT limitSellRequest into queue
   },
 
   /**
@@ -250,60 +214,7 @@ const service = {
       stock_tx_id: transaction.stock_tx_id,
     };
 
-    // Query the matching engine to cancel the limit order
-    const sellRes = await matEngSvc.cancelSellOrder(cancelSellRequest);
-
-    // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
-    try {
-      transaction = { ...transaction, order_status: ORDER_STATUS.CANCELLED };
-      transaction = await stockTransactionRepository.save(transaction);
-    } catch (error) {
-      throw new Error(
-        "Error with updating limit sell order's status to CANCELLED (callStockTransaction)"
-      );
-    }
-
-    try {
-      // Check if user owns stock already
-      let ownedStock: StockOwned | null = await stockOwnedRepository
-        .search()
-        .where("stock_id")
-        .equals(transaction.stock_id)
-        .and("user_name")
-        .equals(user_name)
-        .returnFirst();
-
-      if (ownedStock) {
-        ownedStock = {
-          ...ownedStock,
-
-          // Return the quantity that has NOT been sold back to the user
-          current_quantity: ownedStock.current_quantity + sellRes.cur_quantity,
-        };
-        await stockOwnedRepository.save(ownedStock);
-      } else {
-        const stock = await stockRepository
-          .search()
-          .where("stock_id")
-          .equals(transaction.stock_id)
-          .returnFirst();
-        if (!stock) {
-          throw new Error("Error fetching stock record (cancelStockTransaction)");
-        }
-
-        // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        await stockOwnedRepository.save({
-          stock_id: transaction.stock_id,
-          user_name,
-          stock_name: stock.stock_name,
-
-          // Return the quantity that has NOT been sold back to the user
-          current_quantity: sellRes.cur_quantity,
-        });
-      }
-    } catch (error) {
-      throw new Error("Error checking or updating user's owned stock (cancelStockTransaction)");
-    }
+    // TODO: Place cancelSellRequest into queue to cancel the limit order
   },
 };
 

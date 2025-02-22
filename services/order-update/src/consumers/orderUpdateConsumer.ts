@@ -1,5 +1,5 @@
 import * as amqp from "amqplib";
-import OrderUpdateService from "@/services/orderUpdateService";
+import OrderUpdateHandler from "@/handlers/orderUpdateHandler";
 
 const DEFAULT_RABBITMQ_URL = "amqp://guest:guest@localhost:5672";
 const EXCHANGE_NAME = "order_update_exchange";
@@ -20,7 +20,7 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
       await channel.bindQueue(QUEUE_NAME, EXCHANGE_NAME, routingKey);
     }
 
-    channel.prefetch(1); // Fair dispatch
+    channel.prefetch(1); // Fair dispatch to allow multiple consumers (Work Queue)
 
     console.log("Order Update Service waiting for messages...");
 
@@ -39,15 +39,15 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
 
           switch (routingKey) {
             case "order.sale_update":
-              await OrderUpdateService.handleSaleUpdate(content);
+              await OrderUpdateHandler.handleSaleUpdate(content);
               break;
 
             case "order.buy_completed":
-              await OrderUpdateService.handleBuyCompletion(content);
+              await OrderUpdateHandler.handleBuyCompletion(content);
               break;
 
             case "order.cancelled":
-              await OrderUpdateService.handleCancellation(content);
+              await OrderUpdateHandler.handleCancellation(content);
               break;
 
             default:

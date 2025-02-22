@@ -1,3 +1,4 @@
+import { createAddQtyToOwnedStock } from "@/utils/portfolio";
 import { type InferSchema, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import {
@@ -242,42 +243,13 @@ export default {
     }
 
     // Add stock to user portfolio
-    try {
-      // Check if user owns stock already
-      const ownedStock: StockOwned | null = await stockOwnedRepo
-        .search()
-        .where("stock_id")
-        .equals(stock_id)
-        .and("user_name")
-        .equals(oriStockTx.user_name)
-        .returnFirst();
-
-      // Update current quantity of owned stock if user already owns the stock
-      // Otherwise, add new owned stock
-      if (ownedStock) {
-        await stockOwnedRepo.save({
-          ...ownedStock,
-          current_quantity: ownedStock.current_quantity + quantity,
-        });
-      } else {
-        const stock = await stockRepo.search().where("stock_id").equals(stock_id).returnFirst();
-        if (!stock) {
-          throw new Error("Error fetching stock record (handleBuyCompletion)");
-        }
-
-        // The user does not currently have the stock in portfolio
-        await stockOwnedRepo.save({
-          stock_id,
-          user_name: oriStockTx.user_name,
-          stock_name: stock.stock_name,
-          current_quantity: quantity,
-        });
-      }
-    } catch (error) {
-      throw new Error("Error checking or updating user's owned stock (handleBuyCompletion)", {
-        cause: error,
-      });
-    }
+    await createAddQtyToOwnedStock(
+      oriStockTx.stock_id,
+      oriStockTx.user_name,
+      quantity,
+      stockOwnedRepo,
+      stockRepo
+    );
   },
 
   handleCancellation: async ({
@@ -318,47 +290,13 @@ export default {
       );
     }
 
-    try {
-      // Check if user owns stock already
-      let ownedStock: StockOwned | null = await stockOwnedRepo
-        .search()
-        .where("stock_id")
-        .equals(transaction.stock_id)
-        .and("user_name")
-        .equals(transaction.user_name)
-        .returnFirst();
-
-      // Update current quantity of owned stock if user already owns the stock (exist in portfolio)
-      // Otherwise, add new owned stock (needed for the return quantity)
-      if (ownedStock) {
-        ownedStock = await stockOwnedRepo.save({
-          ...ownedStock,
-
-          // Return the quantity that has NOT been sold back to the user
-          current_quantity: ownedStock.current_quantity + cur_quantity,
-        });
-      } else {
-        const stock = await stockRepo
-          .search()
-          .where("stock_id")
-          .equals(transaction.stock_id)
-          .returnFirst();
-        if (!stock) {
-          throw new Error("Error fetching stock record (handleCancellation)");
-        }
-
-        // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        await stockOwnedRepo.save({
-          stock_id: transaction.stock_id,
-          user_name: transaction.user_name,
-          stock_name: stock.stock_name,
-
-          // Return the quantity that has NOT been sold back to the user
-          current_quantity: cur_quantity,
-        });
-      }
-    } catch (error) {
-      throw new Error("Error checking or updating user's owned stock (handleCancellation)");
-    }
+    // Return the quantity that has NOT been sold back to the user
+    await createAddQtyToOwnedStock(
+      transaction.stock_id,
+      transaction.user_name,
+      cur_quantity,
+      stockOwnedRepo,
+      stockRepo
+    );
   },
 };

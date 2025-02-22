@@ -295,14 +295,14 @@ export default {
         .equals(stock_tx_id)
         .returnFirst();
     } catch (error) {
-      throw new Error("Error querying for the original stock transaction (callStockTransaction)", {
+      throw new Error("Error querying for the original stock transaction (handleCancellation)", {
         cause: error,
       });
     }
 
     if (!transaction) {
       throw new Error(
-        `Stock Transaction with id ${stock_tx_id} does not exist (callStockTransaction)`
+        `Stock Transaction with id ${stock_tx_id} does not exist (handleCancellation)`
       );
     }
 
@@ -314,7 +314,7 @@ export default {
       });
     } catch (error) {
       throw new Error(
-        "Error with updating limit sell order's status to CANCELLED (callStockTransaction)"
+        "Error with updating limit sell order's status to CANCELLED (handleCancellation)"
       );
     }
 
@@ -344,7 +344,7 @@ export default {
           .equals(transaction.stock_id)
           .returnFirst();
         if (!stock) {
-          throw new Error("Error fetching stock record (cancelStockTransaction)");
+          throw new Error("Error fetching stock record (handleCancellation)");
         }
 
         // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
@@ -358,7 +358,7 @@ export default {
         });
       }
     } catch (error) {
-      throw new Error("Error checking or updating user's owned stock (cancelStockTransaction)");
+      throw new Error("Error checking or updating user's owned stock (handleCancellation)");
     }
   },
 };

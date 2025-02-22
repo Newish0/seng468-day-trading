@@ -13,7 +13,7 @@ import { publishToQueue } from "./rabbitMqService";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
-const CANCELL_SELL_ROUTING_KEY = "order.market_buy";
+const CANCEL_SELL_ROUTING_KEY = "order.market_buy";
 
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
@@ -225,7 +225,7 @@ const service = {
     };
 
     try {
-      await publishToQueue(CANCELL_SELL_ROUTING_KEY, cancelSellRequest);
+      await publishToQueue(CANCEL_SELL_ROUTING_KEY, cancelSellRequest);
     } catch (error) {
       console.error("Failed to publish cancel sell order:", error); // for debug
       throw error;

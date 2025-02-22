@@ -7,17 +7,19 @@
     "dev": "bun --watch src/index.ts"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.6",
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "amqplib": "^0.10.5",
     "hono": "^4.6.19",
     "redis": "^4.7.0",
     "redis-om": "^0.4.7",
-    "shared-utils": "workspace:*",
+    "shared-models": "workspace:*",
     "shared-types": "workspace:*",
-    "shared-models": "workspace:*"
+    "shared-utils": "workspace:*"
   }
 }

@@ -10,6 +10,11 @@ import type {
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
 import { MatchingEngineService } from "./matchingEngineService";
+import { publishToQueue } from "./rabbitMqService";
+
+const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
+const MARKET_BUY_ROUTING_KEY = "order.market_buy";
+const CANCELL_SELL_ROUTING_KEY = "order.market_buy";
 
 const matEngSvc = new MatchingEngineService(
   Bun.env.MATCHING_ENGINE_HOST || "http://matching-engine:3000"
@@ -114,7 +119,12 @@ const service = {
       );
     }
 
-    // TODO: PUT limitSellRequest into queue
+    try {
+      await publishToQueue(LIMIT_SELL_ROUTING_KEY, limitSellRequest);
+    } catch (error) {
+      console.error("Failed to publish limit sell order:", error); // for debug
+      throw error;
+    }
   },
 
   /**
@@ -169,7 +179,12 @@ const service = {
       user_name,
     };
 
-    // TODO: Insert marketBuyRequest into queue HERE
+    try {
+      await publishToQueue(MARKET_BUY_ROUTING_KEY, marketBuyRequest);
+    } catch (error) {
+      console.error("Failed to publish market buy order:", error); // for debug
+      throw error;
+    }
   },
 
   /**
@@ -214,7 +229,12 @@ const service = {
       stock_tx_id: transaction.stock_tx_id,
     };
 
-    // TODO: Place cancelSellRequest into queue to cancel the limit order
+    try {
+      await publishToQueue(CANCELL_SELL_ROUTING_KEY, cancelSellRequest);
+    } catch (error) {
+      console.error("Failed to publish cancel sell order:", error); // for debug
+      throw error;
+    }
   },
 };
 

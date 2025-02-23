@@ -208,12 +208,12 @@ export default {
 
     // Update the original stock transaction to mark as completed with latest data
     try {
-      oriStockTx = {
+      oriStockTx = await stockTxRepo.save({
         ...oriStockTx,
         order_status: ORDER_STATUS.COMPLETED,
         stock_price: price_total / quantity, // Avg price per share
         wallet_tx_id: walletTxId,
-      };
+      });
     } catch (error) {
       throw new Error(
         "Error updating the original stock transaction for buyer (handleBuyCompletion)",

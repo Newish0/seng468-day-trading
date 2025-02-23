@@ -26,6 +26,7 @@ pub struct OrderConsumer {
 struct MarketBuyResult {
     market_buy_response: MarketBuyResponse,
     order_updates: Option<Vec<OrderUpdate>>,
+    have_completed_sell: bool, // True if at least one sell order was fully completed
 }
 
 impl OrderConsumer {
@@ -64,6 +65,7 @@ impl OrderConsumer {
                     data: None,
                 },
                 order_updates: None,
+                have_completed_sell: false,
             };
         }
 
@@ -81,6 +83,7 @@ impl OrderConsumer {
                     data: None,
                 },
                 order_updates: None,
+                have_completed_sell: false,
             };
         };
 
@@ -112,6 +115,7 @@ impl OrderConsumer {
                     data: None,
                 },
                 order_updates: None,
+                have_completed_sell: false,
             };
         }
 
@@ -119,6 +123,7 @@ impl OrderConsumer {
         let mut total_price = 0.0;
         let mut shares_bought = 0;
         let mut order_updates: Vec<OrderUpdate> = Vec::new();
+        let mut have_completed_sell = false;
         while shares_to_buy > 0 {
             // Assume the sell order always exist due to the above shares quantity check.
             // If it somehow fails, we will break out early. But it is a critical issue at this point.
@@ -151,6 +156,8 @@ impl OrderConsumer {
                     stock_tx_id: top_sell_order.stock_tx_id.clone(),
                     user_name: top_sell_order.user_name.clone(),
                 });
+
+                have_completed_sell = true;
             } else {
                 total_price += shares_to_buy as f64 * top_sell_order.price;
                 shares_bought += shares_to_buy;
@@ -188,7 +195,26 @@ impl OrderConsumer {
         return MarketBuyResult {
             market_buy_response: response,
             order_updates: Some(order_updates),
+            have_completed_sell,
         };
+    }
+
+    /// Helper for publishing stock price
+    async fn publish_stock_price_helper(&self, stock_id: &str) {
+        let state = self.state.read().await;
+        if let Some(top_order) = state.matching_pq.peek(stock_id) {
+            if let Err(e) = self
+                .rabbitmq_client
+                .publish_stock_price(stock_id, top_order.price)
+                .await
+            {
+                eprintln!(
+                    "Failed to publish latest stock price for {}: {}",
+                    stock_id, e
+                );
+            }
+        }
+        drop(state);
     }
 }
 
@@ -215,6 +241,7 @@ impl AsyncConsumer for OrderConsumer {
         match routing_key.as_str() {
             "order.market_buy" => {
                 if let Ok(request) = serde_json::from_slice::<MarketBuyRequest>(&content) {
+                    let stock_id = request.stock_id.clone(); // Save for later
                     let buy_result = self.process_market_buy(request).await;
 
                     // Publish buy completion event (as failure or success)
@@ -239,10 +266,16 @@ impl AsyncConsumer for OrderConsumer {
                         }
                         None => { /* do nothing */ }
                     }
+
+                    // Publish latest stock price
+                    if buy_result.have_completed_sell {
+                        self.publish_stock_price_helper(&stock_id).await;
+                    }
                 }
             }
             "order.limit_sell" => {
                 if let Ok(request) = serde_json::from_slice::<LimitSellRequest>(&content) {
+                    let stock_id = request.stock_id.clone(); // Save for later
                     let sell_order = SellOrder {
                         stock_id: request.stock_id,
                         stock_tx_id: request.stock_tx_id,
@@ -255,16 +288,25 @@ impl AsyncConsumer for OrderConsumer {
 
                     let mut state = self.state.write().await;
                     state.matching_pq.insert(sell_order);
+                    drop(state); // Release write lock
+
+                    // Publish latest stock price
+                    // TODO: only publish if price has changed
+                    self.publish_stock_price_helper(&stock_id).await;
                 }
             }
             "order.limit_sell_cancellation" => {
                 if let Ok(request) = serde_json::from_slice::<LimitSellCancelRequest>(&content) {
-                    let mut state = self.state.write().await;
+                    let some_order = {
+                        let mut state = self.state.write().await;
+                        state
+                            .matching_pq
+                            .remove_order(&request.stock_id, &request.stock_tx_id)
+                    }; // Release write lock
 
-                    if let Some(order) = state
-                        .matching_pq
-                        .remove_order(&request.stock_id, &request.stock_tx_id)
-                    {
+                    if let Some(order) = some_order {
+                        let stock_id = order.stock_id.clone(); // Save for later
+
                         // Publish cancellation response
                         let response = LimitSellCancelResponse {
                             success: true,
@@ -286,6 +328,10 @@ impl AsyncConsumer for OrderConsumer {
                         {
                             eprintln!("Failed to publish cancellation response: {}", e);
                         }
+
+                        // Publish latest stock price
+                        // TODO: only publish if price has changed
+                        self.publish_stock_price_helper(&stock_id).await;
                     } else {
                         let err_res = LimitSellCancelResponse {
                             success: false,

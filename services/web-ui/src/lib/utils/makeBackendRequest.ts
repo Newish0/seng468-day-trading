@@ -1,4 +1,6 @@
 import type { Endpoint, FetchOptions, InternalResponse } from "shared-types/dtos";
+import { get } from "svelte/store";
+import { auth } from "../Auth/auth";
 
 // Define your endpoints
 const backendEndpoints = {
@@ -75,6 +77,7 @@ export const makeBackendRequest =
         method: endpoint.requestMethod,
         headers: {
           "Content-Type": "application/json",
+          token: get(auth).token || "",
           ...options.headers,
         },
         body: options.body ? JSON.stringify(options.body) : undefined,

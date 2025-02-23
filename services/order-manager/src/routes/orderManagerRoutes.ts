@@ -1,4 +1,4 @@
-import controller from "@/controllers/orderController";
+import controller from "@/controllers/orderManagerController";
 import { Hono } from "hono";
 
 const orderRoutes = new Hono();

@@ -1,4 +1,4 @@
-import service from "@/services/orderService";
+import service from "@/services/orderManagerService";
 import type { Context } from "hono";
 import { handleError } from "shared-utils";
 

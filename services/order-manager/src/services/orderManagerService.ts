@@ -9,7 +9,7 @@ import type {
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
-import { publishToQueue } from "./rabbitMqService.ts";
+import { publishToQueue } from "./rabbitMQService";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";

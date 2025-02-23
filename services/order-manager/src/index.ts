@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import orderRoutes from "@/routes/orderRoutes";
-import { initializeRabbitMQ } from "./services/rabbitMqService";
+import orderRoutes from "@/routes/orderManagerRoutes";
+import { initializeRabbitMQ } from "./services/rabbitMQService";
 
 const port = Bun.env.PORT || 3000;
 const rabbitPort = Bun.env.RABBIT_PORT || 5672;

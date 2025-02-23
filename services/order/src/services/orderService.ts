@@ -9,7 +9,7 @@ import type {
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
-import { publishToQueue } from "./rabbitMqService";
+import { publishToQueue } from "./rabbitMqService.ts";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
@@ -120,6 +120,25 @@ const service = {
       console.error("Failed to publish limit sell order:", error); // for debug
       throw error;
     }
+
+    if (ownedStock.current_quantity - quantity === 0) {
+      const ownedStockEntityId = ownedStock[EntityId];
+
+      // If the quantity to sell equals the owned quantity, delete the record
+      try {
+        if (ownedStockEntityId) await stockOwnedRepository.remove(ownedStockEntityId);
+      } catch (err) {
+        throw new Error("Error deleting owned stock record from database");
+      }
+    } else {
+      // If there's more stock left, just decrease the quantity
+      ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
+      try {
+        await stockOwnedRepository.save(ownedStock);
+      } catch (err) {
+        throw new Error("Error updating owned stock quantity in database");
+      }
+    }
   },
 
   /**
@@ -165,6 +184,13 @@ const service = {
       quantity: quantity,
       time_stamp: new Date(),
     };
+
+    // Stores new transaction before approval by M.E
+    try {
+      new_user_transaction = await stockTransactionRepository.save(new_user_transaction);
+    } catch (error) {
+      throw new Error("Error storing new_user_transaction for buyer (placeMarketBuyOrder)");
+    }
 
     const marketBuyRequest: MarketBuyRequest = {
       stock_id,

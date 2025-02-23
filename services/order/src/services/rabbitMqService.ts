@@ -1,7 +1,6 @@
 import amqp from "amqplib";
 
 const ORDER_EXCHANGE = "order_exchange";
-const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
 let channel: amqp.Channel;
 
@@ -9,11 +8,11 @@ let channel: amqp.Channel;
  * Initializes the RabbitMQ connection and creates a channel.
  * It also asserts the exchange (order_exchange) of type "topic" to ensure it exists.
  */
-export async function initializeRabbitMQ() {
+export async function initializeRabbitMQ(RABBITMQ_URL: string) {
   try {
     const connection = await amqp.connect(RABBITMQ_URL);
     channel = await connection.createChannel();
-    await channel.assertExchange(ORDER_EXCHANGE, "topic", { durable: false }); // REVIEW: Do we need durable?
+    await channel.assertExchange(ORDER_EXCHANGE, "topic", { durable: true });
   } catch (error) {
     throw error;
   }

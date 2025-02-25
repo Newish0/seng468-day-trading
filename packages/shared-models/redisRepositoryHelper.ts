@@ -52,3 +52,14 @@ export async function getOwnedStock(userRepository: Repository<Entity>, stockOwn
 export async function removeFromRepository(repository: Repository<Entity>, key: string): Promise<void> {
 await repository.remove(key);
 }
+
+// Would we need to pass it a active instance of the repository? 
+export async function updateReservedFundIfSufficient(redisInstance: any, userRepository: Repository<Entity>, userKey: string, amount: number): Promise<boolean> {
+    let user : any = await userRepository.fetch(userKey);
+    if(user.reserved_funds >= amount) {
+        user.reserved_funds -= amount;
+        await userRepository.save(user);
+        return true;
+    }
+    return false;
+}

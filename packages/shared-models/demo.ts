@@ -32,13 +32,14 @@ const main = async () => {
   
   let data : any = await getFromRepository(stock_repository_two, stock_key);
 
-  console.log("This should log out our data");
-  console.log(data);
+  // console.log("This should log out our data");
+  // console.log(data);
 
   /**
    * Now lets use the search function. We can search for data even without its Keys if they are stored in repositories
    */
 
+  /* Commented out right now for testing purposes
   // Quick loop to just insert some data
   for (let i = 2; i < 10; i += 1) {
     stock = {
@@ -52,6 +53,7 @@ const main = async () => {
   data = await stock_repository_two.search().return.all();
   console.log("Here is all the data in our repository");
   console.log(data);
+  */
 
   /**
    * Here we can check if a repository exists before we want to query data from it. All repository names are defined
@@ -80,7 +82,7 @@ const main = async () => {
     current_quantity: 2,
   }
 
-  let owned_stock_repository: Repository<any> = await redisConnection.createRepository(ownedStockSchema);
+  let owned_stock_repository: Repository<Entity> = await redisConnection.createRepository(ownedStockSchema);
 
   let owned_stock_key_one = await addIntoRepository(owned_stock_repository, owned_stock_one);
   let owned_stock_key_two = await addIntoRepository(owned_stock_repository, owned_stock_two);
@@ -95,9 +97,18 @@ const main = async () => {
     wallet_balence: 3.5,
   } 
 
+  user_data.wallet_balence = 10000;
+
   let user_repository: Repository<any> = await redisConnection.createRepository(userSchema);
   let user_key : string = await addIntoRepository(user_repository, user_data);
   let user_object : any = await (getFromRepository(user_repository, user_key));
+
+  console.log("Here is the user object returned")
+  console.log(user_object);
+  console.log("Here is the user object's key")
+  console.log(user_key);
+  console.log("Here is the user object's key again, but this time we are calling it from the object")
+  console.log(user_object[EntityId]);
 
   /**
    * Here I am unsure on how to type hint these objects, any help here would be greatly appreciated as I am unable to get this to work

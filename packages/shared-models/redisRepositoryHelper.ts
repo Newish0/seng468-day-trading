@@ -53,13 +53,43 @@ export async function removeFromRepository(repository: Repository<Entity>, key: 
 await repository.remove(key);
 }
 
-// Would we need to pass it a active instance of the repository? 
-export async function updateReservedFundIfSufficient(redisInstance: any, userRepository: Repository<Entity>, userKey: string, amount: number): Promise<boolean> {
-    let user : any = await userRepository.fetch(userKey);
-    if(user.reserved_funds >= amount) {
-        user.reserved_funds -= amount;
-        await userRepository.save(user);
+export async function getKeyFromEntity(entity: Entity): Promise<string> {
+    return entity[EntityId] as string;
+}
+
+export async function updateReservedFundIfSufficient(
+    redisInstance: RedisClientType, 
+    userRepository: Repository<Entity>, 
+    userName: string, 
+    amountToDeduct: number
+): Promise<boolean> {
+    let user: Entity = await userRepository.fetch(userName);
+
+    if (user.wallet_balence == null) {
+        user.wallet_balence = 0;
+        throw new Error("User wallet_balance is null");
+    }
+
+    if (typeof user.reserved_funds === "number" && user.reserved_funds >= amountToDeduct) {
+        const key = user[EntityId]; // JSON string key
+
+        // Fetch current JSON, modify it, and update atomically
+        if (!key) {
+            throw new Error("Entity key is undefined");
+        }
+        const data = await redisInstance.get(key);
+        let userData = data ? JSON.parse(data) : {};
+
+        userData.reserved_funds = 10;
+
+        // Perform atomic update in Redis
+        const multi = redisInstance.multi();
+        multi.set(key, JSON.stringify(userData));
+        await multi.exec(); // Ensure the transaction executes properly
+
         return true;
     }
+
     return false;
 }
+

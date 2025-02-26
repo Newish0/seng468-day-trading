@@ -44,8 +44,6 @@ class RedisInstance {
             let repository = new Repository<Entity>(schema, this.redisClient);
             repository.createIndex();
             this.repositoryDict[repoKey] = repository;
-            console.log(repoKey);
-            console.log(schema);
       }
     } catch (error) {
       console.error('Failed to connect to Redis:', error);

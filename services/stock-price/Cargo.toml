@@ -1,0 +1,9 @@
+[package]
+name = "stock-price"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+amqprs = "2.1.0"
+tokio = "1.43.0"
+async-trait = "0.1.86"

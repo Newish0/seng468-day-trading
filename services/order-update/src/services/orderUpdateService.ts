@@ -252,6 +252,34 @@ export default {
     );
   },
 
+  handleFailedBuyCompletion: async ({ stock_tx_id }: { stock_tx_id: string }) => {
+    // Find the original stock order transaction
+    let oriStockTx: StockTransaction | null = null;
+    try {
+      oriStockTx = await stockTxRepo
+        .search()
+        .where("stock_tx_id")
+        .equals(stock_tx_id)
+        .returnFirst();
+    } catch (error) {
+      throw new Error("Error querying for the original stock transaction (handleFailedBuyCompletion)", {
+        cause: error,
+      });
+    }
+
+    if (!oriStockTx) {
+      throw new Error(
+        `Original Stock Transaction with id ${stock_tx_id} does not exist (handleFailedBuyCompletion)`
+      );
+    }
+
+    // Update the original stock transaction to mark as failed
+    stockTxRepo.save({
+      ...oriStockTx,
+      order_status: ORDER_STATUS.FAILED,
+    });
+  },
+
   handleCancellation: async ({
     stock_tx_id,
     cur_quantity,

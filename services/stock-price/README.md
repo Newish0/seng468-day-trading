@@ -38,3 +38,18 @@ Ensure RabbitMQ is running before starting the service.
 1. With rabbitmq and stock price service running, go to rabbitmq dashboard at `http://localhost:15672/`
 2. Sign in with user=`guest`, password=`guest`
 3. Go to `http://localhost:15672/#/exchanges/%2F/stock_prices_exchange` to publish stock price message
+
+### Sample stock price message
+
+**Routing key**
+
+`stock.prices.appl`
+
+**Message payload**
+
+```
+{
+  "stock_id": "appl",
+  "current_price:" 1234
+}
+```

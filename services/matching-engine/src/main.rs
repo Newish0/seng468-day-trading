@@ -14,7 +14,7 @@ use state::AppState;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Load environment variables from Docker or environment directly
+    // Load env from .env file or the environment
     dotenv().ok();
 
     // Initialize application state
@@ -36,28 +36,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize and setup order consumer
     let order_consumer = OrderConsumer::new(Arc::clone(&app_state), Arc::clone(&rabbitmq_client));
     order_consumer.setup().await?;
-
-    // // HACK: This is a tmp solution.
-    // // Start a background task to periodically publish stock prices
-    // let state_clone = Arc::clone(&app_state);
-    // let client_clone = Arc::clone(&rabbitmq_client);
-    // tokio::spawn(async move {
-    //     loop {
-    //         let state = state_clone.read().await;
-    //         for stock_id in state.matching_pq.get_all_stocks() {
-    //             if let Some(top_order) = state.matching_pq.peek(&stock_id) {
-    //                 if let Err(e) = client_clone
-    //                     .publish_stock_price(&stock_id, top_order.price)
-    //                     .await
-    //                 {
-    //                     eprintln!("Failed to publish stock price: {}", e);
-    //                 }
-    //             }
-    //         }
-    //         drop(state);
-    //         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
-    //     }
-    // });
 
     // Keep the main thread alive
     println!("Matching engine started. Press Ctrl+C to exit.");

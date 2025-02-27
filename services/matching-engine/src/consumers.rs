@@ -41,6 +41,22 @@ impl OrderConsumer {
         self.rabbitmq_client.setup_consumer(self.clone()).await
     }
 
+    fn create_mk_buy_fail_result(&self, stock_id: String, stock_tx_id: String) -> MarketBuyResult {
+        MarketBuyResult {
+            market_buy_response: MarketBuyResponse {
+                success: false,
+                data: MarketBuyData {
+                    stock_id: stock_id,
+                    stock_tx_id: stock_tx_id,
+                    price_total: None,
+                    quantity: None,
+                },
+            },
+            order_updates: None,
+            have_completed_sell: false,
+        }
+    }
+
     /// Helper for performing market buy
     async fn process_market_buy(&self, request: MarketBuyRequest) -> MarketBuyResult {
         // Need to have lock the entire time to ensure no other sell occurs
@@ -59,14 +75,7 @@ impl OrderConsumer {
         // Check available shares
         let mut shares_to_buy = request.quantity;
         if shares_to_buy > available_shares {
-            return MarketBuyResult {
-                market_buy_response: MarketBuyResponse {
-                    success: false,
-                    data: None,
-                },
-                order_updates: None,
-                have_completed_sell: false,
-            };
+            return self.create_mk_buy_fail_result(request.stock_id, request.stock_tx_id);
         }
 
         // Dry-run: Clone the priority queue to calculate total cost without modifying state
@@ -77,14 +86,7 @@ impl OrderConsumer {
             .get_stock_queue(&request.stock_id)
             .cloned()
         else {
-            return MarketBuyResult {
-                market_buy_response: MarketBuyResponse {
-                    success: false,
-                    data: None,
-                },
-                order_updates: None,
-                have_completed_sell: false,
-            };
+            return self.create_mk_buy_fail_result(request.stock_id, request.stock_tx_id);
         };
 
         let mut cloned_queue = original_queue;
@@ -109,14 +111,7 @@ impl OrderConsumer {
 
         // Budget validation
         if total_price_dry > request.budget {
-            return MarketBuyResult {
-                market_buy_response: MarketBuyResponse {
-                    success: false,
-                    data: None,
-                },
-                order_updates: None,
-                have_completed_sell: false,
-            };
+            return self.create_mk_buy_fail_result(request.stock_id, request.stock_tx_id);
         }
 
         // Proceed with actual purchase processing
@@ -184,12 +179,12 @@ impl OrderConsumer {
 
         let response = MarketBuyResponse {
             success: true,
-            data: Some(MarketBuyData {
+            data: MarketBuyData {
                 stock_id: request.stock_id,
                 stock_tx_id: request.stock_tx_id,
-                quantity: shares_bought,
-                price_total: total_price,
-            }),
+                quantity: Some(shares_bought),
+                price_total: Some(total_price),
+            },
         };
 
         return MarketBuyResult {
@@ -199,22 +194,28 @@ impl OrderConsumer {
         };
     }
 
-    /// Helper for publishing stock price
+    /// Helper for publishing stock price.
+    /// Send in the latest stock price or `None` (AKA `null`) if it does not exist.
     async fn publish_stock_price_helper(&self, stock_id: &str) {
-        let state = self.state.read().await;
-        if let Some(top_order) = state.matching_pq.peek(stock_id) {
-            if let Err(e) = self
-                .rabbitmq_client
-                .publish_stock_price(stock_id, top_order.price)
-                .await
-            {
-                eprintln!(
-                    "Failed to publish latest stock price for {}: {}",
-                    stock_id, e
-                );
+        let latest_price: Option<f64> = {
+            let state: tokio::sync::RwLockReadGuard<'_, AppState> = self.state.read().await;
+            if let Some(top_order) = state.matching_pq.peek(stock_id) {
+                Some(top_order.price)
+            } else {
+                None
             }
+        };
+
+        if let Err(e) = self
+            .rabbitmq_client
+            .publish_stock_price(stock_id, latest_price)
+            .await
+        {
+            eprintln!(
+                "Failed to publish latest stock price for {}: {}",
+                stock_id, e
+            );
         }
-        drop(state);
     }
 }
 

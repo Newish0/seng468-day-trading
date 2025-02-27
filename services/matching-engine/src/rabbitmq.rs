@@ -10,7 +10,7 @@ use amqprs::{
 };
 use std::sync::Arc;
 
-use crate::models::{LimitSellCancelResponse, MarketBuyResponse, OrderUpdate};
+use crate::models::{LimitSellCancelResponse, MarketBuyResponse, OrderUpdate, StockPrice};
 
 pub struct RabbitMQConfig {
     pub host: String,
@@ -150,12 +150,12 @@ impl RabbitMQClient {
     pub async fn publish_stock_price(
         &self,
         stock_id: &str,
-        current_price: f64,
+        current_price: Option<f64>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let payload = serde_json::json!({
-            "stock_id": stock_id,
-            "current_price": current_price,
-        });
+        let payload = StockPrice {
+            stock_id: stock_id.to_string(),
+            current_price,
+        };
 
         let routing_key = format!("stock.price.{}", stock_id);
         let args = BasicPublishArguments::new("stock_prices_exchange", &routing_key);

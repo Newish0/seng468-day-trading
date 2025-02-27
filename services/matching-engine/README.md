@@ -116,5 +116,5 @@ The exchange is `stock_prices_exchange`.
 ```rs
 pub struct StockPrice {
     pub stock_id: String,
-    pub current_price: f64,
+    pub current_price: Option<f64>, // None/null if stock is no longer available
 }

@@ -4,13 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug)]
 pub struct StockPrice {
     pub stock_id: String,
-    pub current_price: f64,
-}
-
-#[derive(Serialize, Debug)]
-pub struct StockPricesResponse {
-    pub success: bool,
-    pub data: Option<Vec<StockPrice>>,
+    pub current_price: Option<f64>,
 }
 
 // Market buy types

@@ -194,22 +194,28 @@ impl OrderConsumer {
         };
     }
 
-    /// Helper for publishing stock price
+    /// Helper for publishing stock price.
+    /// Send in the latest stock price or `None` (AKA `null`) if it does not exist.
     async fn publish_stock_price_helper(&self, stock_id: &str) {
-        let state = self.state.read().await;
-        if let Some(top_order) = state.matching_pq.peek(stock_id) {
-            if let Err(e) = self
-                .rabbitmq_client
-                .publish_stock_price(stock_id, top_order.price)
-                .await
-            {
-                eprintln!(
-                    "Failed to publish latest stock price for {}: {}",
-                    stock_id, e
-                );
+        let latest_price: Option<f64> = {
+            let state: tokio::sync::RwLockReadGuard<'_, AppState> = self.state.read().await;
+            if let Some(top_order) = state.matching_pq.peek(stock_id) {
+                Some(top_order.price)
+            } else {
+                None
             }
+        };
+
+        if let Err(e) = self
+            .rabbitmq_client
+            .publish_stock_price(stock_id, latest_price)
+            .await
+        {
+            eprintln!(
+                "Failed to publish latest stock price for {}: {}",
+                stock_id, e
+            );
         }
-        drop(state);
     }
 }
 

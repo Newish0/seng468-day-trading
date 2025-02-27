@@ -14,7 +14,7 @@ use crate::state::AppState;
 #[tokio::main]
 async fn main() {
     // Setup RabbitMQ connection and channel
-    let (_, channel) = rabbitmq::setup_rabbitmq().await;
+    let (connection, channel) = rabbitmq::setup_rabbitmq().await;
 
     let app_state = Arc::new(tokio::sync::RwLock::new(AppState::new()));
     let price_consumer = PriceConsumer::new(app_state.clone());
@@ -37,5 +37,10 @@ async fn main() {
         .await
         .unwrap();
     println!("Stock Prices Service listening on {server_endpoint}");
+
+    // Store connection and channel in variables that won't go out of scope
+    // This prevents them from being dropped
+    let _connection = connection;
+    let _channel = channel;
     axum::serve(listener, app).await.unwrap();
 }

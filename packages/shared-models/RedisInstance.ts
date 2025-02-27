@@ -42,10 +42,11 @@ class RedisInstance {
       for(const [repoKey, schema] of Object.entries(this.schemas)) {
             // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
             let repository = new Repository<Entity>(schema, this.redisClient);
-            // This was never a issue using just redis, for whatever reason ioredis is pissy. And doesn't get bloody happy unless we await it. I hate this so much. The error message is so godamn vague too. I am lucky I solved it as quickly as I did
-            // GOD himself has tried to personally stop me. Whatever, now everything should bloody work as intended. IDEALLY we can remove this await function because then we can create indexs without having to wait. This is only a issue is the Cache is empty. Edge case.
-            //Also for some reason we need a await function here. WHY?? if we run it with indexes already in the cache again no issues, do we keep it this way for speed reasons??
-            // CHATGPT doesn't know the reason either. Using IOREDIS we are now going into uncharted territory. Redis-om seems to be designed for just plain Redis. I hate this and I hate you. 
+            /**
+             * For whatever reason, we now need a await here to make sure the repository is created before we try to use it.
+             * This was not a issue when we were just using plain Redis. Using IORedis we will get a error if we do not include the await keyword
+             * I am unsure as to what is casuing this issue, but it is something to keep in mind.
+             */
             await repository.createIndex(); // All of our repositorys should expect to be indexed into 
             this.repositoryDict[repoKey] = repository;
       }
@@ -55,10 +56,19 @@ class RedisInstance {
     }      
   }
 
+  /**
+   * This function returns the dictionary of all the repositorys
+   * @returns {Promise<Record<string, Repository<Entity>>} - Returns a dictionary of all the repositorys
+   */
   async getRepositoryDict(): Promise<Record<string, Repository<Entity>>> {
     return this.repositoryDict;
   }
 
+  /**
+   * Returns a specific repository given a name
+   * @param name - The name of the repository we want to retrieve
+   * @returns {Promise<Repository<Entity>>} - Returns the repository we wanted to retrieve
+   */
   async getRepository(name: string): Promise<Repository<Entity>> {
     return this.repositoryDict[name];
   }

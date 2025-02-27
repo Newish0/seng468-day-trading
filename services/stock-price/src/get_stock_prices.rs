@@ -9,11 +9,18 @@ pub async fn get_stock_prices(
 ) -> Json<StockPricesResponse> {
     let prices = prices.read().await;
 
-    let prices: Vec<StockPrice> = prices
+    let mut prices: Vec<StockPrice> = prices
         .stock_prices
         .iter()
         .map(|(_, stock_price)| stock_price.clone())
         .collect();
+
+    // Sort by stock_name in descending order (case-insensitive)
+    prices.sort_by(|a, b| {
+        let name_a = a.stock_name.to_uppercase();
+        let name_b = b.stock_name.to_uppercase();
+        name_b.cmp(&name_a)
+    });
 
     Json(StockPricesResponse {
         success: true,

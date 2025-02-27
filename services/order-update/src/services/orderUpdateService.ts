@@ -223,6 +223,9 @@ export default {
       );
     }
 
+
+    // TODO: Use atomic func to update wallet balance & UNLOCK funds 
+
     // Update the user balance for buyer (updates the user fetched at the start of method)
     try {
       const user = await userRepo
@@ -253,6 +256,8 @@ export default {
   },
 
   handleFailedBuyCompletion: async ({ stock_tx_id }: { stock_tx_id: string }) => {
+    // TODO: Unlock funds
+
     // Find the original stock order transaction
     let oriStockTx: StockTransaction | null = null;
     try {

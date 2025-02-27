@@ -8,6 +8,9 @@ export async function createAddQtyToOwnedStock(
   stockOwnedRepo: Repository<StockOwned>,
   stockRepo: Repository<Stock>
 ) {
+
+  // TODO: Use atomic functions for changing stock qty 
+
   try {
     let ownedStock: StockOwned | null = await stockOwnedRepo
       .search()

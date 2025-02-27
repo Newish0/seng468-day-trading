@@ -11,7 +11,7 @@ use crate::{
     matching_pq::SellOrder,
     models::{
         LimitSellCancelData, LimitSellCancelRequest, LimitSellCancelResponse, LimitSellRequest,
-        MarketBuyData, MarketBuyRequest, MarketBuyResponse, OrderUpdate,
+        MarketBuyData, MarketBuyRequest, MarketBuyResponse, OrderUpdate, StockPrice,
     },
     rabbitmq::RabbitMQClient,
     state::AppState,
@@ -197,18 +197,26 @@ impl OrderConsumer {
     /// Helper for publishing stock price.
     /// Send in the latest stock price or `None` (AKA `null`) if it does not exist.
     async fn publish_stock_price_helper(&self, stock_id: &str) {
-        let latest_price: Option<f64> = {
-            let state: tokio::sync::RwLockReadGuard<'_, AppState> = self.state.read().await;
+        let payload: StockPrice = {
+            let state = self.state.read().await;
             if let Some(top_order) = state.matching_pq.peek(stock_id) {
-                Some(top_order.price)
+                StockPrice {
+                    stock_id: stock_id.to_string(),
+                    stock_name: Some(top_order.stock_name.clone()),
+                    current_price: Some(top_order.price),
+                }
             } else {
-                None
+                StockPrice {
+                    stock_id: stock_id.to_string(),
+                    stock_name: None,
+                    current_price: None,
+                }
             }
         };
 
         if let Err(e) = self
             .rabbitmq_client
-            .publish_stock_price(stock_id, latest_price)
+            .publish_stock_price(payload)
             .await
         {
             eprintln!(
@@ -279,6 +287,7 @@ impl AsyncConsumer for OrderConsumer {
                     let stock_id = request.stock_id.clone(); // Save for later
                     let sell_order = SellOrder {
                         stock_id: request.stock_id,
+                        stock_name: request.stock_name,
                         stock_tx_id: request.stock_tx_id,
                         price: request.price,
                         partially_sold: false,

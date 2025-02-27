@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug)]
 pub struct StockPrice {
     pub stock_id: String,
-    pub current_price: Option<f64>,
+    pub stock_name: Option<String>, // None/null if stock is no longer available
+    pub current_price: Option<f64>, // None/null if stock is no longer available
 }
 
 // Market buy types
@@ -35,6 +36,7 @@ pub struct MarketBuyData {
 #[derive(Deserialize, Debug)]
 pub struct LimitSellRequest {
     pub stock_id: String,
+    pub stock_name: String,
     pub quantity: u32,
     pub price: f64,
     pub stock_tx_id: String,

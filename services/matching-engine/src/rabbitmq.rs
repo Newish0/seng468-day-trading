@@ -149,15 +149,11 @@ impl RabbitMQClient {
 
     pub async fn publish_stock_price(
         &self,
-        stock_id: &str,
-        current_price: Option<f64>,
+        payload: StockPrice,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let payload = StockPrice {
-            stock_id: stock_id.to_string(),
-            current_price,
-        };
+        
 
-        let routing_key = format!("stock.price.{}", stock_id);
+        let routing_key = format!("stock.price.{}", payload.stock_id);
         let args = BasicPublishArguments::new("stock_prices_exchange", &routing_key);
 
         self.channel

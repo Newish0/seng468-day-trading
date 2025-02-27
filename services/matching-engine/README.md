@@ -38,6 +38,7 @@ pub struct MarketBuyRequest {
 ```rs
 pub struct LimitSellRequest {
     pub stock_id: String,
+    pub stock_name: String,
     pub quantity: u32,
     pub price: f64,
     pub stock_tx_id: String,
@@ -116,5 +117,6 @@ The exchange is `stock_prices_exchange`.
 ```rs
 pub struct StockPrice {
     pub stock_id: String,
+    pub stock_name: Option<String>, // None/null if stock is no longer available
     pub current_price: Option<f64>, // None/null if stock is no longer available
 }

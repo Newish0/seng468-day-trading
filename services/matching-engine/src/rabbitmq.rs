@@ -74,7 +74,7 @@ impl RabbitMQClient {
         // Exchange for stock price updates
         let stock_prices_exchange_args =
             ExchangeDeclareArguments::new("stock_prices_exchange", "topic")
-                .durable(true)
+                .durable(false)
                 .finish();
         channel.exchange_declare(stock_prices_exchange_args).await?;
 

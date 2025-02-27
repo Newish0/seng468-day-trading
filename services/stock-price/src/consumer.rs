@@ -25,10 +25,15 @@ impl AsyncConsumer for PriceConsumer {
             }
         };
 
-        // add a new stock_id if the key doesn't exist or update the existing entry if the key already exists
+        // Add a new stock_id if key doesn't exist or update existing if key already exists
+        // Remove stock_id if current_price is None
         let mut state = self.state.write().await;
-        state
-            .stock_prices
-            .insert(stock_price.stock_id.clone(), stock_price);
+        if stock_price.current_price.is_none() {
+            state.stock_prices.remove(&stock_price.stock_id);
+        } else {
+            state
+                .stock_prices
+                .insert(stock_price.stock_id.clone(), stock_price);
+        }
     }
 }

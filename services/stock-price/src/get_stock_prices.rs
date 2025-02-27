@@ -9,7 +9,6 @@ pub async fn get_stock_prices(
 ) -> Json<StockPricesResponse> {
     let prices = prices.read().await;
 
-    // Note: will likely have to filter out stock's with prices of 0 or null if a stock is no longer for sale
     let prices: Vec<StockPrice> = prices
         .stock_prices
         .iter()

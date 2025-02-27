@@ -50,6 +50,6 @@ Ensure RabbitMQ is running before starting the service.
 ```
 {
   "stock_id": "appl",
-  "current_price:" 1234
+  "current_price": 1234
 }
 ```

@@ -2,7 +2,7 @@
 import { stockSchema, ownedStockSchema, userSchema } from './redisSchema';
 import { RedisInstance } from './RedisInstance';
 import {Schema, Repository, EntityId} from 'redis-om';
-import { addIntoRepository, getFromRepository, getOwnedStock, removeFromRepository } from "./redisRepositoryHelper";
+import { addIntoRepository, getFromRepository, getOwnedStock, removeFromRepository, lockUserWallet } from "./redisRepositoryHelper";
 import type { Entity } from 'redis-om';
 
 /**
@@ -95,6 +95,7 @@ const main = async () => {
     stock_transaction_history: [],
     wallet_transaction_history: [],
     wallet_balence: 3.5,
+    is_locked: true, // Please when creating a schema, set this to false by default. In redis OM there is no way to set a default value
   } 
 
   user_data.wallet_balence = 10000;
@@ -121,6 +122,13 @@ const main = async () => {
 
   console.log("And here is just a simple call to a function which does the same thing.");
   console.log(await getOwnedStock(user_repository, owned_stock_repository, user_key));
+
+  let test : boolean = await lockUserWallet(
+      redisConnection.getClient(), 
+      user_key,
+      1000);
+
+  console.log(test);
 
 
   redisConnection.disconnect();

@@ -70,6 +70,7 @@ const userSchemaObject = {
   stock_transaction_history: { type: "string[]" },
   wallet_transaction_history: { type: "string[]" },
   wallet_balence: { type: "number" },
+  is_locked: { type: "boolean" },
 } as const;
 const userSchema = new Schema("users", userSchemaObject);
 export type User = InferSchema<typeof userSchemaObject>;

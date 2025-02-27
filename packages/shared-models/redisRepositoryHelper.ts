@@ -1,5 +1,5 @@
 import {Schema, Repository, EntityId} from 'redis-om';
-import { createClient} from 'redis';
+import { createClient } from 'redis';
 import type { RedisClientType, RedisModules } from 'redis'; 
 import type { Entity } from 'redis-om';
 
@@ -57,39 +57,48 @@ export async function getKeyFromEntity(entity: Entity): Promise<string> {
     return entity[EntityId] as string;
 }
 
+export async function lockUserWallet(
+    redisInstance: RedisClientType, 
+    user_key: string, 
+    amountToDeduct: number
+): Promise<any> {
+    console.log("user key");
+    console.log(user_key);
+
+    // If a true is returned its actually a 1, if false its null 
+    const luaScript = `
+    local data = redis.call('JSON.GET', KEYS[1])
+    local jsonData = cjson.decode(data)
+
+    if jsonData.is_locked then
+        return false
+    else
+        jsonData.is_locked = true
+        redis.call('JSON.SET', KEYS[1], '.', cjson.encode(jsonData))
+        return true    
+    end
+    `; 
+
+    try {
+        //Not sure if I can remove any, also gotta add users: because redis-om adds it
+        // This is a finnecky thing, but it works and does it atomically
+        const result = await redisInstance.eval(luaScript, { keys: ["users:" + user_key], arguments: [] } as any); 
+        console.log("Lua script result:", result);
+        return result;
+    } catch (error) {
+        console.error("Error executing Lua script:", error);
+        return false;
+    }
+
+}
+
+/*
 export async function updateReservedFundIfSufficient(
     redisInstance: RedisClientType, 
     userRepository: Repository<Entity>, 
     userName: string, 
     amountToDeduct: number
 ): Promise<boolean> {
-    let user: Entity = await userRepository.fetch(userName);
 
-    if (user.wallet_balence == null) {
-        user.wallet_balence = 0;
-        throw new Error("User wallet_balance is null");
-    }
 
-    if (typeof user.reserved_funds === "number" && user.reserved_funds >= amountToDeduct) {
-        const key = user[EntityId]; // JSON string key
-
-        // Fetch current JSON, modify it, and update atomically
-        if (!key) {
-            throw new Error("Entity key is undefined");
-        }
-        const data = await redisInstance.get(key);
-        let userData = data ? JSON.parse(data) : {};
-
-        userData.reserved_funds = 10;
-
-        // Perform atomic update in Redis
-        const multi = redisInstance.multi();
-        multi.set(key, JSON.stringify(userData));
-        await multi.exec(); // Ensure the transaction executes properly
-
-        return true;
-    }
-
-    return false;
-}
-
+*/

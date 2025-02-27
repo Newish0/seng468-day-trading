@@ -42,7 +42,11 @@ class RedisInstance {
       for(const [repoKey, schema] of Object.entries(this.schemas)) {
             // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
             let repository = new Repository<Entity>(schema, this.redisClient);
-            repository.createIndex();
+            // This was never a issue using just redis, for whatever reason ioredis is pissy. And doesn't get bloody happy unless we await it. I hate this so much. The error message is so godamn vague too. I am lucky I solved it as quickly as I did
+            // GOD himself has tried to personally stop me. Whatever, now everything should bloody work as intended. IDEALLY we can remove this await function because then we can create indexs without having to wait. This is only a issue is the Cache is empty. Edge case.
+            //Also for some reason we need a await function here. WHY?? if we run it with indexes already in the cache again no issues, do we keep it this way for speed reasons??
+            // CHATGPT doesn't know the reason either. Using IOREDIS we are now going into uncharted territory. Redis-om seems to be designed for just plain Redis. I hate this and I hate you. 
+            await repository.createIndex(); // All of our repositorys should expect to be indexed into 
             this.repositoryDict[repoKey] = repository;
       }
     } catch (error) {

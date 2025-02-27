@@ -14,13 +14,18 @@ use crate::state::AppState;
 #[tokio::main]
 async fn main() {
     // Setup RabbitMQ connection and channel
-    let (connection, channel) = rabbitmq::setup_rabbitmq().await;
+    let exchange_name = "stock_prices_exchange";
+    let queue_name = "stock_prices_queue";
+    let consumer_tag = "stock_price_consumer";
+    let binding_key = "stock.price.*";
+
+    let (connection, channel) =
+        rabbitmq::setup_rabbitmq(exchange_name, queue_name, binding_key).await;
 
     let app_state = Arc::new(tokio::sync::RwLock::new(AppState::new()));
     let price_consumer = PriceConsumer::new(app_state.clone());
 
-    let queue_name = "stock_prices_queue";
-    let mut consume_args = BasicConsumeArguments::new(queue_name, "stock_price_consumer");
+    let mut consume_args = BasicConsumeArguments::new(queue_name, consumer_tag);
     consume_args.manual_ack(false);
     channel
         .basic_consume(price_consumer, consume_args)

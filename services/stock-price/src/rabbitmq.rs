@@ -6,7 +6,11 @@ use amqprs::{
 
 use std::env;
 
-pub async fn setup_rabbitmq() -> (Connection, amqprs::channel::Channel) {
+pub async fn setup_rabbitmq(
+    exchange_name: &str,
+    queue_name: &str,
+    binding_key: &str,
+) -> (Connection, amqprs::channel::Channel) {
     // Retrieve RabbitMQ configuration
     let host = env::var("RABBITMQ_HOST").unwrap_or_else(|_| "localhost".to_string());
     let port = env::var("RABBITMQ_PORT")
@@ -35,14 +39,11 @@ pub async fn setup_rabbitmq() -> (Connection, amqprs::channel::Channel) {
         .unwrap();
 
     // Setup queue and binding
-    let exchange_name = "stock_prices_exchange";
-    let queue_name = "stock_prices_queue";
     channel
         .queue_declare(QueueDeclareArguments::new(queue_name))
         .await
         .unwrap();
 
-    let binding_key = "stock.price.*";
     channel
         .queue_bind(QueueBindArguments::new(
             queue_name,

@@ -29,9 +29,7 @@ const walletService = {
       const user = await userService.getUserFromId(userId);
       const currentBalance = user.wallet_balance;
       const newBalance = currentBalance + amount;
-      if (newBalance < 0) {
-        throw new Error("User will be left with negative balance");
-      }
+
       await userRepository!.save({ ...user, wallet_balance: newBalance });
     } catch (e) {
       throw new Error("User not found");

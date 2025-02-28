@@ -11,7 +11,7 @@ const setupController = {
       const stock_id = await stockService.createStock(stock_name);
       return c.json({ success: true, data: { stock_id } });
     } catch (e) {
-      return handleError(c, e, "Failed to create stock", 400);
+      return handleError(c, e, "Failed to create stock", 500);
     }
   },
   addStockToUserRequest: async (c: ContextWithUser<WrappedInput<AddStockToUserRequest>>) => {

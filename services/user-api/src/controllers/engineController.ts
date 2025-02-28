@@ -1,3 +1,4 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   type PlaceLimitSellRequest,
   type PlaceLimitSellResponse,
@@ -26,7 +27,7 @@ const engineController = {
           c,
           new Error("Only market buy orders are supported"),
           "Invalid order type",
-          422
+          400
         );
       }
       const response = await makeInternalRequest<PlaceMarketBuyRequest, PlaceMarketBuyResponse>({
@@ -39,7 +40,12 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
+        return handleError(
+          c,
+          new Error("Failed to place order"),
+          "Failed to place order",
+          response.status == 400 ? 400 : 500
+        );
       }
     } else {
       if (orderType !== ORDER_TYPE.LIMIT) {
@@ -47,7 +53,7 @@ const engineController = {
           c,
           new Error("Only limit sell orders are supported"),
           "Invalid order type",
-          422
+          400
         );
       }
       const response = await makeInternalRequest<PlaceLimitSellRequest, PlaceLimitSellResponse>({
@@ -61,7 +67,12 @@ const engineController = {
       if (response.success) {
         return c.json({ success: true, data: null });
       } else {
-        return handleError(c, new Error("Failed to place order"), "Failed to place order", 400);
+        return handleError(
+          c,
+          new Error("Failed to place order"),
+          "Failed to place order",
+          response.status == 400 ? 400 : 500
+        );
       }
     }
   },
@@ -79,7 +90,12 @@ const engineController = {
     if (response.success) {
       return c.json({ success: true, data: null });
     } else {
-      return handleError(c, new Error("Failed to cancel order"), "Failed to cancel order", 400);
+      return handleError(
+        c,
+        new Error("Failed to cancel order"),
+        "Failed to cancel order",
+        response.status == 400 ? 400 : 500
+      );
     }
   },
 };

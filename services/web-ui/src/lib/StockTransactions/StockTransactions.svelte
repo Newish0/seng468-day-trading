@@ -1,43 +1,64 @@
 <script lang="ts">
-  import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
+  import {
+    type CancelStockTransactionRequest,
+    type CancelStockTransactionResponse,
+  } from "shared-types/dtos/user-api/engine/cancelStockTransaction";
+  import {
+    type GetStockTransactionsRequest,
+    type GetStockTransactionsResponse,
+  } from "shared-types/dtos/user-api/transaction/getStockTransactions";
+  import { ORDER_STATUS, type StockTransaction } from "shared-types/transactions";
+  import { makeBackendRequest } from "../utils/makeBackendRequest";
   import { onMount } from "svelte";
+  import { addToast, TOAST_TYPES } from "../Toast/toastStore";
+  import ConfirmModal from "./../ConfirmModal/ConfirmModal.svelte";
+  import { authHeader } from "../Auth/auth";
 
-  let transactions: any;
+  let transactions: StockTransaction[];
 
-  const getWalletTransactions = () => {
-    // to be implemented
+  const getStockTransactions = async () => {
+    const response = await makeBackendRequest<
+      GetStockTransactionsRequest,
+      GetStockTransactionsResponse
+    >({
+      headers: $authHeader,
+      body: undefined,
+    })("userApi", "getStockTransactions");
 
-    return [
-      {
-        stock: "AAPL",
-        orderType: "Market buy",
-        amount: 1500,
-        time: "2024-01-29 12:00",
-        status: "Pending",
-      },
-      {
-        stock: "GOOGL",
-        orderType: "Limit sell",
-        amount: 1250,
-        time: "2024-01-29 13:15",
-        status: "Completed",
-      },
-      {
-        stock: "MSFT",
-        orderType: "Market buy",
-        amount: 1100,
-        time: "2024-01-29 14:30",
-        status: "Cancel",
-      },
-    ];
+    if (!response.success) {
+      addToast({ message: "Failed to get stock transactions", type: TOAST_TYPES.ERROR });
+      return [] as StockTransaction[];
+    }
+
+    return response.data;
   };
 
   onMount(() => {
-    transactions = getWalletTransactions();
+    transactions = []; // No-data value
+    getStockTransactions().then((data) => {
+      transactions = data;
+    });
   });
 
-  const cancelTransaction = () => {
-    // to be implemented
+  const cancelTransaction = async ({ stock_tx_id }: Pick<StockTransaction, "stock_tx_id">) => {
+    const response = await makeBackendRequest<
+      CancelStockTransactionRequest,
+      CancelStockTransactionResponse
+    >({
+      headers: $authHeader,
+      body: {
+        stock_tx_id: stock_tx_id,
+      },
+    })("userApi", "cancelStockTransaction");
+
+    if (!response.success) {
+      addToast({ message: "Failed to cancel transaction", type: TOAST_TYPES.ERROR });
+      return;
+    }
+
+    addToast({ message: "Successfully cancelled transaction", type: TOAST_TYPES.SUCCESS });
+    transactions = transactions.filter((transaction) => transaction.stock_tx_id !== stock_tx_id);
+    window.location.reload();
   };
 </script>
 
@@ -59,14 +80,17 @@
       <!-- TODO: Partial sell transactions ideally could be grouped together and put under say an accordion -->
       {#each transactions as transaction}
         <tr>
-          <td>{transaction.stock}</td>
-          <td>{transaction.orderType}</td>
-          <td>${transaction.amount}</td>
-          <td>{transaction.time}</td>
-          <td>{transaction.status}</td>
-          <td>
-            {#if transaction.status !== "Completed"}
-              <ConfirmModal on:click={cancelTransaction}>Cancel</ConfirmModal>
+          <td>{transaction.stock_id}</td>
+          <td>{transaction.order_type}</td>
+          <td>${transaction.stock_price}</td>
+          <td>{transaction.time_stamp}</td>
+          <td>{transaction.order_status}</td>
+          <td class="min-w-12">
+            {#if transaction.order_status !== ORDER_STATUS.COMPLETED && transaction.order_status !== ORDER_STATUS.CANCELLED}
+              <ConfirmModal
+                on:click={() => cancelTransaction({ stock_tx_id: transaction.stock_tx_id })}
+                >Cancel</ConfirmModal
+              >
             {/if}
           </td>
         </tr>

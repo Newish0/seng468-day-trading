@@ -2,13 +2,13 @@
   import Login from "./Login.svelte";
   import Register from "./Register.svelte";
 
-  export let mode: "login" | "register" = "register";
+  let mode: "login" | "register" = "login";
 </script>
 
-<div>
+<div class="mx-auto w-full max-w-lg">
   {#if mode === "register"}
-    <Register on:click={() => (mode = "login")} />
+    <Register bind:mode />
   {:else}
-    <Login on:click={() => (mode = "register")} />
+    <Login bind:mode />
   {/if}
 </div>

@@ -1,14 +1,16 @@
 <script lang="ts">
-  import Auth from "./lib/Auth/Auth.svelte";
   import "simpledotcss";
   import "./app.css";
+  import Auth from "./lib/Auth/Auth.svelte";
   import StockPortfolio from "./lib/StockPortfolio/StockPortfolio.svelte";
   import Stocks from "./lib/Stocks/Stocks.svelte";
-  import Wallet from "./lib/Wallet/Wallet.svelte";
   import StockTransactions from "./lib/StockTransactions/StockTransactions.svelte";
+  import Toast from "./lib/Toast/Toast.svelte";
+  import Wallet from "./lib/Wallet/Wallet.svelte";
   import WalletTransactions from "./lib/WalletTransactions/WalletTransactions.svelte";
-
-  let loggedIn = true;
+  import ThemeToggle from "./lib/ThemeToggle/ThemeToggle.svelte";
+  import { auth } from "./lib/Auth/auth";
+  import LogOut from "./lib/Auth/LogOut.svelte";
 </script>
 
 <main class="max-w-[1200px] flex flex-col my-[60px] mx-auto gap-12">
@@ -20,7 +22,7 @@
     </div>
   </div>
 
-  {#if !loggedIn}
+  {#if !$auth.token}
     <Auth />
   {:else}
     <Wallet />
@@ -29,4 +31,12 @@
     <StockTransactions />
     <Stocks />
   {/if}
+  <Toast />
+
+  <div class="absolute top-2 right-2 !flex !items-center !gap-2">
+    <ThemeToggle />
+    {#if $auth.token}
+      <LogOut />
+    {/if}
+  </div>
 </main>

@@ -6,8 +6,9 @@ use tokio::sync::RwLock;
 use crate::{
     matching_pq::SellOrder,
     models::{
-        LimitSellCancelData, LimitSellCancelResponse, LimitSellRequest, LimitSellResponse,
-        MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice, StockPricesResponse,
+        LimitSellCancelData, LimitSellCancelRequest, LimitSellCancelResponse, LimitSellRequest,
+        LimitSellResponse, MarketBuyData, MarketBuyRequest, MarketBuyResponse, StockPrice,
+        StockPricesResponse,
     },
     order_service::{self, OrderService, OrderServiceConfig, OrderUpdate},
     state::AppState,
@@ -127,8 +128,7 @@ pub async fn market_buy(
         let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
 
         // Complete the top sell order or perform partial sell on the top sell order
-        let order_update;
-        if purchase_all {
+        let order_update = if purchase_all {
             total_price += top_sell_order.cur_quantity as f64 * top_sell_order.price;
             shares_bought += top_sell_order.cur_quantity;
 
@@ -137,14 +137,14 @@ pub async fn market_buy(
             let sold_qty = top_sell_order.cur_quantity; // make copy
             top_sell_order.cur_quantity = 0;
 
-            order_update = OrderUpdate {
+            OrderUpdate {
                 stock_id: top_sell_order.stock_id.clone(),
                 price: top_sell_order.price,
                 remaining_quantity: top_sell_order.cur_quantity,
                 sold_quantity: sold_qty,
                 stock_tx_id: top_sell_order.stock_tx_id.clone(),
                 user_name: top_sell_order.user_name.clone(),
-            };
+            }
         } else {
             total_price += shares_to_buy as f64 * top_sell_order.price;
             shares_bought += shares_to_buy;
@@ -155,7 +155,7 @@ pub async fn market_buy(
             let sold_qty = shares_to_buy; // make copy
             shares_to_buy = 0;
 
-            order_update = OrderUpdate {
+            let update = OrderUpdate {
                 stock_id: top_sell_order.stock_id.clone(),
                 price: top_sell_order.price,
                 remaining_quantity: top_sell_order.cur_quantity,
@@ -166,27 +166,35 @@ pub async fn market_buy(
 
             // Reinsert the sell order back into the PQ since it is a partial sell
             state.matching_pq.insert(top_sell_order);
-        }
 
-        // Get the endpoint from the environment variable, with a default if not found
-        let endpoint = env::var("ORDER_SERVICE_URL")
-            .unwrap_or_else(|_| "http://order/updateSale:3000".to_string());
+            update
+        };
+
+        // Get the base url from the environment variable, with a default if not found
+        let base_url =
+            env::var("ORDER_SERVICE_HOST").unwrap_or_else(|_| "http://order:3000".to_string());
 
         // DEBUG: Output the request to order service
         #[cfg(debug_assertions)]
         {
-            println!("Send sale update to {:?}", endpoint);
+            println!("Send sale update to {base_url}");
             println!("{:?}", order_update);
         }
 
         let order_service = OrderService::new(OrderServiceConfig {
-            base_url: endpoint,
+            base_url,
             max_retries: 3,
             base_retry_delay_secs: 2,
         });
 
-        // TODO: do this on a separate thread.
-        order_service.update_sale(order_update).await.unwrap(); // TODO: Add error handling
+        tokio::spawn(async move {
+            match order_service.update_sale(order_update).await {
+                Ok(_) => (), // Don't need further action on success
+                Err(_) => {
+                    println!("TODO: What do we do when we fail to call the order service? ")
+                } // TODO: What do we do when we fail to call the order service? 
+            }
+        });
     } // while
 
     Json(MarketBuyResponse {
@@ -224,7 +232,7 @@ pub async fn limit_sell(
 
 pub async fn cancel_limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
-    Json(payload): Json<LimitSellRequest>,
+    Json(payload): Json<LimitSellCancelRequest>,
 ) -> Json<LimitSellCancelResponse> {
     let some_sell_order = {
         let mut state = state.write().await;

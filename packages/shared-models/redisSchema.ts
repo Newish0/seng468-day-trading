@@ -1,12 +1,12 @@
-import { Schema } from "redis-om";
+import { Schema, type Entity } from "redis-om";
 
-export type InferSchema<T extends Record<string, { type: string }>> = {
+type InferSchema<T extends Record<string, { type: string }>> = Entity & {
   [K in keyof T]: T[K]["type"] extends "string"
     ? string
     : T[K]["type"] extends "string[]"
     ? string[]
     : T[K]["type"] extends "date"
-    ? string
+    ? Date
     : T[K]["type"] extends "number"
     ? number
     : T[K]["type"] extends "boolean"
@@ -18,33 +18,52 @@ const stockSchemaObject = {
   stock_id: { type: "string" },
   stock_name: { type: "string" },
 } as const;
-const stockSchema = new Schema("stocks", stockSchemaObject);
+
 export type Stock = InferSchema<typeof stockSchemaObject>;
+const stockSchema = new Schema<Stock>("stocks", stockSchemaObject);
 
 const ownedStockSchemaObject = {
+  user_name: { type: "string" },
   stock_id: { type: "string" },
   stock_name: { type: "string" },
   current_quantity: { type: "number" },
 } as const;
-const ownedStockSchema = new Schema("owned_stocks", ownedStockSchemaObject);
+
 export type StockOwned = InferSchema<typeof ownedStockSchemaObject>;
+const ownedStockSchema = new Schema<StockOwned>("owned_stocks", ownedStockSchemaObject);
 
 const walletTransactionSchemaObject = {
+  user_name: { type: "string" },
   wallet_tx_id: { type: "string" },
   stock_tx_id: { type: "string" },
   is_debit: { type: "boolean" },
   amount: { type: "number" },
   time_stamp: { type: "date" },
 } as const;
+
+export type WalletTransaction = InferSchema<typeof walletTransactionSchemaObject>;
+const WalletTransactionSchema = new Schema<WalletTransaction>(
 const walletTransactionSchema = new Schema(
   "wallet_transactions",
   walletTransactionSchemaObject
 );
-export type WalletTransaction = InferSchema<
-  typeof walletTransactionSchemaObject
->;
+
+export interface StockTransaction extends Entity {
+  user_name: string;
+  stock_tx_id: string;
+  stock_id: string;
+  wallet_tx_id: string | null;
+  order_status: string;
+  is_buy: boolean;
+  order_type: string;
+  stock_price: number;
+  quantity: number;
+  parent_tx_id: string | null;
+  time_stamp: Date;
+}
 
 const stockTransactionSchemaObject = {
+  user_name: { type: "string" },
   stock_tx_id: { type: "string" },
   stock_id: { type: "string" },
   wallet_tx_id: { type: "string" },
@@ -56,23 +75,31 @@ const stockTransactionSchemaObject = {
   parent_tx_id: { type: "string" },
   time_stamp: { type: "date" },
 } as const;
+
+const StockTransactionSchema = new Schema<StockTransaction>(
 const stockTransactionSchema = new Schema(
   "stock_transactions",
   stockTransactionSchemaObject
 );
-export type StockTransaction = InferSchema<typeof stockTransactionSchemaObject>;
 
 const userSchemaObject = {
   user_name: { type: "string" },
   password: { type: "string" },
   name: { type: "string" },
+  wallet_balance: { type: "number" },
   portfolio: { type: "string[]" },
   stock_transaction_history: { type: "string[]" },
   wallet_transaction_history: { type: "string[]" },
   wallet_balence: { type: "number" },
   is_locked: { type: "boolean" },
 } as const;
-const userSchema = new Schema("users", userSchemaObject);
+
 export type User = InferSchema<typeof userSchemaObject>;
 
-export { stockSchema, ownedStockSchema, walletTransactionSchema, stockTransactionSchema, userSchema };
+export {
+  ownedStockSchema,
+  stockSchema,
+  StockTransactionSchema,
+  userSchema,
+  WalletTransactionSchema,
+};

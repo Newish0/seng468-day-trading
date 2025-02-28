@@ -54,3 +54,5 @@ user-api // service root
 /engine/cancelStockTransaction - Cancel a pending sell order
 
 /setup/createStock - Creates a new stock in the system
+
+/setup/addStockToUser - Adds the given number of shares of stock to the user 

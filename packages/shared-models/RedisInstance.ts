@@ -3,7 +3,6 @@ import { createClient} from 'redis';
 import  {userSchema, ownedStockSchema, stockSchema, walletTransactionSchema, stockTransactionSchema} from './redisSchema';
 import type { RedisClientType, RedisModules } from 'redis'; 
 import type { Entity } from 'redis-om';
-import type { InferSchema } from './redisSchema';
 
 //Instantiation object
 class RedisInstance {
@@ -21,10 +20,10 @@ class RedisInstance {
     };
 
   /**
-   * 
+   *
    * @param redisUrl - Optional argument to connect to a differnt Redis server
    */
-  constructor(redisUrl: string = 'redis://localhost:6379') {
+  constructor(redisUrl: string = process.env.REDIS_URL || "redis://localhost:6379") {
     this.redisClient = createClient({ url: redisUrl });
   }
 
@@ -51,7 +50,7 @@ class RedisInstance {
             this.repositoryDict[repoKey] = repository;
       }
     } catch (error) {
-      console.error('Failed to connect to Redis:', error);
+      console.error("Failed to connect to Redis:", error);
       throw error;
     }      
   }
@@ -77,15 +76,15 @@ class RedisInstance {
    * Disconnect from Redis
    * @returns {Promise<void>} - Resolves when disconnected successfully
    */
-    async disconnect(): Promise<void> {
-      try {
-        await this.redisClient.quit();
-        console.log('Disconnected from Redis.');
-      } catch (error) {
-        console.error('Error while disconnecting Redis:', error);
-        throw error;
-      }
+  async disconnect(): Promise<void> {
+    try {
+      await this.redisClient.quit();
+      console.log("Disconnected from Redis.");
+    } catch (error) {
+      console.error("Error while disconnecting Redis:", error);
+      throw error;
     }
+  }
 
   /**
    * Returns the Redis Client
@@ -96,34 +95,34 @@ class RedisInstance {
   }
 
   /**
-   * Queries the database, and performs a quick check to see if the schema has already been instantiated within the database. 
+   * Queries the database, and performs a quick check to see if the schema has already been instantiated within the database.
    * @param name - Name of the repository we want to check for
    * @returns boolean - A boolean value determining if the repository already exists in the database
    */
   async doesRepositoryExist(name: string): Promise<number> {
     // Need to typecast this if it exists, but for now this works
-    let key : string = name + ':index:hash'; // The naming convention for the repositories should follow this format.
-    return await (this.redisClient.exists(key)); // Returns true if repository does exist
+    let key: string = name + ":index:hash"; // The naming convention for the repositories should follow this format.
+    return await this.redisClient.exists(key); // Returns true if repository does exist
   }
- 
+
   /**
-   * Creates a repository given a schema and name. It will then add it to the global dictionary 
-   * @param schema - The type of schema the Repository will be supporting 
-   * @param name - The name of the repository 
-   * @returns {Repository<Entity>} - Returns the repository it instantiated
+   * Creates a repository given a schema and name. It will then add it to the global dictionary
+   * @param schema - The type of schema the Repository will be supporting
+   * @param name - The name of the repository
+   * @returns {Repository<any>} - Returns the repository it instantiated
    */
-  async createRepository(schema: Schema): Promise<Repository<Entity>> {
+  async createRepository(schema: Schema): Promise<Repository<any>> {
     // Check if Redis client is connected
     if (!this.redisClient.isOpen) {
-      throw new Error('Redis client is not connected to a live instance.');
+      throw new Error("Redis client is not connected to a live instance.");
     }
 
     // Create repository with the schema
-    const repository = new Repository<Entity>(schema, this.redisClient);
+    const repository = new Repository<any>(schema, this.redisClient);
 
     // All of our repositorys should expect to be indexed into
     await repository.createIndex();
-    
+
     return repository;
   }
 

@@ -121,17 +121,7 @@ const service = {
       throw error;
     }
 
-    if (ownedStock.current_quantity - quantity === 0) {
-      const ownedStockEntityId = ownedStock[EntityId];
-
-      // If the quantity to sell equals the owned quantity, delete the record
-      try {
-        if (ownedStockEntityId) await stockOwnedRepository.remove(ownedStockEntityId);
-      } catch (err) {
-        throw new Error("Error deleting owned stock record from database");
-      }
-    } else {
-      // If there's more stock left, just decrease the quantity
+    if (ownedStock.current_quantity - quantity >= 0) {
       ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
       try {
         await stockOwnedRepository.save(ownedStock);

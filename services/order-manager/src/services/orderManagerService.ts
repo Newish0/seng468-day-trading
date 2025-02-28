@@ -1,7 +1,12 @@
 import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
-import type { StockOwned, StockTransaction } from "shared-models/redisSchema";
-import { ownedStockSchema, StockTransactionSchema, userSchema } from "shared-models/redisSchema";
+import type { Stock, StockOwned, StockTransaction } from "shared-models/redisSchema";
+import {
+  ownedStockSchema,
+  StockTransactionSchema,
+  userSchema,
+  stockSchema,
+} from "shared-models/redisSchema";
 import type {
   CancelSellRequest,
   LimitSellOrderRequest,
@@ -15,6 +20,8 @@ const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
 const CANCEL_SELL_ROUTING_KEY = "order.limit_sell_cancellation";
 
+const stockNameCache: Map<string, string> = new Map();
+
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
 
@@ -26,6 +33,8 @@ const userRepository: Repository<User> = await redisConnection.createRepository(
 const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
   ownedStockSchema
 );
+
+const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -45,9 +54,10 @@ const service = {
     price: number,
     user_name: string
   ) => {
-    // Review: Check whether the user has that particular stock/quantity here or in user-api?
-
     let userData: User | null; // contains user info from database
+    let stock_name: string;
+    let ownedStock: StockOwned | null;
+    const txId = crypto.randomUUID();
     try {
       userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
       if (!userData) throw new Error("Error finding user (placeLimitSellOrder)");
@@ -55,11 +65,27 @@ const service = {
       throw new Error("Error fetching user data from database (Limit Sell Order)");
     }
 
-    const txId = crypto.randomUUID();
+    if (stockNameCache.has(stock_id)) {
+      stock_name = stockNameCache.get(stock_id)!;
+    } else {
+      try {
+        const stock = await stockRepository
+          .search()
+          .where("stock_id")
+          .equals(stock_id)
+          .returnFirst();
+        if (!stock) throw new Error("Invalid stock_id (placeLimitSellOrder)");
+        stock_name = stock.stock_name;
+        stockNameCache.set(stock_id, stock_name);
+      } catch (err) {
+        throw new Error("Error fetching stock name (placeLimitSellOrder)");
+      }
+    }
 
     // Initializes limit sell request to request the matching-engine
     const limitSellRequest: LimitSellOrderRequest = {
       stock_id,
+      stock_name,
       quantity,
       price,
       stock_tx_id: txId,
@@ -88,7 +114,6 @@ const service = {
       throw new Error("Error saving limit sell transaction into database");
     }
 
-    let ownedStock: StockOwned | null;
     try {
       ownedStock = await stockOwnedRepository
         .search()

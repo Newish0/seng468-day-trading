@@ -1,5 +1,6 @@
 export type LimitSellOrderRequest = {
   stock_id: string;
+  stock_name: string;
   quantity: number;
   price: number;
   stock_tx_id: string;

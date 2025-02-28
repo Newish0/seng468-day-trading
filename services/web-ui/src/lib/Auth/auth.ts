@@ -15,5 +15,5 @@ type AuthHeader = {
 };
 
 export const authHeader = derived(auth, ($auth): AuthHeader | {} => {
-  return $auth.token ? { Authorization: `Bearer ${$auth.token}` } : {};
+  return $auth.token ? { token: $auth.token } : {};
 });

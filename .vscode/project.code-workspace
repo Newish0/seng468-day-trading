@@ -21,7 +21,7 @@
             "path": "../packages/shared-utils"
         },
         {
-            "name": "services/auth",
+            "name": "Auth Service",
             "path": "../services/auth"
         },
         {
@@ -29,20 +29,24 @@
             "path": "../services/foobar-service"
         },
         {
-            "name": "services/gateway",
+            "name": "Gateway",
             "path": "../services/gateway"
         },
         {
-            "name": "services/matching-engine",
+            "name": "Matching Engine",
             "path": "../services/matching-engine"
         },
         {
-            "name": "services/user-api",
+            "name": "User API Service",
             "path": "../services/user-api"
         },
         {
-            "name": "services/web-ui",
+            "name": "Web UI",
             "path": "../services/web-ui"
+        },
+        {
+            "name": "Order Update Service",
+            "path": "../services/order-update",
         },
         {
             "name": "Order Placement/Cancellation Service",

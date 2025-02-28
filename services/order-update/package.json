@@ -1,0 +1,24 @@
+{
+  "name": "order-update-service",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/amqplib": "^0.10.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.5",
+    "redis": "^4.7.0",
+    "redis-om": "^0.4.7",
+    "shared-models": "workspace:*",
+    "shared-types": "workspace:*",
+    "shared-utils": "workspace:*"
+  }
+}

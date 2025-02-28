@@ -42,6 +42,7 @@ const stockController = {
     try {
       const userStocks = await stockService.getUserStockPortfolio(username);
       const userStocksOwned = userStocks
+        .filter((stock) => stock.current_quantity) // filter out stocks with 0 quantity
         .map((stock) => ({
           stock_id: stock.stock_id,
           stock_name: stock.stock_name,

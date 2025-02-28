@@ -45,11 +45,12 @@
             "path": "../services/web-ui"
         },
         {
-            "path": "../services/order"
+            "name": "Order Update Service",
+            "path": "../services/order-update",
         },
         {
-            "name": "Order Update Service",
-            "path": "../services/order-update"
+            "name": "Order Placement/Cancellation Service",
+            "path": "../services/order-manager"
         }
     ],
     "settings": {

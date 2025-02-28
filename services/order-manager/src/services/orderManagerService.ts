@@ -146,6 +146,7 @@ const service = {
       throw error;
     }
 
+    // TODO: Make this atomic
     if (ownedStock.current_quantity - quantity >= 0) {
       ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
       try {

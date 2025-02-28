@@ -224,7 +224,7 @@ export default {
     }
 
 
-    // TODO: Use atomic func to update wallet balance & UNLOCK funds 
+    // TODO: Use atomic func to update wallet balance instead of below logic 
 
     // Update the user balance for buyer (updates the user fetched at the start of method)
     try {
@@ -244,6 +244,8 @@ export default {
         cause: error,
       });
     }
+
+    // TODO: UNLOCK funds only AFTER we updated owned stock 
 
     // Add stock to user portfolio
     await createAddQtyToOwnedStock(

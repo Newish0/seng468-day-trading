@@ -45,7 +45,8 @@
             "path": "../services/web-ui"
         },
         {
-            "path": "../services/order"
+            "name": "Order Placement/Cancellation Service",
+            "path": "../services/order-manager"
         }
     ],
     "settings": {

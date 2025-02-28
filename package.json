@@ -7,7 +7,8 @@
     "services/user-api",
     "services/web-ui",
     "services/order-manager",
-    "services/auth"
+    "services/auth",
+    "services/order-update"
   ],
   "devDependencies": {
     "@types/bun": "latest"

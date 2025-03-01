@@ -6,8 +6,9 @@
     "services/foobar-service",
     "services/user-api",
     "services/web-ui",
-    "services/order",
-    "services/auth"
+    "services/order-manager",
+    "services/auth",
+    "services/order-update"
   ],
   "devDependencies": {
     "@types/bun": "latest"

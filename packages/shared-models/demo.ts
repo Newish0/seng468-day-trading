@@ -2,7 +2,7 @@
 import { stockSchema, ownedStockSchema, userSchema } from './redisSchema';
 import { RedisInstance } from './RedisInstance';
 import {Schema, Repository, EntityId} from 'redis-om';
-import { addIntoRepository, getFromRepository, getOwnedStock, removeFromRepository, lockUserWallet, ownedStockAtomicUpdate } from "./redisRepositoryHelper";
+import { addIntoRepository, getFromRepository, removeFromRepository, lockUserWallet, ownedStockAtomicUpdate, userWalletAtomicUpdate } from "./redisRepositoryHelper";
 import type { Entity } from 'redis-om';
 
 /**
@@ -91,10 +91,7 @@ const main = async () => {
     user_name: "Jim", // Could also just be the user id/token
     password: "Jimp",
     name: "Jimbo",
-    portfolio: [owned_stock_key_one, owned_stock_key_two],
-    stock_transaction_history: [],
-    wallet_transaction_history: [],
-    wallet_balence: 3.5,
+    wallet_balance: 3.5,
     is_locked: false, // Please when creating a schema, set this to false by default. In redis OM there is no way to set a default value
   } 
 
@@ -111,18 +108,6 @@ const main = async () => {
   console.log("Here is the user object's key again, but this time we are calling it from the object")
   console.log(user_object[EntityId]);
 
-  /**
-   * Here I am unsure on how to type hint these objects, any help here would be greatly appreciated as I am unable to get this to work
-   * without declaring them as a any type
-   */
-  console.log("Here is also object and portfolio returned")
-  console.log(typeof user_object)
-  console.log(typeof user_object.portfolio);
-  console.log(await getFromRepository(owned_stock_repository, user_object.portfolio));
-
-  console.log("And here is just a simple call to a function which does the same thing.");
-  console.log(await getOwnedStock(user_repository, owned_stock_repository, user_key));
-
   let lock_result : boolean = await lockUserWallet(redisConnection.getClient(), user_key);
 
   console.log("Here is the result of the lock function");
@@ -136,7 +121,20 @@ const main = async () => {
   console.log("Here is the result of the lock function again");
   console.log(lock_result);
 
+  console.log("Here is the result of the lock function after we unlock it");
+  user_data = await getFromRepository(user_repository, user_key);
+  user_data.is_locked = false;
+  await addIntoRepository(user_repository, user_data); // Add the updated user object back into the repository
+  lock_result = await lockUserWallet(redisConnection.getClient(), user_key);
+  console.log(lock_result);
   console.log(await getFromRepository(user_repository, user_key));
+
+  console.log("Now we are going to be updating the wallet balance of the user atomically");
+  let wallet_atomic : boolean = await userWalletAtomicUpdate(redisConnection.getClient(), user_key, 100);
+
+  console.log("Now we are going to be printing out user data after the atomic update");
+  console.log(await getFromRepository(user_repository, user_key));
+  
 
   let owned_stock_atomic : boolean = await ownedStockAtomicUpdate(redisConnection.getClient(), owned_stock_key_one, -100);
 

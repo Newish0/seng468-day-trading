@@ -31,19 +31,6 @@ return data;
 }
 
 /**
- * Takes the given repositories (should be user and stockOwned), and retrieves the data stored under portfolio from the given user key.
- * @param userRepository - The user repository we want to retrieve our user from
- * @param stockOwnedRepository - The stock owned repository, contain our owned stock data
- * @param userKey - The key of the user whos portfolio we want to retrieve
- * @returns {Promise<Entity>} - Returns the data stored at that key.
- */
-export async function getOwnedStock(userRepository: Repository<Entity>, stockOwnedRepository: Repository<Entity>, userKey: string): Promise<Entity> {
-    let user : any = await userRepository.fetch(userKey); 
-    let data : Entity =  await stockOwnedRepository.fetch(user.portfolio);
-    return data;
-    }
-
-/**
  * Takes the given repository, and retrieves the data stored at the given key.
  * @param repository - The repository we want to insert data into
  * @param key - The key for the data we want to retrieve from the repository
@@ -97,6 +84,34 @@ export async function ownedStockAtomicUpdate(redisInstance: RedisClientType, sto
     }
 }
 
+export async function userWalletAtomicUpdate(redisInstance: RedisClientType, userKey: string, amountToChange: number): Promise<boolean> {
+    // If a true is returned its actually a 1, if false its null 
+    const luaScript = `
+    local data = redis.call('JSON.GET', KEYS[1])
+    local jsonData = cjson.decode(data)
+    local amountToChange = tonumber(ARGV[1])
+
+    if (jsonData.is_locked) and (amountToChange < 0) then
+        return false
+    else
+        jsonData.wallet_balance = jsonData.wallet_balance + amountToChange
+        redis.call('JSON.SET', KEYS[1], '.', cjson.encode(jsonData))
+        return true    
+    end
+    `; 
+
+    try {
+        //Not sure if I can remove any, also gotta add users: because redis-om adds it
+        // This is a finnecky thing, but it works and does it atomically
+        const result = await redisInstance.eval(luaScript, { keys: ["users:" + userKey], arguments: [amountToChange.toString()] } as any); // Args need to be passed as strings
+        // console.log(result);
+        return result !== null;
+    } catch (error) {
+        console.error("Error executing Lua script:", error);
+        return false;
+    }
+}
+
 /**
  * This function locks a user's wallet, letting a user know no operations should be performed on it.
  * This is done by setting the is_locked field to true in the user object.
@@ -129,5 +144,17 @@ export async function lockUserWallet(redisInstance: RedisClientType, user_key: s
         console.error("Error executing Lua script:", error);
         return false;
     }
+}
+
+/**
+ * This function unlocks a user's wallet, letting a user know operations can be performed on it.
+ * This is done by setting the is_locked field to false in the user object.
+ * @param repository - The repository we want to update the users wallet in
+ * @param key - The key of the user we want to unlock
+ */
+export async function unlockUserWallet(repository: Repository<Entity>, key: string): Promise<void> {
+    let user = await repository.fetch(key);
+    user.is_locked = false;
+    repository.save(user);
 }
 

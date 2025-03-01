@@ -85,10 +85,6 @@ const userSchemaObject = {
   password: { type: "string" },
   name: { type: "string" },
   wallet_balance: { type: "number" },
-  portfolio: { type: "string[]" },
-  stock_transaction_history: { type: "string[]" },
-  wallet_transaction_history: { type: "string[]" },
-  wallet_balence: { type: "number" },
   is_locked: { type: "boolean" },
 } as const;
 

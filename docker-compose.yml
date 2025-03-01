@@ -37,7 +37,7 @@ services:
     ports:
       - "3000"
     depends_on:
-      order:
+      order-manager:
         condition: service_started
       redis:
         condition: service_healthy

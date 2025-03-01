@@ -30,7 +30,7 @@ services:
     environment:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-      - ORDER_SERVICE_HOST=http://order:3002
+      - ORDER_SERVICE_HOST=http://order-manager:3002
     container_name: user-api
     networks:
       - day-trading-network
@@ -72,15 +72,39 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
-  # Order Service
-  order:
+
+  # Order Placement/Cancellation Service
+  order-manager:
     build:
       context: . # Use the project root as the build context for packages to work
-      dockerfile: ./services/order/Dockerfile
+      dockerfile: ./services/order-manager/Dockerfile
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
       - REDIS_URL=redis://redis:6379
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+    depends_on:
+      matching-engine:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+
+  # Order Update Service
+  order-update:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/order-update/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
     depends_on:
       matching-engine:
         condition: service_started
@@ -96,6 +120,9 @@ services:
       dockerfile: Dockerfile
     environment:
       - PORT=3003
-      - ORDER_SERVICE_HOST=http://order:3002
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
     networks:
       - day-trading-network

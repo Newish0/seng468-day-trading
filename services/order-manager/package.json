@@ -1,5 +1,5 @@
 {
-  "name": "order-service",
+  "name": "order-manager",
   "module": "index.ts",
   "type": "module",
   "scripts": {

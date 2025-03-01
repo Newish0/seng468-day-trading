@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize application state
     let app_state = Arc::new(RwLock::new(AppState::new()));
 
-    // Initialize RabbitMQ client
+    // Initialize RabbitMQ client with sharding configuration
     let rabbitmq_config = RabbitMQConfig {
         host: env::var("RABBITMQ_HOST").unwrap_or_else(|_| "localhost".to_string()),
         port: env::var("RABBITMQ_PORT")
@@ -29,7 +29,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or(5672),
         username: env::var("RABBITMQ_USERNAME").unwrap_or_else(|_| "guest".to_string()),
         password: env::var("RABBITMQ_PASSWORD").unwrap_or_else(|_| "guest".to_string()),
+        shard_id: env::var("SHARD_ID")
+            .unwrap_or_else(|_| "0".to_string())
+            .parse()
+            .unwrap_or(0),
     };
+
+    println!(
+        "Starting matching engine with shard ID: {}",
+        rabbitmq_config.shard_id
+    );
 
     let rabbitmq_client = Arc::new(RabbitMQClient::new(rabbitmq_config).await?);
 

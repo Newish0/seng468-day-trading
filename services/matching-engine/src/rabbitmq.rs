@@ -17,6 +17,7 @@ pub struct RabbitMQConfig {
     pub port: u16,
     pub username: String,
     pub password: String,
+    pub shard_id: u32,
 }
 
 impl Default for RabbitMQConfig {
@@ -26,6 +27,7 @@ impl Default for RabbitMQConfig {
             port: 5672,
             username: "guest".to_string(),
             password: "guest".to_string(),
+            shard_id: 0,
         }
     }
 }
@@ -33,6 +35,7 @@ impl Default for RabbitMQConfig {
 pub struct RabbitMQClient {
     _connection: Connection, // Keep connection alive
     channel: Arc<Channel>,
+    config: RabbitMQConfig,
 }
 
 impl RabbitMQClient {
@@ -81,6 +84,7 @@ impl RabbitMQClient {
         Ok(Self {
             _connection: connection, // Store connection
             channel: Arc::new(channel),
+            config,
         })
     }
 
@@ -88,58 +92,86 @@ impl RabbitMQClient {
         &self,
         consumer: C,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        // Declare queues for different order types
-        let market_buy_queue = QueueDeclareArguments::durable_client_named("market_buy_queue");
+        let shard_id = self.config.shard_id;
+
+        // Declare queue for market buy orders specific to this shard
+        let market_buy_queue = QueueDeclareArguments::durable_client_named(&format!(
+            "market_buy_queue_shard_{}",
+            shard_id
+        ));
         let (market_buy_queue_name, _, _) =
             self.channel.queue_declare(market_buy_queue).await?.unwrap();
+
+        // Bind queue with shard-specific routing pattern
         self.channel
             .queue_bind(QueueBindArguments::new(
                 &market_buy_queue_name,
                 "order_exchange",
-                "order.market_buy",
+                &format!("order.market_buy.shard_{}", shard_id),
             ))
             .await?;
 
-        let limit_sell_queue = QueueDeclareArguments::durable_client_named("limit_sell_queue");
+        // Declare queue for limit sell orders specific to this shard
+        let limit_sell_queue = QueueDeclareArguments::durable_client_named(&format!(
+            "limit_sell_queue_shard_{}",
+            shard_id
+        ));
         let (limit_sell_queue_name, _, _) =
             self.channel.queue_declare(limit_sell_queue).await?.unwrap();
+
+        // Bind queue with shard-specific routing pattern
         self.channel
             .queue_bind(QueueBindArguments::new(
                 &limit_sell_queue_name,
                 "order_exchange",
-                "order.limit_sell",
+                &format!("order.limit_sell.shard_{}", shard_id),
             ))
             .await?;
 
-        let cancel_sell_queue = QueueDeclareArguments::durable_client_named("cancel_sell_queue");
+        // Declare queue for sell cancellations specific to this shard
+        let cancel_sell_queue = QueueDeclareArguments::durable_client_named(&format!(
+            "cancel_sell_queue_shard_{}",
+            shard_id
+        ));
         let (cancel_sell_queue_name, _, _) = self
             .channel
             .queue_declare(cancel_sell_queue)
             .await?
             .unwrap();
+
+        // Bind queue with shard-specific routing pattern
         self.channel
             .queue_bind(QueueBindArguments::new(
                 &cancel_sell_queue_name,
                 "order_exchange",
-                "order.limit_sell_cancellation",
+                &format!("order.limit_sell_cancellation.shard_{}", shard_id),
             ))
             .await?;
 
         // Set up consumers
-        let market_buy_args =
-            BasicConsumeArguments::new(&market_buy_queue_name, "market_buy_consumer").finish();
+        let market_buy_args = BasicConsumeArguments::new(
+            &market_buy_queue_name,
+            &format!("market_buy_consumer_{}", shard_id),
+        )
+        .finish();
         self.channel
             .basic_consume(consumer.clone(), market_buy_args)
             .await?;
 
-        let limit_sell_args =
-            BasicConsumeArguments::new(&limit_sell_queue_name, "limit_sell_consumer").finish();
+        let limit_sell_args = BasicConsumeArguments::new(
+            &limit_sell_queue_name,
+            &format!("limit_sell_consumer_{}", shard_id),
+        )
+        .finish();
         self.channel
             .basic_consume(consumer.clone(), limit_sell_args)
             .await?;
 
-        let cancel_sell_args =
-            BasicConsumeArguments::new(&cancel_sell_queue_name, "cancel_sell_consumer").finish();
+        let cancel_sell_args = BasicConsumeArguments::new(
+            &cancel_sell_queue_name,
+            &format!("cancel_sell_consumer_{}", shard_id),
+        )
+        .finish();
         self.channel
             .basic_consume(consumer, cancel_sell_args)
             .await?;
@@ -151,8 +183,6 @@ impl RabbitMQClient {
         &self,
         payload: StockPrice,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        
-
         let routing_key = format!("stock.price.{}", payload.stock_id);
         let args = BasicPublishArguments::new("stock_prices_exchange", &routing_key);
 

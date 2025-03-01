@@ -214,11 +214,7 @@ impl OrderConsumer {
             }
         };
 
-        if let Err(e) = self
-            .rabbitmq_client
-            .publish_stock_price(payload)
-            .await
-        {
+        if let Err(e) = self.rabbitmq_client.publish_stock_price(payload).await {
             eprintln!(
                 "Failed to publish latest stock price for {}: {}",
                 stock_id, e
@@ -247,8 +243,12 @@ impl AsyncConsumer for OrderConsumer {
     ) {
         let routing_key = deliver.routing_key().to_string();
 
-        match routing_key.as_str() {
-            "order.market_buy" => {
+        // Extract the order type from routing key pattern: order.{order_type}.shard_{shard_id}
+        let parts: Vec<&str> = routing_key.split('.').collect();
+
+        // Handle the message based on the order type part of the routing key
+        match parts.get(1) {
+            Some(&"market_buy") => {
                 if let Ok(request) = serde_json::from_slice::<MarketBuyRequest>(&content) {
                     let stock_id = request.stock_id.clone(); // Save for later
                     let buy_result = self.process_market_buy(request).await;
@@ -282,7 +282,7 @@ impl AsyncConsumer for OrderConsumer {
                     }
                 }
             }
-            "order.limit_sell" => {
+            Some(&"limit_sell") => {
                 if let Ok(request) = serde_json::from_slice::<LimitSellRequest>(&content) {
                     let stock_id = request.stock_id.clone(); // Save for later
                     let sell_order = SellOrder {
@@ -305,7 +305,7 @@ impl AsyncConsumer for OrderConsumer {
                     self.publish_stock_price_helper(&stock_id).await;
                 }
             }
-            "order.limit_sell_cancellation" => {
+            Some(&"limit_sell_cancellation") => {
                 if let Ok(request) = serde_json::from_slice::<LimitSellCancelRequest>(&content) {
                     let some_order = {
                         let mut state = self.state.write().await;

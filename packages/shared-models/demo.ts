@@ -95,7 +95,7 @@ const main = async () => {
     is_locked: false, // Please when creating a schema, set this to false by default. In redis OM there is no way to set a default value
   } 
 
-  user_data.wallet_balence = 10000;
+  user_data.wallet_balance = 10000;
 
   let user_repository: Repository<any> = await redisConnection.createRepository(userSchema);
   let user_key : string = await addIntoRepository(user_repository, user_data);
@@ -134,7 +134,7 @@ const main = async () => {
 
   console.log("Now we are going to be printing out user data after the atomic update");
   console.log(await getFromRepository(user_repository, user_key));
-  
+
 
   let owned_stock_atomic : boolean = await ownedStockAtomicUpdate(redisConnection.getClient(), owned_stock_key_one, -100);
 

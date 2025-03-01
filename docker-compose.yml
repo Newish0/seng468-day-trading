@@ -59,6 +59,22 @@ services:
       retries: 3
       start_period: 5s
 
+  rabbitmq:
+    image: rabbitmq:management
+    networks:
+      - day-trading-network
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management interface port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # Auth Service
   auth:
     build:
@@ -91,6 +107,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - day-trading-network
 
@@ -110,6 +128,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - day-trading-network
 
@@ -119,7 +139,6 @@ services:
       context: ./services/matching-engine
       dockerfile: Dockerfile
     environment:
-      - PORT=3003
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest

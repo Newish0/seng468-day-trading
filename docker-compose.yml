@@ -103,8 +103,8 @@ services:
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
     depends_on:
-      matching-engine:
-        condition: service_started
+      # matching-engine:
+      #   condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -124,8 +124,8 @@ services:
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
     depends_on:
-      matching-engine:
-        condition: service_started
+      # matching-engine:
+      #   condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -159,15 +159,6 @@ services:
     <<: *matching-engine-base
     environment:
       - SHARD_ID=1
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
-
-  matching-engine-shard2:
-    <<: *matching-engine-base
-    environment:
-      - SHARD_ID=2
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest

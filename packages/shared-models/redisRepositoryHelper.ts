@@ -50,7 +50,7 @@ export async function getKeyFromEntity(entity: Entity): Promise<string> {
 }
 
 /**
- * 
+ * This function updates a user's stock owned quantity atomically. This is done by adding the amountToChange to the current_quantity of the stock owned object.
  * @param redisInstance - The redis client instance
  * @param stockOwnedKey - The key of the stock owned object we want to update
  * @param amountToChange - The amount we want to change the current_quantity by
@@ -84,6 +84,13 @@ export async function ownedStockAtomicUpdate(redisInstance: RedisClientType, sto
     }
 }
 
+/**
+ * This function updates a user's wallet balance atomically. This is done by adding the amountToChange to the wallet balance of the user object.
+ * @param redisInstance - The redis client instance
+ * @param userKey - The key of the user object we want to update
+ * @param amountToChange - The amount we want to change the wallet balance by
+ * @returns {Promise<boolean>} - Returns true if the wallet was successfully updated, false if the wallet would be decremented below 0, is locked and we are subtracting, or had a error
+ */
 export async function userWalletAtomicUpdate(redisInstance: RedisClientType, userKey: string, amountToChange: number): Promise<boolean> {
     // If a true is returned its actually a 1, if false its null 
     const luaScript = `
@@ -91,7 +98,7 @@ export async function userWalletAtomicUpdate(redisInstance: RedisClientType, use
     local jsonData = cjson.decode(data)
     local amountToChange = tonumber(ARGV[1])
 
-    if (jsonData.is_locked) and (amountToChange < 0) then
+    if ((jsonData.is_locked) and (amountToChange < 0)) or (jsonData.wallet_balance + amountToChange < 0) then
         return false
     else
         jsonData.wallet_balance = jsonData.wallet_balance + amountToChange
@@ -113,7 +120,7 @@ export async function userWalletAtomicUpdate(redisInstance: RedisClientType, use
 }
 
 /**
- * This function locks a user's wallet, letting a user know no operations should be performed on it.
+ * This function locks a user's wallet, letting a user know no subtraction operations should be performed on it.
  * This is done by setting the is_locked field to true in the user object.
  * @param redisInstance - The redis client instance
  * @param user_key - The key of the user we want to lock

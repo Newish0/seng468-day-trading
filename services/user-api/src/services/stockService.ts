@@ -6,7 +6,7 @@ import {
   type StockOwned,
   stockSchema,
   type StockTransaction,
-  StockTransactionSchema,
+  stockTransactionSchema,
 } from "shared-models/redisSchema";
 
 // Creating connection here due to the implementation of RedisInstance.ts
@@ -22,7 +22,7 @@ const ownedStockRepository: Repository<StockOwned> = await redisConnection.creat
   ownedStockSchema
 );
 const stockTransactionRepository: Repository<StockTransaction> =
-  await redisConnection.createRepository(StockTransactionSchema);
+  await redisConnection.createRepository(stockTransactionSchema);
 
 const stockService = {
   async createStock(stock_name: string) {

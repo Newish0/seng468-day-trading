@@ -111,6 +111,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 3
 
   # Order Update Service
   order-update:
@@ -132,6 +134,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 3
 
   # Matching Engine (Rust)
   matching-engine:

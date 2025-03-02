@@ -1,9 +1,9 @@
 
-import { stockSchema, ownedStockSchema, userSchema } from './redisSchema';
-import { RedisInstance } from './RedisInstance';
-import {Schema, Repository, EntityId} from 'redis-om';
-import { addIntoRepository, getFromRepository, removeFromRepository, lockUserWallet, ownedStockAtomicUpdate, userWalletAtomicUpdate } from "./redisRepositoryHelper";
 import type { Entity } from 'redis-om';
+import { EntityId, Repository } from 'redis-om';
+import { RedisInstance } from './RedisInstance';
+import { addIntoRepository, getFromRepository, lockUserWallet, ownedStockAtomicUpdate, userWalletAtomicUpdate } from "./redisRepositoryHelper";
+import { ownedStockSchema, stockSchema, userSchema } from './redisSchema';
 
 /**
  * Here is a quick demo of the created object. Should contain all CRUD operations required for a basic database except for update (trying to figure that one out).
@@ -12,7 +12,7 @@ import type { Entity } from 'redis-om';
 const main = async () => {
   let redisConnection : any = new RedisInstance();
 
-  redisConnection.connect();
+  await redisConnection.connect();
 
   let stock : any = {
   stock_id: "1",

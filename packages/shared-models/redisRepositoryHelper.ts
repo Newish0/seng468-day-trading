@@ -1,7 +1,6 @@
-import {Schema, Repository, EntityId} from 'redis-om';
-import { createClient } from 'redis';
-import type { RedisClientType, RedisModules } from 'redis'; 
+import type { RedisClientType } from 'redis';
 import type { Entity } from 'redis-om';
+import { EntityId, Repository } from 'redis-om';
 
 
 /**

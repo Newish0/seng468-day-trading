@@ -1,8 +1,8 @@
-import {Schema, Repository, EntityId} from 'redis-om';
-import { createClient} from 'redis';
-import  {userSchema, ownedStockSchema, stockSchema, walletTransactionSchema, stockTransactionSchema} from './redisSchema';
-import type { RedisClientType, RedisModules } from 'redis'; 
+import type { RedisClientType } from 'redis';
+import { createClient } from 'redis';
 import type { Entity } from 'redis-om';
+import { Repository, Schema } from 'redis-om';
+import { ownedStockSchema, stockSchema, stockTransactionSchema, userSchema, walletTransactionSchema } from './redisSchema';
 
 //Instantiation object
 class RedisInstance {
@@ -41,12 +41,7 @@ class RedisInstance {
       for(const [repoKey, schema] of Object.entries(this.schemas)) {
             // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
             let repository = new Repository<Entity>(schema, this.redisClient);
-            /**
-             * For whatever reason, we now need a await here to make sure the repository is created before we try to use it.
-             * This was not a issue when we were just using plain Redis. Using IORedis we will get a error if we do not include the await keyword
-             * I am unsure as to what is casuing this issue, but it is something to keep in mind.
-             */
-            await repository.createIndex(); // All of our repositorys should expect to be indexed into 
+            repository.createIndex(); // All of our repositorys should expect to be indexed into 
             this.repositoryDict[repoKey] = repository;
       }
     } catch (error) {
@@ -128,4 +123,4 @@ class RedisInstance {
 
 }
 
-export {RedisInstance};
+export { RedisInstance };

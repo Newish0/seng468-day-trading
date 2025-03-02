@@ -1,7 +1,8 @@
-import { Schema, Repository, EntityId } from "redis-om";
-import { createClient } from "redis";
-import type { RedisClientType, RedisModules } from "redis";
-import type { Entity } from "redis-om";
+import type { RedisClientType } from 'redis';
+import { createClient } from 'redis';
+import type { Entity } from 'redis-om';
+import { Repository, Schema } from 'redis-om';
+import { ownedStockSchema, stockSchema, stockTransactionSchema, userSchema, walletTransactionSchema } from './redisSchema';
 
 //Instantiation object
 class RedisInstance {
@@ -9,6 +10,14 @@ class RedisInstance {
   // May need some help with setting redisClient and repositoryDict as static vars, so we can make sure we have proper
   // Synchronization amoung the microservices
   private redisClient: RedisClientType;
+  private repositoryDict: Record<string, Repository<Entity>> = {};
+  private schemas: Record<string, Schema> = {
+        users: userSchema,
+        ownedStock: ownedStockSchema,
+        stock: stockSchema,
+        walletTransaction: walletTransactionSchema,
+        stockTransaction: stockTransactionSchema
+    };
 
   /**
    *
@@ -19,17 +28,43 @@ class RedisInstance {
   }
 
   /**
-   * Connects to the Redis server
+   * Connects to the Redis server and initializes the repositorys.
    * @returns {void} - Should return nothing. If a error occurs it should be thrown up
    */
   async connect(): Promise<void> {
     try {
-      await this.redisClient.connect();
-      console.log("Connected to Redis at:", this.redisClient.options?.url);
+      // Here we perform a check to see if the Redis client is connected
+      if (!this.redisClient.isOpen) {
+        await this.redisClient.connect();
+      }
+      
+      for(const [repoKey, schema] of Object.entries(this.schemas)) {
+            // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
+            let repository = new Repository<Entity>(schema, this.redisClient);
+            repository.createIndex(); // All of our repositorys should expect to be indexed into 
+            this.repositoryDict[repoKey] = repository;
+      }
     } catch (error) {
       console.error("Failed to connect to Redis:", error);
       throw error;
-    }
+    }      
+  }
+
+  /**
+   * This function returns the dictionary of all the repositorys
+   * @returns {Promise<Record<string, Repository<Entity>>} - Returns a dictionary of all the repositorys
+   */
+  async getRepositoryDict(): Promise<Record<string, Repository<Entity>>> {
+    return this.repositoryDict;
+  }
+
+  /**
+   * Returns a specific repository given a name
+   * @param name - The name of the repository we want to retrieve
+   * @returns {Promise<Repository<Entity>>} - Returns the repository we wanted to retrieve
+   */
+  async getRepository(name: string): Promise<Repository<Entity>> {
+    return this.repositoryDict[name];
   }
 
   /**
@@ -86,62 +121,6 @@ class RedisInstance {
     return repository;
   }
 
-  /**
-   * Takes the given repository, and adds the data into it. The Repository and data passed to it need to have a matching schema in order to work
-   * there is no error handling in the case where we pass into the repository a differnt schema from what its configured to.
-   * @param repository - The repository we want to insert data into
-   * @param data - The data we want to insert into the repository
-   * @returns {Promise<string>} - Returns the key in which we inserted our data into.
-   */
-  async addIntoRepository(repository: Repository<Entity>, data: Entity): Promise<string> {
-    // Saving the data to the repository
-    const record: Entity = await repository.save(data);
-
-    // Returning the EntityId
-    return record[EntityId] as string; // or record.entityId if EntityId is not used directly as a key
-  }
-
-  /**
-   * Takes the given repository, and retrieves the data stored at the given key.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to retrieve from the repository
-   * @returns {Promise<Entity>} - Returns the data stored at that key.
-   */
-  async getFromRepository(repository: Repository<Entity>, key: string): Promise<Entity> {
-    let data: Entity = await repository.fetch(key);
-    return data;
-  }
-
-  /**
-   * Takes the given repository, and retrieves the data stored at the given key.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to retrieve from the repository
-   * @returns {Promise<void>} - Returns nothing.
-   */
-  async removeFromRepository(repository: Repository<Entity>, key: string): Promise<void> {
-    await repository.remove(key);
-  }
-
-  /**
-   * Takes the given repository, and updates the data based on the given key. Redis doesn't seem to have a intuitive way of updating information it seems.
-   * So currently, all this function does is take the same object and overwrite it.
-   * @param repository - The repository we want to insert data into
-   * @param key - The key for the data we want to update from the repository
-   * @param replacement - The data we want to insert into the repository
-   * @returns {Promise<string>} - Returns the key in which we updated our data into.
-   */
-  async updateFromRepository(
-    repository: Repository<Entity>,
-    key: string,
-    replacement: Entity
-  ): Promise<void> {
-    //  // Saving the data to the repository
-    //  const record : any = await repository.save(key, replacement);
-
-    //  // Returning the EntityId
-    //  return record[EntityId]; // or record.entityId if EntityId is not used directly as a key
-    console.log("I don't work yet");
-  }
 }
 
 export { RedisInstance };

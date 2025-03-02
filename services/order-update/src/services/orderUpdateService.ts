@@ -4,9 +4,9 @@ import { RedisInstance } from "shared-models/RedisInstance";
 import {
   ownedStockSchema,
   stockSchema,
-  StockTransactionSchema,
+  stockTransactionSchema,
   userSchema,
-  WalletTransactionSchema,
+  walletTransactionSchema,
   type Stock,
   type StockOwned,
   type StockTransaction,
@@ -19,11 +19,11 @@ const redisConn = new RedisInstance();
 await redisConn.connect();
 
 const stockTxRepo: Repository<StockTransaction> = await redisConn.createRepository(
-  StockTransactionSchema
+  stockTransactionSchema
 );
 const userRepo: Repository<User> = await redisConn.createRepository(userSchema);
 const walletTxRepo: Repository<WalletTransaction> = await redisConn.createRepository(
-  WalletTransactionSchema
+  walletTransactionSchema
 );
 const stockOwnedRepo: Repository<StockOwned> = await redisConn.createRepository(ownedStockSchema);
 
@@ -223,8 +223,7 @@ export default {
       );
     }
 
-
-    // TODO: Use atomic func to update wallet balance instead of below logic 
+    // TODO: Use atomic func to update wallet balance instead of below logic
 
     // Update the user balance for buyer (updates the user fetched at the start of method)
     try {
@@ -245,7 +244,7 @@ export default {
       });
     }
 
-    // TODO: UNLOCK funds only AFTER we updated owned stock 
+    // TODO: UNLOCK funds only AFTER we updated owned stock
 
     // Add stock to user portfolio
     await createAddQtyToOwnedStock(
@@ -269,9 +268,12 @@ export default {
         .equals(stock_tx_id)
         .returnFirst();
     } catch (error) {
-      throw new Error("Error querying for the original stock transaction (handleFailedBuyCompletion)", {
-        cause: error,
-      });
+      throw new Error(
+        "Error querying for the original stock transaction (handleFailedBuyCompletion)",
+        {
+          cause: error,
+        }
+      );
     }
 
     if (!oriStockTx) {

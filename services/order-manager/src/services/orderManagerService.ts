@@ -3,7 +3,7 @@ import { RedisInstance } from "shared-models/RedisInstance";
 import type { Stock, StockOwned, StockTransaction } from "shared-models/redisSchema";
 import {
   ownedStockSchema,
-  StockTransactionSchema,
+  stockTransactionSchema,
   userSchema,
   stockSchema,
 } from "shared-models/redisSchema";
@@ -26,7 +26,7 @@ const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
 
 const stockTransactionRepository: Repository<StockTransaction> =
-  await redisConnection.createRepository(StockTransactionSchema);
+  await redisConnection.createRepository(stockTransactionSchema);
 
 const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 

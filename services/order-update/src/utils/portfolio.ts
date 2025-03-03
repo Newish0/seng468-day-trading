@@ -11,8 +11,6 @@ export async function createAddQtyToOwnedStock(
   stockRepo: Repository<Stock>,
   redis: RedisInstance
 ) {
-  // TODO: Use atomic functions for changing stock qty
-
   try {
     const ownedStock: StockOwned | null = await stockOwnedRepo
       .search()

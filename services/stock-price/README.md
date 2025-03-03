@@ -2,6 +2,8 @@
 
 Implements `/stockPrices` and consumes from `stock_prices_exchange` to update list of stock prices in memory.
 
+When consuming a message which does not have `stock_name` or `current_price`, then it will remove the stock from the price list.
+
 ## Running the Service
 
 1. Ensure you have Rust and Cargo installed.
@@ -43,7 +45,7 @@ Ensure RabbitMQ is running before starting the service.
 
 **Routing key**
 
-`stock.prices.appl`
+`stock.price.appl`
 
 **Message payload**
 

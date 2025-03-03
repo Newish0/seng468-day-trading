@@ -46,6 +46,7 @@ const service = {
       user_name: username,
       password: hashedPassword,
       name,
+      is_locked: false,
       wallet_balance: 0,
     };
     try {

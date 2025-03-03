@@ -1,5 +1,5 @@
 import { createAddQtyToOwnedStock } from "@/utils/portfolio";
-import { Repository } from "redis-om";
+import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import {
   ownedStockSchema,
@@ -13,6 +13,7 @@ import {
   type User,
   type WalletTransaction,
 } from "shared-models/redisSchema";
+import { unlockUserWallet, userWalletAtomicUpdate } from "shared-models/redisRepositoryHelper";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 
 const redisConn = new RedisInstance();
@@ -148,7 +149,10 @@ export default {
 
       if (!user) throw new Error("Error finding user (updateSales)");
 
-      await userRepo.save({ ...user, wallet_balance: user.wallet_balance + amount });
+      const success = await userWalletAtomicUpdate(redisConn.getClient(), user[EntityId]!, amount);
+
+      if (!success)
+        throw new Error("Error updating the wallet of the limit sell user (updateSales)");
     } catch (error) {
       throw new Error("Error updating the wallet of the limit sell user (updateSales)", {
         cause: error,
@@ -189,17 +193,15 @@ export default {
 
     // Create wallet transaction for buyer for the fund deduction
     const walletTxId = crypto.randomUUID();
-    let newWalletTx: WalletTransaction;
     try {
-      newWalletTx = {
+      await walletTxRepo.save({
         wallet_tx_id: walletTxId,
         stock_tx_id: stock_tx_id,
         is_debit: true,
         amount: price_total,
         time_stamp: new Date(),
         user_name: oriStockTx.user_name,
-      };
-      newWalletTx = await walletTxRepo.save(newWalletTx);
+      });
     } catch (error) {
       throw new Error("Error creating new wallet transaction (handleBuyCompletion)", {
         cause: error,
@@ -223,28 +225,38 @@ export default {
       );
     }
 
-    // TODO: Use atomic func to update wallet balance instead of below logic
-
     // Update the user balance for buyer (updates the user fetched at the start of method)
-    try {
-      const user = await userRepo
-        .search()
-        .where("user_name")
-        .equals(oriStockTx.user_name)
-        .returnFirst();
+    const { success: walletBalanceUpdateSuccess, userEntityId } = await (async () => {
+      try {
+        const user = await userRepo
+          .search()
+          .where("user_name")
+          .equals(oriStockTx.user_name)
+          .returnFirst();
 
-      if (!user) {
-        throw new Error("Error finding user (handleBuyCompletion)");
+        if (!user) {
+          throw new Error("Error finding user (handleBuyCompletion)");
+        }
+
+        const userEntityId = user[EntityId]!;
+
+        const success = await userWalletAtomicUpdate(
+          redisConn.getClient(),
+          userEntityId,
+          -price_total
+        );
+
+        return { success, userEntityId: userEntityId };
+      } catch (error) {
+        throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)", {
+          cause: error,
+        });
       }
+    })();
 
-      await userRepo.save({ ...user, wallet_balance: user.wallet_balance - price_total });
-    } catch (error) {
-      throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)", {
-        cause: error,
-      });
+    if (!walletBalanceUpdateSuccess) {
+      throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)");
     }
-
-    // TODO: UNLOCK funds only AFTER we updated owned stock
 
     // Add stock to user portfolio
     await createAddQtyToOwnedStock(
@@ -252,13 +264,14 @@ export default {
       oriStockTx.user_name,
       quantity,
       stockOwnedRepo,
-      stockRepo
+      stockRepo,
+      redisConn
     );
+
+    await unlockUserWallet(userRepo, userEntityId);
   },
 
   handleFailedBuyCompletion: async ({ stock_tx_id }: { stock_tx_id: string }) => {
-    // TODO: Unlock funds
-
     // Find the original stock order transaction
     let oriStockTx: StockTransaction | null = null;
     try {
@@ -287,6 +300,18 @@ export default {
       ...oriStockTx,
       order_status: ORDER_STATUS.FAILED,
     });
+
+    const user = await userRepo
+      .search()
+      .where("user_name")
+      .equals(oriStockTx.user_name)
+      .returnFirst();
+
+    if (!user) {
+      throw new Error("Error finding user (handleFailedBuyCompletion)");
+    }
+
+    await unlockUserWallet(userRepo, user[EntityId]!);
   },
 
   handleCancellation: async ({
@@ -333,7 +358,8 @@ export default {
       transaction.user_name,
       cur_quantity,
       stockOwnedRepo,
-      stockRepo
+      stockRepo,
+      redisConn
     );
   },
 };

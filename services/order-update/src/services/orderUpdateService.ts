@@ -149,7 +149,10 @@ export default {
 
       if (!user) throw new Error("Error finding user (updateSales)");
 
-      await userRepo.save({ ...user, wallet_balance: user.wallet_balance + amount });
+      const success = await userWalletAtomicUpdate(redisConn.getClient(), user[EntityId]!, amount);
+
+      if (!success)
+        throw new Error("Error updating the wallet of the limit sell user (updateSales)");
     } catch (error) {
       throw new Error("Error updating the wallet of the limit sell user (updateSales)", {
         cause: error,

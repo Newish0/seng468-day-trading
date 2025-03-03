@@ -1,4 +1,5 @@
 use axum::{
+    Json,
     body::Body,
     extract::Request,
     http::StatusCode,
@@ -8,6 +9,7 @@ use axum::{
 use jsonwebtoken::errors::ErrorKind;
 use jsonwebtoken::{DecodingKey, Validation, decode};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 #[derive(Debug, Serialize, Deserialize, Clone)] // Added Clone derive
 pub struct Claims {
@@ -19,11 +21,18 @@ pub struct Claims {
 pub async fn jwt_middleware(
     mut req: Request<Body>,
     next: Next,
-) -> Result<Response, (StatusCode, &'static str)> {
+) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
     // Extract token from the "token" header.
     let token_header = req.headers().get("token").and_then(|hv| hv.to_str().ok());
     if token_header.is_none() {
-        return Ok((StatusCode::UNAUTHORIZED, "Token not included").into_response());
+        return Ok((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "success": false,
+                "data": { "error": "Token not included" }
+            })),
+        )
+            .into_response());
     }
     let token = token_header.unwrap();
 
@@ -48,7 +57,14 @@ pub async fn jwt_middleware(
                 ErrorKind::ExpiredSignature => "Token expired",
                 _ => "Unauthorized",
             };
-            Ok((StatusCode::UNAUTHORIZED, resp_text).into_response())
+            Ok((
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "success": false,
+                    "data": { "error": resp_text }
+                })),
+            )
+                .into_response())
         }
     }
 }

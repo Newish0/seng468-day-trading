@@ -1,4 +1,6 @@
-import type { Repository } from "redis-om";
+import { EntityId, type Repository } from "redis-om";
+import type { RedisInstance } from "shared-models/RedisInstance";
+import { ownedStockAtomicUpdate } from "shared-models/redisRepositoryHelper";
 import type { Stock, StockOwned } from "shared-models/redisSchema";
 
 export async function createAddQtyToOwnedStock(
@@ -6,13 +8,13 @@ export async function createAddQtyToOwnedStock(
   userName: string,
   qtyToAdd: number,
   stockOwnedRepo: Repository<StockOwned>,
-  stockRepo: Repository<Stock>
+  stockRepo: Repository<Stock>,
+  redis: RedisInstance
 ) {
-
-  // TODO: Use atomic functions for changing stock qty 
+  // TODO: Use atomic functions for changing stock qty
 
   try {
-    let ownedStock: StockOwned | null = await stockOwnedRepo
+    const ownedStock: StockOwned | null = await stockOwnedRepo
       .search()
       .where("stock_id")
       .equals(stockId)
@@ -23,10 +25,15 @@ export async function createAddQtyToOwnedStock(
     // Update current quantity of owned stock if user already owns the stock (exist in portfolio)
     // Otherwise, add new owned stock (needed for the return quantity)
     if (ownedStock) {
-      ownedStock = await stockOwnedRepo.save({
-        ...ownedStock,
-        current_quantity: ownedStock.current_quantity + qtyToAdd,
-      });
+      const success = await ownedStockAtomicUpdate(
+        redis.getClient(),
+        ownedStock[EntityId]!,
+        qtyToAdd
+      );
+
+      if (!success) {
+        throw new Error("Error updating user's owned stock (createAddQtyToOwnedStock)");
+      }
     } else {
       const stock = await stockRepo.search().where("stock_id").equals(stockId).returnFirst();
       if (!stock) {

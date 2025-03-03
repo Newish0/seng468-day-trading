@@ -19,6 +19,7 @@ services:
     depends_on:
       - user-api
       - auth
+      - stock-price
     networks:
       - day-trading-network
 
@@ -143,5 +144,25 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+
+  stock-price:
+    build:
+      context: ./services/stock-price
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      matching-engine:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - day-trading-network

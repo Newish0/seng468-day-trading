@@ -1,14 +1,16 @@
 mod consumer;
 mod get_stock_prices;
+mod jwt_middleware;
 mod rabbitmq;
-mod state; // new import
+mod state;
 
 use amqprs::channel::BasicConsumeArguments;
-use axum::{Router, routing::get};
+use axum::{Router, middleware::from_fn, routing::get};
 use std::{env, sync::Arc};
 
 use crate::consumer::PriceConsumer;
 use crate::get_stock_prices::get_stock_prices;
+use crate::jwt_middleware::jwt_middleware;
 use crate::state::AppState;
 
 #[tokio::main]
@@ -32,9 +34,12 @@ async fn main() {
         .await
         .unwrap();
 
-    // Build router
+    // Build router with JWT middleware applied to /stockPrices route
     let app = Router::new()
-        .route("/stockPrices", get(get_stock_prices))
+        .route(
+            "/stockPrices",
+            get(get_stock_prices).layer(from_fn(jwt_middleware)),
+        )
         .with_state(app_state);
     let port: String = env::var("PORT").unwrap_or("3000".to_string());
     let server_endpoint = format!("0.0.0.0:{port}");

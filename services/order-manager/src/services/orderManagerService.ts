@@ -1,6 +1,7 @@
 import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
-import type { Stock, StockOwned, StockTransaction } from "shared-models/redisSchema";
+import type { Stock, StockOwned, StockTransaction, User } from "shared-models/redisSchema";
+import { lockUserWallet, ownedStockAtomicUpdate } from "shared-models/redisRepositoryHelper";
 import {
   ownedStockSchema,
   stockTransactionSchema,
@@ -13,7 +14,6 @@ import type {
   MarketBuyRequest,
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
-import type { User } from "shared-types/user";
 import { publishToQueue } from "./rabbitMQService";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
@@ -114,6 +114,17 @@ const service = {
       throw new Error("Error saving limit sell transaction into database");
     }
 
+    const cleanupOptimistic = async () => {
+      const transactionEntityId = transaction[EntityId];
+      try {
+        if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+      } catch (err) {
+        throw new Error(
+          "Error removing transaction from database during cleanupOptimistic (placeLimitSellOrder)"
+        );
+      }
+    };
+
     try {
       ownedStock = await stockOwnedRepository
         .search()
@@ -123,17 +134,16 @@ const service = {
         .equals(user_name)
         .returnFirst();
       if (!ownedStock) {
-        const transactionEntityId = transaction[EntityId];
-        if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+        await cleanupOptimistic();
         throw new Error("User does not own this stock (placeLimitSellOrder)");
       }
     } catch (err) {
+      await cleanupOptimistic();
       throw new Error("Error fetching owned stock data from database");
     }
 
     if (ownedStock.current_quantity < quantity) {
-      const transactionEntityId = transaction[EntityId];
-      if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+      await cleanupOptimistic();
       throw new Error(
         `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
       );
@@ -146,13 +156,26 @@ const service = {
       throw error;
     }
 
-    // TODO: Make this atomic
+    // Do a preliminary check on quantity then perform atomic update on quantity
     if (ownedStock.current_quantity - quantity >= 0) {
-      ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
-      try {
-        await stockOwnedRepository.save(ownedStock);
-      } catch (err) {
-        throw new Error("Error updating owned stock quantity in database");
+      const success = await (async () => {
+        try {
+          return await ownedStockAtomicUpdate(
+            redisConnection.getClient(),
+            ownedStock[EntityId]!,
+            -quantity
+          );
+        } catch (err) {
+          await cleanupOptimistic();
+          throw new Error("Error updating owned stock quantity in database", { cause: err });
+        }
+      })();
+
+      if (!success) {
+        await cleanupOptimistic();
+        throw new Error(
+          "Error updating owned stock quantity in database likely due to insufficient quantity."
+        );
       }
     }
   },
@@ -168,21 +191,33 @@ const service = {
    * @throws {Error} - Throws error if there is an issue fetching user data, or with sending message into the queue
    */
   placeMarketBuyOrder: async (stock_id: string, quantity: number, user_name: string) => {
-    let userData: User | null; // contains user info from database
+    let userData: User | null = null; // contains user info from database
 
-    // Fetches the buyer's user_balance (required for matching-engine)
-    try {
-      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+    // Fetches the buyer's user data (required for matching-engine) and wait until lock acquired
+    while (!userData || userData.is_locked) {
+      try {
+        userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
 
-      if (!userData) throw new Error("Error finding user (placeMarketOrder)");
-    } catch (err) {
-      throw new Error("Error fetching user data from database (Market Buy Order)");
-    }
+        if (!userData) throw new Error("Error finding user (placeMarketOrder)");
+      } catch (err) {
+        throw new Error("Error fetching user data from database (Market Buy Order)");
+      }
+
+      const isFundLockSuccess = await (() => {
+        try {
+          return lockUserWallet(redisConnection.getClient(), userData[EntityId]!);
+        } catch (err) {
+          throw new Error("Error locking user wallet (placeMarketBuyOrder)", {
+            cause: err,
+          });
+        }
+      })();
+
+      if (!isFundLockSuccess) await new Promise((resolve) => setTimeout(resolve, 200)); // wait 200ms
+    } // while
 
     if (userData.wallet_balance <= 0)
       throw new Error(`The user does not have any money: $${userData.wallet_balance}`);
-
-    // TODO: Lock funds here
 
     const buyTxId = crypto.randomUUID();
 

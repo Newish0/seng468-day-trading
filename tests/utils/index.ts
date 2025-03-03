@@ -67,3 +67,7 @@ export async function createUniqueUser() {
   // Return both the token and the user data
   return { token: loginResponse.data.token, user };
 }
+
+export async function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

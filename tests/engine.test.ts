@@ -1,5 +1,5 @@
 import { test, expect, beforeAll, afterAll } from "bun:test";
-import { apiRequest, createUniqueUser, withAuth } from "./utils";
+import { apiRequest, createUniqueUser, delay, withAuth } from "./utils";
 
 let sellUserTk: string;
 let buyUserTk: string;
@@ -52,14 +52,14 @@ afterAll(async () => {
     true
   );
 
-  const buyPayload = {
-    stock_id: stockId,
-    is_buy: true,
-    order_type: "MARKET",
-    quantity: 1,
-  };
+  for (let i = 0; i < 100; i++) {
+    const buyPayload = {
+      stock_id: stockId,
+      is_buy: true,
+      order_type: "MARKET",
+      quantity: Math.floor(Math.random() * 4) + 1,
+    };
 
-  while (true) {
     const response = await apiRequest(
       "POST",
       "/engine/placeStockOrder",
@@ -87,6 +87,8 @@ test("POST /engine/placeStockOrder places a limit sell order successfully", asyn
   );
   expect(response.success).toBe(true);
   expect(response.data).toBeNull();
+
+  await delay(200); // Wait for the transaction to be processed
 
   // Verify that the order was placed successfully
   const txResponse = await apiRequest(
@@ -128,6 +130,8 @@ test("POST /engine/placeStockOrder places a market buy order successfully", asyn
   expect(response.success).toBe(true);
   expect(response.data).toBeNull();
 
+  await delay(200); // Wait for the transaction to be processed
+
   // Verify that the order was placed successfully
   const txResponse = await apiRequest(
     "GET",
@@ -144,7 +148,7 @@ test("POST /engine/placeStockOrder places a market buy order successfully", asyn
       tx.order_type === "MARKET" &&
       tx.is_buy === true &&
       tx.quantity === 5 &&
-      tx.order_status === "COMPLETED" // HACK: This is only the case for current synchronous implementation
+      tx.order_status === "COMPLETED"
   );
   expect(tx).toBeDefined();
 });
@@ -159,6 +163,8 @@ test("POST /engine/placeStockOrder places a partial market buy order successfull
     price: 10,
   };
   await apiRequest("POST", "/engine/placeStockOrder", sellPayload, withAuth(sellUserTk), true);
+
+  await delay(200); // Wait for the transaction to be processed
 
   const buyPayload = {
     stock_id: stockId,
@@ -175,8 +181,9 @@ test("POST /engine/placeStockOrder places a partial market buy order successfull
   expect(response.success).toBe(true);
   expect(response.data).toBeNull();
 
+  await delay(200); // Wait for the transaction to be processed
+
   // Verify that a partial transaction was generated for the sell order
-  // HACK: This validation only works when BUY is synchronous. Otherwise we might need to wait.
   const txResponse = await apiRequest(
     "GET",
     "/transaction/getStockTransactions",
@@ -224,8 +231,9 @@ test("POST /engine/placeStockOrder a partial limit sell order is completed succe
   expect(response.success).toBe(true);
   expect(response.data).toBeNull();
 
+  await delay(200); // Wait for the transaction to be processed
+
   // Verify that a partial transaction was generated for the sell order and parent is completed
-  // HACK: This validation only works when BUY is synchronous. Otherwise we might need to wait.
   const txResponse = await apiRequest(
     "GET",
     "/transaction/getStockTransactions",
@@ -275,6 +283,8 @@ test("POST /engine/cancelStockTransaction cancels a pending sell order", async (
   );
   expect(sellOrderResponse.success).toBe(true);
 
+  await delay(200); // Wait for the transaction to be processed
+
   const txResponse = await apiRequest(
     "GET",
     "/transaction/getStockTransactions",
@@ -301,6 +311,39 @@ test("POST /engine/cancelStockTransaction cancels a pending sell order", async (
 });
 
 test("POST /engine/cancelStockTransaction a partially completed sell order is cancelled", async () => {
+  const sellResult = await createUniqueUser();
+  const sellUserTk = sellResult.token;
+
+  const buyResult = await createUniqueUser();
+  const buyUserTk = buyResult.token;
+
+  const stockId = (
+    await apiRequest(
+      "POST",
+      "/setup/createStock",
+      { stock_name: `Stock ${Date.now()}` },
+      withAuth(sellUserTk),
+      true
+    )
+  ).data.stock_id;
+
+  await apiRequest(
+    "POST",
+    "/setup/addStockToUser",
+    { stock_id: stockId, quantity: 20 },
+    withAuth(sellUserTk),
+    true
+  );
+
+  // Add money to buy user's wallet
+  await apiRequest(
+    "POST",
+    "/transaction/addMoneyToWallet",
+    { amount: 1000 },
+    withAuth(buyUserTk),
+    true
+  );
+
   // Check currently owned quantity
   const portfolioResponse = await apiRequest(
     "GET",
@@ -331,6 +374,8 @@ test("POST /engine/cancelStockTransaction a partially completed sell order is ca
   );
   expect(sellOrderResponse.success).toBe(true);
 
+  await delay(200); // Wait for the transaction to be processed
+
   const actuallySoldQty = 1;
   const buyOnePayload = {
     stock_id: stockId,
@@ -345,6 +390,8 @@ test("POST /engine/cancelStockTransaction a partially completed sell order is ca
     withAuth(buyUserTk)
   );
   expect(buyOneOrderResponse.success).toBe(true);
+
+  await delay(200); // Wait for the transaction to be processed
 
   const txResponse = await apiRequest(
     "GET",
@@ -370,6 +417,8 @@ test("POST /engine/cancelStockTransaction a partially completed sell order is ca
   );
   expect(cancelResponse.success).toBe(true);
   expect(cancelResponse.data).toBeNull();
+
+  await delay(200); // Wait for the transaction to be processed
 
   // Check currently owned quantity
   const newPortfolioResponse = await apiRequest(

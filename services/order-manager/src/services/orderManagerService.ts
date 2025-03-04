@@ -193,6 +193,13 @@ const service = {
   placeMarketBuyOrder: async (stock_id: string, quantity: number, user_name: string) => {
     let userData: User | null = null; // contains user info from database
 
+    try {
+      const stock = await stockRepository.search().where("stock_id").equals(stock_id).returnFirst();
+      if (!stock) throw new Error("Invalid stock_id (placeMarketBuyOrder)");
+    } catch (err) {
+      throw new Error("Error fetching stock name (placeMarketBuyOrder)");
+    }
+
     // Fetches the buyer's user data (required for matching-engine) and wait until lock acquired
     while (!userData || userData.is_locked) {
       try {

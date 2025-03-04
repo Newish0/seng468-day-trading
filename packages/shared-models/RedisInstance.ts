@@ -46,8 +46,7 @@ class RedisInstance {
 
       for (const [repoKey, schema] of Object.entries(this.schemas)) {
         // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
-        let repository = new Repository<Entity>(schema, this.redisClient);
-        repository.createIndex(); // All of our repositorys should expect to be indexed into
+        const repository: Repository<Entity> = await this.createRepository(schema);
         this.repositoryDict[repoKey] = repository;
       }
     } catch (error) {

@@ -88,6 +88,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 4
 
   # Order Placement/Cancellation Service
   order-manager:

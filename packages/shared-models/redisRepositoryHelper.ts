@@ -156,9 +156,9 @@ export async function userWalletAtomicUpdate(
  * perform the deduction and unlock in one atomic operation.
  * 
  * This function is needed because withdrawals are not allowed if the wallet is locked. But, 
- * we need to update the user wallet before they can buy more stocks. And the moment we unlock
- * the user's wallet, they can buy more stocks. So, we need to do the deduction and unlock in one 
- * atomic operation.
+ * the moment we unlock the user's wallet, they can buy more stocks. However, we need to 
+ * update the user wallet before they are allowed to buy more stocks (to avoid race conditions). 
+ * So, we need to do the deduction and unlock in one atomic operation.
  *
  * @param redisInstance - The redis client instance
  * @param userKey - The key of the user object we want to update

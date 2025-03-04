@@ -19,6 +19,7 @@ services:
     depends_on:
       - user-api
       - auth
+      - stock-price
     networks:
       - day-trading-network
 
@@ -30,13 +31,14 @@ services:
     environment:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
-      - ORDER_SERVICE_HOST=http://order:3002
+      - ORDER_SERVICE_HOST=http://order-manager:3002
+    container_name: user-api
     networks:
       - day-trading-network
     deploy:
       replicas: 4
     depends_on:
-      order:
+      order-manager:
         condition: service_started
       redis:
         condition: service_healthy
@@ -58,6 +60,22 @@ services:
       retries: 3
       start_period: 5s
 
+  rabbitmq:
+    image: rabbitmq:management
+    networks:
+      - day-trading-network
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management interface port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # Auth Service
   auth:
     build:
@@ -71,19 +89,47 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
-  # Order Service
-  order:
+
+  # Order Placement/Cancellation Service
+  order-manager:
     build:
       context: . # Use the project root as the build context for packages to work
-      dockerfile: ./services/order/Dockerfile
+      dockerfile: ./services/order-manager/Dockerfile
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
       - REDIS_URL=redis://redis:6379
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
     depends_on:
       matching-engine:
         condition: service_started
       redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+
+  # Order Update Service
+  order-update:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/order-update/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+    depends_on:
+      matching-engine:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - day-trading-network
@@ -94,7 +140,29 @@ services:
       context: ./services/matching-engine
       dockerfile: Dockerfile
     environment:
-      - PORT=3003
-      - ORDER_SERVICE_HOST=http://order:3002
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+
+  stock-price:
+    build:
+      context: ./services/stock-price
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      matching-engine:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - day-trading-network

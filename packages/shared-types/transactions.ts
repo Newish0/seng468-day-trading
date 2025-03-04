@@ -4,6 +4,7 @@ export enum ORDER_STATUS {
   COMPLETED = "COMPLETED",
   CANCELLED = "CANCELLED",
   IN_PROGRESS = "IN_PROGRESS",
+  FAILED = "FAILED",
 }
 export function isValidOrderStatus(obj: any): obj is ORDER_STATUS {
   return (

@@ -1,5 +1,5 @@
 import { beforeAll, test, expect, afterAll } from "bun:test";
-import { apiRequest, createUniqueUser, uniqueUser, withAuth } from "./utils";
+import { apiRequest, createUniqueUser, delay, uniqueUser, withAuth } from "./utils";
 
 let walletUser: string;
 let sellUserTk: string;
@@ -81,7 +81,7 @@ afterAll(async () => {
       quantity: 1,
     };
 
-    while (true) {
+    for (let i = 0; i < 200; i++) {
       const response = await apiRequest(
         "POST",
         "/engine/placeStockOrder",
@@ -125,6 +125,8 @@ test("GET /transaction/getStockPrices returns valid stock prices", async () => {
     true
   );
 
+  await delay(200); // Wait for the transaction to be processed
+
   const response = await apiRequest(
     "GET",
     "/transaction/getStockPrices",
@@ -165,6 +167,8 @@ test("GET /transaction/getStockPortfolio returns a valid stock portfolio", async
     withAuth(buyUserTk),
     true
   );
+
+  await delay(200); // Wait for the transaction to be processed
 
   const response = await apiRequest(
     "GET",

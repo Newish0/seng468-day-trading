@@ -1,5 +1,5 @@
 {
-  "name": "order-service",
+  "name": "order-update-service",
   "module": "index.ts",
   "type": "module",
   "scripts": {
@@ -7,17 +7,18 @@
     "dev": "bun --watch src/index.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/amqplib": "^0.10.6"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "hono": "^4.6.19",
+    "amqplib": "^0.10.5",
     "redis": "^4.7.0",
     "redis-om": "^0.4.7",
-    "shared-utils": "workspace:*",
+    "shared-models": "workspace:*",
     "shared-types": "workspace:*",
-    "shared-models": "workspace:*"
+    "shared-utils": "workspace:*"
   }
 }

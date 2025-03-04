@@ -2,7 +2,7 @@ import { Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
 import {
   userSchema,
-  WalletTransactionSchema,
+  walletTransactionSchema,
   type User,
   type WalletTransaction,
 } from "shared-models/redisSchema";
@@ -18,7 +18,7 @@ try {
 }
 const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 const walletTransactionRepository: Repository<WalletTransaction> =
-  await redisConnection.createRepository(WalletTransactionSchema);
+  await redisConnection.createRepository(walletTransactionSchema);
 
 const walletService = {
   addMoneyToWallet: async (userId: string, amount: number) => {

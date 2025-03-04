@@ -32,7 +32,6 @@ services:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
       - ORDER_SERVICE_HOST=http://order-manager:3002
-    container_name: user-api
     networks:
       - day-trading-network
     deploy:

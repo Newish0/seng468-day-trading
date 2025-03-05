@@ -64,7 +64,7 @@ impl OrderConsumer {
         let mut state = self.state.write().await;
 
         // Total number of shares on sale excluding those from the user requesting the buy order
-        let available_shares: u32 = state
+        let available_shares: u64 = state
             .matching_pq
             .get_all_orders(&request.stock_id)
             .iter()

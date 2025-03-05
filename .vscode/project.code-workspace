@@ -51,6 +51,10 @@
         {
             "name": "Order Placement/Cancellation Service",
             "path": "../services/order-manager"
+        },
+        {
+            "name": "Stock Price Service",
+            "path": "../services/stock-price"
         }
     ],
     "settings": {

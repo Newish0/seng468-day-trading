@@ -13,7 +13,11 @@ import {
   type User,
   type WalletTransaction,
 } from "shared-models/redisSchema";
-import { unlockUserWallet, userWalletAtomicUpdate } from "shared-models/redisRepositoryHelper";
+import {
+  unlockUserWallet,
+  userWalletAtomicUpdate,
+  userWalletDeductAndUnlockAtomicUpdate,
+} from "shared-models/redisRepositoryHelper";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 
 const redisConn = new RedisInstance();
@@ -225,40 +229,9 @@ export default {
       );
     }
 
-    // Update the user balance for buyer (updates the user fetched at the start of method)
-    const { success: walletBalanceUpdateSuccess, userEntityId } = await (async () => {
-      try {
-        const user = await userRepo
-          .search()
-          .where("user_name")
-          .equals(oriStockTx.user_name)
-          .returnFirst();
-
-        if (!user) {
-          throw new Error("Error finding user (handleBuyCompletion)");
-        }
-
-        const userEntityId = user[EntityId]!;
-
-        const success = await userWalletAtomicUpdate(
-          redisConn.getClient(),
-          userEntityId,
-          -price_total
-        );
-
-        return { success, userEntityId: userEntityId };
-      } catch (error) {
-        throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)", {
-          cause: error,
-        });
-      }
-    })();
-
-    if (!walletBalanceUpdateSuccess) {
-      throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)");
-    }
-
-    // Add stock to user portfolio
+    // Add stock to user portfolio.
+    // NOTE: This must be called before we unlock the user's wallet to avoid race conditions.
+    //       This is because the moment we unlock the user's wallet, they can buy more stocks.
     await createAddQtyToOwnedStock(
       oriStockTx.stock_id,
       oriStockTx.user_name,
@@ -268,7 +241,45 @@ export default {
       redisConn
     );
 
-    await unlockUserWallet(userRepo, userEntityId);
+    const user = await (async () => {
+      try {
+        const user = await userRepo
+          .search()
+          .where("user_name")
+          .equals(oriStockTx.user_name)
+          .returnFirst();
+        if (!user) throw new Error("Error finding user (handleBuyCompletion)");
+        return user;
+      } catch (error) {
+        throw new Error("Error querying for user (handleBuyCompletion)", {
+          cause: error,
+        });
+      }
+    })();
+
+    // Deduct money from the user's wallet and unlock atomically
+    // NOTE: Must unlock after deducting to avoid race conditions. So
+    //       we are forced to perform the deduct and unlock in one atomic operation.
+    const walletAndUnlockSuccess = await (async () => {
+      try {
+        return await userWalletDeductAndUnlockAtomicUpdate(
+          redisConn.getClient(),
+          user[EntityId]!,
+          price_total
+        );
+      } catch (error) {
+        throw new Error(
+          "Error updating buyer wallet or unlock for buy order(handleBuyCompletion)",
+          {
+            cause: error,
+          }
+        );
+      }
+    })();
+
+    if (!walletAndUnlockSuccess) {
+      throw new Error("Error updating buyer wallet for buy order(handleBuyCompletion)");
+    }
   },
 
   handleFailedBuyCompletion: async ({ stock_tx_id }: { stock_tx_id: string }) => {

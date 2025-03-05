@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 // Stock prices types
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct StockPrice {
     pub stock_id: String,
     pub stock_name: Option<String>, // None/null if stock is no longer available
@@ -12,7 +12,7 @@ pub struct StockPrice {
 #[derive(Deserialize, Debug)]
 pub struct MarketBuyRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub stock_tx_id: String,
     pub budget: f64,
     pub user_name: String,
@@ -28,7 +28,7 @@ pub struct MarketBuyResponse {
 pub struct MarketBuyData {
     pub stock_id: String,
     pub stock_tx_id: String,
-    pub quantity: Option<u32>, // None if success is false
+    pub quantity: Option<u64>, // None if success is false
     pub price_total: Option<f64>, // None if success is false
 }
 
@@ -37,7 +37,7 @@ pub struct MarketBuyData {
 pub struct LimitSellRequest {
     pub stock_id: String,
     pub stock_name: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String,
@@ -45,7 +45,7 @@ pub struct LimitSellRequest {
 #[derive(Deserialize, Debug)]
 pub struct LimitSellCancelRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
 }
@@ -66,17 +66,17 @@ pub struct LimitSellCancelData {
     pub stock_id: String,
     pub stock_tx_id: String,
     pub partially_sold: bool,
-    pub ori_quantity: u32,
-    pub cur_quantity: u32,
-    pub sold_quantity: u32,
+    pub ori_quantity: u64,
+    pub cur_quantity: u64,
+    pub sold_quantity: u64,
     pub price: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrderUpdate {
     pub stock_id: String,
-    pub sold_quantity: u32,
-    pub remaining_quantity: u32,
+    pub sold_quantity: u64,
+    pub remaining_quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String,

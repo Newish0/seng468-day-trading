@@ -49,16 +49,16 @@ export default {
   handleSaleUpdate: async (data: SalesUpdateData) => {
     // TODO: Add payload check? If so, type is Partial<...>
 
-    OrderUpdateService.handleSaleUpdate(data);
+    await OrderUpdateService.handleSaleUpdate(data);
   },
 
   handleBuyCompletion: async (data: BuyCompleteData) => {
     // TODO: Add payload check? If so, type is Partial<...>
 
     if (data.success) {
-      OrderUpdateService.handleBuyCompletion(data.data);
+      await OrderUpdateService.handleBuyCompletion(data.data);
     } else {
-      OrderUpdateService.handleFailedBuyCompletion(data.data);
+      await OrderUpdateService.handleFailedBuyCompletion(data.data);
     }
   },
 
@@ -66,7 +66,7 @@ export default {
     // TODO: Add payload check? If so, type is Partial<...>
 
     if (data.success) {
-      OrderUpdateService.handleCancellation(data.data);
+      await OrderUpdateService.handleCancellation(data.data);
     } else {
       console.error("Failed to cancel order:", data.data);
     }

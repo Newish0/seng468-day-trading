@@ -15,12 +15,11 @@ import type {
 } from "shared-types/dtos/order-service/orderRequests";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import { publishToQueue } from "./rabbitMQService";
+import { getStockName } from "@/utils/stock";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
 const CANCEL_SELL_ROUTING_KEY = "order.limit_sell_cancellation";
-
-const stockNameCache: Map<string, string> = new Map();
 
 const redisConnection: RedisInstance = new RedisInstance();
 redisConnection.connect();
@@ -65,21 +64,10 @@ const service = {
       throw new Error("Error fetching user data from database (Limit Sell Order)");
     }
 
-    if (stockNameCache.has(stock_id)) {
-      stock_name = stockNameCache.get(stock_id)!;
-    } else {
-      try {
-        const stock = await stockRepository
-          .search()
-          .where("stock_id")
-          .equals(stock_id)
-          .returnFirst();
-        if (!stock) throw new Error("Invalid stock_id (placeLimitSellOrder)");
-        stock_name = stock.stock_name;
-        stockNameCache.set(stock_id, stock_name);
-      } catch (err) {
-        throw new Error("Error fetching stock name (placeLimitSellOrder)");
-      }
+    try {
+      stock_name = await getStockName(stock_id, stockRepository);
+    } catch (err) {
+      throw new Error("Error fetching stock name (placeLimitSellOrder)");
     }
 
     // Initializes limit sell request to request the matching-engine
@@ -194,18 +182,10 @@ const service = {
     let userData: User | null = null; // contains user info from database
 
     // The specs expects an outright success false HTTP response if an invalid stock ID is provided
-    if (!stockNameCache.has(stock_id)) {
-      try {
-        const stock = await stockRepository
-          .search()
-          .where("stock_id")
-          .equals(stock_id)
-          .returnFirst();
-        if (!stock) throw new Error("Invalid stock_id (placeMarketBuyOrder)");
-        stockNameCache.set(stock_id, stock.stock_name);
-      } catch (err) {
-        throw new Error("Error fetching stock name (placeMarketBuyOrder)");
-      }
+    try {
+      await getStockName(stock_id, stockRepository);
+    } catch (err) {
+      throw new Error("Error checking if stock_id is valid  (placeMarketBuyOrder)");
     }
 
     // Fetches the buyer's user data (required for matching-engine) and wait until lock acquired

@@ -7,20 +7,53 @@ mod state;
 use amqprs::channel::BasicConsumeArguments;
 use axum::{Router, middleware::from_fn, routing::get};
 use std::{env, sync::Arc};
+use tracing::{info, debug};
+use tracing_subscriber::{FmtSubscriber, EnvFilter};
 
 use crate::consumer::PriceConsumer;
 use crate::get_stock_prices::get_stock_prices;
 use crate::jwt_middleware::jwt_middleware;
 use crate::state::AppState;
 
+pub fn setup_tracing() {
+    // Debug mode: detailed logging
+    #[cfg(debug_assertions)]
+    {
+        let subscriber = FmtSubscriber::builder()
+            .with_env_filter(
+                EnvFilter::from_default_env()
+                    .add_directive("stock_price=debug".parse().unwrap()),
+            )
+            .with_target(true)
+            .with_thread_ids(true)
+            .with_file(true)
+            .with_line_number(true)
+            .pretty();
+        let _ = subscriber.try_init();
+    }
+
+    // Release mode: log info and error levels
+    #[cfg(not(debug_assertions))]
+    {
+        let subscriber = FmtSubscriber::builder().with_env_filter(
+            EnvFilter::from_default_env().add_directive("stock_price=info".parse().unwrap()),
+        );
+        let _ = subscriber.try_init();
+    }
+}
+
 #[tokio::main]
 async fn main() {
+    setup_tracing();
+    info!("Starting stock price service");
+
     // Setup RabbitMQ connection and channel
     let exchange_name = "stock_prices_exchange";
     let queue_name = "stock_prices_queue";
     let consumer_tag = "stock_price_consumer";
     let binding_key = "stock.price.*";
 
+    debug!("Setting up RabbitMQ with exchange: {}, queue: {}", exchange_name, queue_name);
     let (connection, channel) =
         rabbitmq::setup_rabbitmq(exchange_name, queue_name, binding_key).await;
 
@@ -46,7 +79,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(server_endpoint.clone())
         .await
         .unwrap();
-    println!("Stock Prices Service listening on {server_endpoint}");
+    info!("Stock Prices Service listening on {server_endpoint}");
 
     // Store connection and channel in variables that won't go out of scope
     // This prevents them from being dropped

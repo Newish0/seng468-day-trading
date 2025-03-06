@@ -38,13 +38,10 @@ const service = {
     if (existingUser) {
       throw new Error("User already exists");
     }
-    const hashedPassword = await Bun.password.hash(password, {
-      algorithm: "bcrypt",
-      cost: SALT_ROUNDS,
-    });
+
     const newUser: User = {
       user_name: username,
-      password: hashedPassword,
+      password,
       name,
       is_locked: false,
       wallet_balance: 0,
@@ -76,11 +73,8 @@ const service = {
       throw new Error("User not found");
     }
     let isPasswordValid;
-    try {
-      isPasswordValid = await Bun.password.verify(password, user.password);
-    } catch (error) {
-      throw new Error("An error has occured validating passwords");
-    }
+
+    isPasswordValid = password == user.password;
 
     if (!isPasswordValid) {
       throw new Error("Password is incorrect");

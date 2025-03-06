@@ -4,7 +4,7 @@ import { RedisInstance } from "shared-models/RedisInstance";
 import { Repository } from "redis-om";
 
 const JWT_SECRET = Bun.env.JWT_SECRET || "secret"; // TODO: Remove 'secret' in prod
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 4;
 
 // Creating connection here due to the implementation of RedisInstance.ts
 // This is probably NOT good - causes multiple connection creation?

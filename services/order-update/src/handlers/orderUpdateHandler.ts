@@ -1,4 +1,5 @@
 import OrderUpdateService from "@/services/orderUpdateService";
+import logger from "@/utils/logger";
 
 type SalesUpdateData = {
   stock_id: string;
@@ -68,7 +69,7 @@ export default {
     if (data.success) {
       await OrderUpdateService.handleCancellation(data.data);
     } else {
-      console.error("Failed to cancel order:", data.data);
+      logger.error("Failed to cancel order:", data.data);
     }
   },
 };

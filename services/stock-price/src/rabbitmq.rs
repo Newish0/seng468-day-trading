@@ -1,3 +1,4 @@
+use tracing::{debug, error, info};
 use amqprs::{
     callbacks::{DefaultChannelCallback, DefaultConnectionCallback},
     channel::{QueueBindArguments, QueueDeclareArguments},
@@ -21,18 +22,37 @@ pub async fn setup_rabbitmq(
     let password = env::var("RABBITMQ_PASSWORD").unwrap_or_else(|_| "guest".to_string());
 
     // Open connection
-    let connection = Connection::open(&OpenConnectionArguments::new(
+    info!("Connecting to RabbitMQ at {}:{}", host, port);
+    let connection = match Connection::open(&OpenConnectionArguments::new(
         &host, port, &username, &password,
     ))
-    .await
-    .unwrap();
+    .await {
+        Ok(conn) => {
+            debug!("Successfully established RabbitMQ connection");
+            conn
+        }
+        Err(e) => {
+            error!("Failed to connect to RabbitMQ: {}", e);
+            panic!("Failed to connect to RabbitMQ: {}", e);
+        }
+    };
     connection
         .register_callback(DefaultConnectionCallback)
         .await
         .unwrap();
 
     // Open channel
-    let channel = connection.open_channel(None).await.unwrap();
+    debug!("Opening RabbitMQ channel");
+    let channel = match connection.open_channel(None).await {
+        Ok(ch) => {
+            debug!("Successfully opened RabbitMQ channel");
+            ch
+        }
+        Err(e) => {
+            error!("Failed to open RabbitMQ channel: {}", e);
+            panic!("Failed to open RabbitMQ channel: {}", e);
+        }
+    };
     channel
         .register_callback(DefaultChannelCallback)
         .await
@@ -53,8 +73,8 @@ pub async fn setup_rabbitmq(
         .await
         .unwrap();
 
-    println!(
-        "Connected to exchange '{}', consuming from queue '{}'",
+    info!(
+        "Successfully connected to exchange '{}', consuming from queue '{}'",
         exchange_name, queue_name
     );
 

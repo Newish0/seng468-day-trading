@@ -1,8 +1,14 @@
-import type { RedisClientType } from 'redis';
-import { createClient } from 'redis';
-import type { Entity } from 'redis-om';
-import { Repository, Schema } from 'redis-om';
-import { ownedStockSchema, stockSchema, stockTransactionSchema, userSchema, walletTransactionSchema } from './redisSchema';
+import type { RedisClientType } from "redis";
+import { createClient } from "redis";
+import type { Entity } from "redis-om";
+import { Repository, Schema } from "redis-om";
+import {
+  ownedStockSchema,
+  stockSchema,
+  stockTransactionSchema,
+  userSchema,
+  walletTransactionSchema,
+} from "./redisSchema";
 
 //Instantiation object
 class RedisInstance {
@@ -12,12 +18,12 @@ class RedisInstance {
   private redisClient: RedisClientType;
   private repositoryDict: Record<string, Repository<Entity>> = {};
   private schemas: Record<string, Schema> = {
-        users: userSchema,
-        ownedStock: ownedStockSchema,
-        stock: stockSchema,
-        walletTransaction: walletTransactionSchema,
-        stockTransaction: stockTransactionSchema
-    };
+    users: userSchema,
+    ownedStock: ownedStockSchema,
+    stock: stockSchema,
+    walletTransaction: walletTransactionSchema,
+    stockTransaction: stockTransactionSchema,
+  };
 
   /**
    *
@@ -37,17 +43,16 @@ class RedisInstance {
       if (!this.redisClient.isOpen) {
         await this.redisClient.connect();
       }
-      
-      for(const [repoKey, schema] of Object.entries(this.schemas)) {
-            // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
-            let repository = new Repository<Entity>(schema, this.redisClient);
-            repository.createIndex(); // All of our repositorys should expect to be indexed into 
-            this.repositoryDict[repoKey] = repository;
+
+      for (const [repoKey, schema] of Object.entries(this.schemas)) {
+        // repository = new Repository<InferSchema<Entity>>(schema, redisInstance.getClient());
+        const repository: Repository<Entity> = await this.createRepository(schema);
+        this.repositoryDict[repoKey] = repository;
       }
     } catch (error) {
       console.error("Failed to connect to Redis:", error);
       throw error;
-    }      
+    }
   }
 
   /**
@@ -115,12 +120,16 @@ class RedisInstance {
     // Create repository with the schema
     const repository = new Repository<any>(schema, this.redisClient);
 
-    // All of our repositorys should expect to be indexed into
-    await repository.createIndex();
+    // All of our repositories should expect to be indexed.
+    // NOTE: Was getting problems without try catch.
+    try {
+      await repository.createIndex();
+    } catch (error) {
+      console.error("Failed to create index:", error);
+    }
 
     return repository;
   }
-
 }
 
 export { RedisInstance };

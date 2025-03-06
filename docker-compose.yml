@@ -32,11 +32,10 @@ services:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
       - ORDER_SERVICE_HOST=http://order-manager:3002
-    container_name: user-api
     networks:
       - day-trading-network
-    ports:
-      - "3000"
+    deploy:
+      replicas: 4
     depends_on:
       order-manager:
         condition: service_started
@@ -89,6 +88,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 4
 
   # Order Placement/Cancellation Service
   order-manager:

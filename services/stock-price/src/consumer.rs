@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PriceUpdate {
+struct PriceUpdate {
     pub stock_id: String,
     pub stock_name: Option<String>,
     pub current_price: Option<f64>,
@@ -38,7 +38,7 @@ impl AsyncConsumer for PriceConsumer {
             let stock_price = StockPrice {
                 stock_id: price_update.stock_id.clone(),
                 stock_name: price_update.stock_name.unwrap(),
-                current_price: price_update.current_price.unwrap(),
+                current_price: price_update.current_price.unwrap().round() as i64,
             };
             state
                 .stock_prices

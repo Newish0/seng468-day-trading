@@ -1,5 +1,6 @@
 import * as amqp from "amqplib";
 import OrderUpdateHandler from "@/handlers/orderUpdateHandler";
+import logger from "@/utils/logger";
 
 const DEFAULT_RABBITMQ_URL = "amqp://guest:guest@localhost:5672";
 const EXCHANGE_NAME = "order_update_exchange";
@@ -22,7 +23,7 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
 
     channel.prefetch(1); // Fair dispatch to allow multiple consumers (Work Queue)
 
-    console.log("Order Update Service waiting for messages...");
+    logger.info("Order Update Service waiting for messages...");
 
     await channel.consume(
       QUEUE_NAME,
@@ -33,9 +34,8 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
           const content = JSON.parse(msg.content.toString());
           const routingKey = msg.fields.routingKey;
 
-          console.log(
-            `Received message with routing key: ${routingKey}, content: ${JSON.stringify(content)}`
-          );
+          logger.debug(`Received message with routing key: ${routingKey}`);
+          logger.debug(`Message content: ${content}`);
 
           switch (routingKey) {
             case "order.sale_update":
@@ -51,14 +51,14 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
               break;
 
             default:
-              console.warn(`Unknown routing key: ${routingKey}`);
+              logger.warn(`Unknown routing key: ${routingKey}`);
               channel.nack(msg); // Reject invalid messages
               return;
           }
 
           channel.ack(msg);
         } catch (error) {
-          console.error("Message processing failed:", error);
+          logger.error("Message processing failed:", error);
           channel.nack(msg, false, false); // Dead-letter handling
         }
       },
@@ -72,7 +72,7 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
       process.exit(0);
     });
   } catch (error) {
-    console.error("Order Update Service failed to start:", error);
+    logger.error("Order Update Service failed to start:", error);
     process.exit(1);
   }
 }

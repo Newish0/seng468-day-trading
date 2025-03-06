@@ -86,7 +86,7 @@
           </elementProp>
           <elementProp name="configPath" elementType="Argument">
             <stringProp name="Argument.name">configPath</stringProp>
-            <stringProp name="Argument.value">/home/pratik/468-TestScript/TestRun3/Config/</stringProp>
+            <stringProp name="Argument.value">/home/saibannur/seng468-day-trading/TestRun3/Config</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>

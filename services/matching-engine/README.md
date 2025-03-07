@@ -27,7 +27,7 @@ The exchange is `order_exchange`.
 ```rs
 pub struct MarketBuyRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub stock_tx_id: String,
     pub budget: f64,
     pub user_name: String,
@@ -39,7 +39,7 @@ pub struct MarketBuyRequest {
 pub struct LimitSellRequest {
     pub stock_id: String,
     pub stock_name: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String,
@@ -51,7 +51,7 @@ pub struct LimitSellRequest {
 ```rs
 pub struct LimitSellCancelRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
 }
@@ -72,7 +72,7 @@ pub struct MarketBuyResponse {
 pub struct MarketBuyData {
     pub stock_id: String,
     pub stock_tx_id: String,
-    pub quantity: Option<u32>, // None if success is false
+    pub quantity: Option<u64>, // None if success is false
     pub price_total: Option<f64>, // None if success is false
 }
 ```
@@ -89,9 +89,9 @@ pub struct LimitSellCancelData {
     pub stock_id: String,
     pub stock_tx_id: String,
     pub partially_sold: bool,
-    pub ori_quantity: u32,
-    pub cur_quantity: u32,
-    pub sold_quantity: u32,
+    pub ori_quantity: u64,
+    pub cur_quantity: u64,
+    pub sold_quantity: u64,
     pub price: f64,
 }
 ```
@@ -100,8 +100,8 @@ pub struct LimitSellCancelData {
 ```rs
 pub struct OrderUpdate {
     pub stock_id: String,
-    pub sold_quantity: u32,
-    pub remaining_quantity: u32,
+    pub sold_quantity: u64,
+    pub remaining_quantity: u64,
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String,

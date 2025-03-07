@@ -6,6 +6,8 @@ use amqprs::{
 use async_trait::async_trait;
 use std::{cmp::Reverse, sync::Arc};
 use tokio::sync::RwLock;
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::field::debug;
 
 use crate::{
     matching_pq::SellOrder,
@@ -31,6 +33,7 @@ struct MarketBuyResult {
 
 impl OrderConsumer {
     pub fn new(state: Arc<RwLock<AppState>>, client: Arc<RabbitMQClient>) -> Self {
+        info!("Creating new OrderConsumer instance");
         Self {
             state,
             rabbitmq_client: client,
@@ -38,10 +41,15 @@ impl OrderConsumer {
     }
 
     pub async fn setup(&self) -> Result<(), Box<dyn std::error::Error>> {
+        info!("Setting up OrderConsumer");
         self.rabbitmq_client.setup_consumer(self.clone()).await
     }
 
     fn create_mk_buy_fail_result(&self, stock_id: String, stock_tx_id: String) -> MarketBuyResult {
+        warn!(
+            "Creating failed market buy result for stock_id={}, tx_id={}",
+            stock_id, stock_tx_id
+        );
         MarketBuyResult {
             market_buy_response: MarketBuyResponse {
                 success: false,
@@ -61,10 +69,16 @@ impl OrderConsumer {
     async fn process_market_buy(&self, request: MarketBuyRequest) -> MarketBuyResult {
         // Need to have lock the entire time to ensure no other sell occurs
         // between ensuring we have enough shares and the actual buy/sell process.
+
+        debug!(
+            "Processing market buy request: stock={}, quantity={}, budget={}, user={}",
+            request.stock_id, request.quantity, request.budget, request.user_name
+        );
+
         let mut state = self.state.write().await;
 
         // Total number of shares on sale excluding those from the user requesting the buy order
-        let available_shares: u32 = state
+        let available_shares: u64 = state
             .matching_pq
             .get_all_orders(&request.stock_id)
             .iter()
@@ -72,9 +86,18 @@ impl OrderConsumer {
             .map(|sell_order| sell_order.cur_quantity)
             .sum();
 
+        debug!(
+            "Available shares for stock {}: {} (requested: {})",
+            request.stock_id, available_shares, request.quantity
+        );
+
         // Check available shares
         let mut shares_to_buy = request.quantity;
         if shares_to_buy > available_shares {
+            warn!(
+                "Insufficient shares available for stock {}: available={}, requested={}",
+                request.stock_id, available_shares, shares_to_buy
+            );
             return self.create_mk_buy_fail_result(request.stock_id, request.stock_tx_id);
         }
 
@@ -109,8 +132,14 @@ impl OrderConsumer {
             }
         }
 
+        debug!("Dry run calculation: total_price={}", total_price_dry);
+
         // Budget validation
         if total_price_dry > request.budget {
+            warn!(
+                "Insufficient budget for market buy: required={}, available={}",
+                total_price_dry, request.budget
+            );
             return self.create_mk_buy_fail_result(request.stock_id, request.stock_tx_id);
         }
 
@@ -123,16 +152,23 @@ impl OrderConsumer {
             // Assume the sell order always exist due to the above shares quantity check.
             // If it somehow fails, we will break out early. But it is a critical issue at this point.
             let Some(mut top_sell_order) = state.matching_pq.pop(&request.stock_id) else {
-                eprintln!("Performing actual buy when there isn't enough valid shares to buy; should not get here.");
+                error!(
+                    "Critical: Performing actual buy when there isn't enough valid shares to buy"
+                );
                 break;
             };
 
             // Skip if the sell order is from the user requesting the buy order
             if top_sell_order.user_name == request.user_name {
+                debug!("Skipping sell order from same user: {}", request.user_name);
                 continue;
             }
 
             let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
+            debug!(
+                "Processing sell order: price={}, quantity={}, purchase_all={}",
+                top_sell_order.price, top_sell_order.cur_quantity, purchase_all
+            );
 
             // Complete the top sell order or perform partial sell on the top sell order
             if purchase_all {
@@ -175,7 +211,19 @@ impl OrderConsumer {
                 // Reinsert the sell order back into the PQ since it is a partial sell
                 state.matching_pq.insert(top_sell_order);
             };
+
+            debug!(
+                "Processed order: shares_bought={}, remaining_to_buy={}, total_price={}",
+                shares_bought, shares_to_buy, total_price
+            );
         }
+
+        debug!(
+            "Market buy completed: shares={}, total_price={}, updates={}",
+            shares_bought,
+            total_price,
+            order_updates.len()
+        );
 
         let response = MarketBuyResponse {
             success: true,
@@ -197,15 +245,21 @@ impl OrderConsumer {
     /// Helper for publishing stock price.
     /// Send in the latest stock price or `None` (AKA `null`) if it does not exist.
     async fn publish_stock_price_helper(&self, stock_id: &str) {
+        debug!("Publishing stock price update for {}", stock_id);
         let payload: StockPrice = {
             let state = self.state.read().await;
             if let Some(top_order) = state.matching_pq.peek(stock_id) {
+                debug!(
+                    "Current price for {}: {} ({})",
+                    stock_id, top_order.price, top_order.stock_name
+                );
                 StockPrice {
                     stock_id: stock_id.to_string(),
                     stock_name: Some(top_order.stock_name.clone()),
                     current_price: Some(top_order.price),
                 }
             } else {
+                warn!("No price available for stock {}", stock_id);
                 StockPrice {
                     stock_id: stock_id.to_string(),
                     stock_name: None,
@@ -214,10 +268,19 @@ impl OrderConsumer {
             }
         };
 
-        if let Err(e) = self.rabbitmq_client.publish_stock_price(payload).await {
-            eprintln!(
+        if let Err(e) = self
+            .rabbitmq_client
+            .publish_stock_price(payload.clone())
+            .await
+        {
+            error!(
                 "Failed to publish latest stock price for {}: {}",
                 stock_id, e
+            );
+        } else {
+            debug!(
+                "Published stock price update: id={}, name={:?}, price={:?}",
+                payload.stock_id, payload.stock_name, payload.current_price
             );
         }
     }
@@ -242,6 +305,11 @@ impl AsyncConsumer for OrderConsumer {
         content: Vec<u8>,
     ) {
         let routing_key = deliver.routing_key().to_string();
+        debug!(
+            "Received message with routing key: {} (delivery tag: {})",
+            routing_key,
+            deliver.delivery_tag()
+        );
 
         // Extract the order type from routing key pattern: order.{order_type}.shard_{shard_id}
         let parts: Vec<&str> = routing_key.split('.').collect();
@@ -259,7 +327,7 @@ impl AsyncConsumer for OrderConsumer {
                         .publish_buy_completed(&buy_result.market_buy_response)
                         .await
                     {
-                        eprintln!("Failed to publish buy completion event: {}", e);
+                        error!("Failed to publish buy completion event: {}", e);
                     }
 
                     // Publish all order updates
@@ -269,7 +337,7 @@ impl AsyncConsumer for OrderConsumer {
                                 if let Err(e) =
                                     self.rabbitmq_client.publish_sale_update(&order).await
                                 {
-                                    eprintln!("Failed to publish order update: {}", e);
+                                    error!("Failed to publish order update: {}", e);
                                 }
                             }
                         }
@@ -280,6 +348,12 @@ impl AsyncConsumer for OrderConsumer {
                     if buy_result.have_completed_sell {
                         self.publish_stock_price_helper(&stock_id).await;
                     }
+                } else {
+                    error!("Failed to parse market buy order",);
+                    debug!(
+                        "Parse Failure Content: {}",
+                        String::from_utf8_lossy(&content)
+                    );
                 }
             }
             Some(&"limit_sell") => {
@@ -303,6 +377,12 @@ impl AsyncConsumer for OrderConsumer {
                     // Publish latest stock price
                     // TODO: only publish if price has changed
                     self.publish_stock_price_helper(&stock_id).await;
+                } else {
+                    error!("Failed to parse limit sell order");
+                    debug!(
+                        "Parse Failure Content: {}",
+                        String::from_utf8_lossy(&content)
+                    );
                 }
             }
             Some(&"limit_sell_cancellation") => {
@@ -336,7 +416,7 @@ impl AsyncConsumer for OrderConsumer {
                             .publish_order_cancelled(&response)
                             .await
                         {
-                            eprintln!("Failed to publish cancellation response: {}", e);
+                            error!("Failed to publish cancellation response: {}", e);
                         }
 
                         // Publish latest stock price
@@ -350,20 +430,26 @@ impl AsyncConsumer for OrderConsumer {
 
                         if let Err(e) = self.rabbitmq_client.publish_order_cancelled(&err_res).await
                         {
-                            eprintln!("Failed to publish cancellation response: {}", e);
+                            error!("Failed to publish cancellation response: {}", e);
                         }
                     }
+                } else {
+                    error!("Failed to parse limit sell cancellation order");
+                    debug!(
+                        "Parse Failure Content: {}",
+                        String::from_utf8_lossy(&content)
+                    );
                 }
             }
             _ => {
-                eprintln!("Unknown routing key: {}", routing_key);
+                error!("Unknown routing key: {}", routing_key);
             }
         }
 
         // Acknowledge the message
         let args = BasicAckArguments::new(deliver.delivery_tag(), false);
         if let Err(e) = channel.basic_ack(args).await {
-            eprintln!("Failed to acknowledge message: {}", e);
+            error!("Failed to acknowledge message: {}", e);
         }
     }
 }

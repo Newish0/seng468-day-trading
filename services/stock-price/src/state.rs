@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct StockPrice {
     pub stock_id: String,
-    pub current_price: Option<f64>,
+    pub current_price: i64,
     pub stock_name: String,
 }
 

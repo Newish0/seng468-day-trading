@@ -19,6 +19,7 @@ services:
     depends_on:
       - user-api
       - auth
+      - stock-price
     networks:
       - day-trading-network
 
@@ -31,11 +32,10 @@ services:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
       - ORDER_SERVICE_HOST=http://order-manager:3002
-    container_name: user-api
     networks:
       - day-trading-network
-    ports:
-      - "3000"
+    deploy:
+      replicas: 4
     depends_on:
       order-manager:
         condition: service_started
@@ -88,6 +88,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 4
 
   # Order Placement/Cancellation Service
   order-manager:
@@ -111,6 +113,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 3
 
   # Order Update Service
   order-update:
@@ -132,10 +136,11 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 3
 
   # Matching Engine (Rust)
-  # Base configuration for matching engine (not started directly)
-  x-matching-engine-base: &matching-engine-base
+  matching-engine-shard0:
     build:
       context: ./services/matching-engine
       dockerfile: Dockerfile
@@ -144,10 +149,6 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-  # Sharded Matching Engines
-  matching-engine-shard0:
-    <<: *matching-engine-base
     environment:
       - SHARD_ID=0
       - RABBITMQ_HOST=rabbitmq
@@ -156,10 +157,34 @@ services:
       - RABBITMQ_PASSWORD=guest
 
   matching-engine-shard1:
-    <<: *matching-engine-base
+    build:
+      context: ./services/matching-engine
+      dockerfile: Dockerfile
+    networks:
+      - day-trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
       - SHARD_ID=1
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
+
+  stock-price:
+    build:
+      context: ./services/stock-price
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      # matching-engine:
+      #   condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - day-trading-network

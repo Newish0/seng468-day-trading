@@ -1,6 +1,10 @@
 import { startOrderUpdateConsumer } from "@/consumers/orderUpdateConsumer";
 import logger from "./utils/logger";
 
+const maxConcurrentMsgs = Bun.env.MAX_CONCURRENT_MSGS
+  ? parseInt(Bun.env.MAX_CONCURRENT_MSGS)
+  : undefined;
+
 const rabbitPort = Bun.env.RABBIT_PORT || 5672;
 const rabbitHost = Bun.env.RABBIT_HOST || "localhost";
 const rabbitUser = Bun.env.RABBIT_USER || "guest";
@@ -10,4 +14,4 @@ const rabbitUrl = `amqp://${rabbitUser}:${rabbitPassword}@${rabbitHost}:${rabbit
 
 logger.info(`Order Update Service have started.`);
 
-await startOrderUpdateConsumer(rabbitUrl);
+await startOrderUpdateConsumer(rabbitUrl, maxConcurrentMsgs);

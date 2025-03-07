@@ -105,8 +105,8 @@ services:
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
     depends_on:
-      matching-engine:
-        condition: service_started
+      # matching-engine:
+      #   condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -128,8 +128,8 @@ services:
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
     depends_on:
-      matching-engine:
-        condition: service_started
+      # matching-engine:
+      #   condition: service_started
       redis:
         condition: service_healthy
       rabbitmq:
@@ -140,20 +140,37 @@ services:
       replicas: 3
 
   # Matching Engine (Rust)
-  matching-engine:
+  matching-engine-shard0:
     build:
       context: ./services/matching-engine
       dockerfile: Dockerfile
+    networks:
+      - day-trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
+      - SHARD_ID=0
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
+
+  matching-engine-shard1:
+    build:
+      context: ./services/matching-engine
+      dockerfile: Dockerfile
+    networks:
+      - day-trading-network
     depends_on:
       rabbitmq:
         condition: service_healthy
-    networks:
-      - day-trading-network
+    environment:
+      - SHARD_ID=1
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
 
   stock-price:
     build:
@@ -165,8 +182,8 @@ services:
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
     depends_on:
-      matching-engine:
-        condition: service_started
+      # matching-engine:
+      #   condition: service_started
       rabbitmq:
         condition: service_healthy
     networks:

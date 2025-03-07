@@ -23,7 +23,7 @@ These outlines the message body sent from the Order Placement/Cancellation Servi
 
 The exchange is `order_exchange`.
 
-### Routing Key `order.market_buy`
+### Routing Key `order.market_buy.shard_<shard_id>`
 ```rs
 pub struct MarketBuyRequest {
     pub stock_id: String,
@@ -34,7 +34,7 @@ pub struct MarketBuyRequest {
 }
 ```
 
-### Routing Key `order.limit_sell`
+### Routing Key `order.limit_sell.shard_<shard_id>`
 ```rs
 pub struct LimitSellRequest {
     pub stock_id: String,
@@ -47,7 +47,7 @@ pub struct LimitSellRequest {
 ```
 
 
-### Routing Key `order.limit_sell_cancellation`
+### Routing Key `order.limit_sell_cancellation.shard_<shard_id>`
 ```rs
 pub struct LimitSellCancelRequest {
     pub stock_id: String,

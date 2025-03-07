@@ -104,6 +104,7 @@ services:
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
+      - ME_INSTANCES=3
     depends_on:
       # matching-engine:
       #   condition: service_started
@@ -167,6 +168,21 @@ services:
         condition: service_healthy
     environment:
       - SHARD_ID=1
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+  matching-engine-shard2:
+    build:
+      context: ./services/matching-engine
+      dockerfile: Dockerfile
+    networks:
+      - day-trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - SHARD_ID=2
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USERNAME=guest

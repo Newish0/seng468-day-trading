@@ -6,7 +6,7 @@ const DEFAULT_RABBITMQ_URL = "amqp://guest:guest@localhost:5672";
 const EXCHANGE_NAME = "order_update_exchange";
 const QUEUE_NAME = "order_update_queue";
 const ROUTING_KEYS = ["order.sale_update", "order.buy_completed", "order.cancelled"];
-const DEFAULT_MAX_CONCURRENT_MSG = 100;
+const DEFAULT_MAX_CONCURRENT_MSG = 10;
 
 export async function startOrderUpdateConsumer(
   rabbitMQUrl = DEFAULT_RABBITMQ_URL,

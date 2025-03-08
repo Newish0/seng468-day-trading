@@ -1,7 +1,5 @@
-import type { RedisClientType } from "redis";
 import { createClient } from "redis";
-import type { Entity } from "redis-om";
-import { Repository, Schema } from "redis-om";
+import { Repository } from "redis-om";
 import {
   ownedStockSchema,
   stockSchema,
@@ -10,19 +8,25 @@ import {
   walletTransactionSchema,
 } from "./redisSchema";
 
-const connA = createClient({ url: "redis://redis:6379" });
-const connB = createClient({ url: "redis://redis2:6379" });
+const connOwnedStock = createClient({ url: "redis://redis1:6379" });
+const connStock = createClient({ url: "redis://redis2:6379" });
+const connStockTx = createClient({ url: "redis://redis3:6379" });
+const connUser = createClient({ url: "redis://redis4:6379" });
+const connWalletTx = createClient({ url: "redis://redis5:6379" });
 
-console.log("HI");
-await connA.connect();
-console.log("BYE");
-await connB.connect();
+await Promise.all([
+  connOwnedStock.connect(),
+  connStock.connect(),
+  connStockTx.connect(),
+  connUser.connect(),
+  connWalletTx.connect(),
+]);
 
-const ownedStockRepo = new Repository(ownedStockSchema, connA);
-const stockRepo = new Repository(stockSchema, connA);
-const stockTxRepo = new Repository(stockTransactionSchema, connB);
-const userRepo = new Repository(userSchema, connA);
-const walletTxRepo = new Repository(walletTransactionSchema, connA);
+const ownedStockRepo = new Repository(ownedStockSchema, connOwnedStock);
+const stockRepo = new Repository(stockSchema, connStock);
+const stockTxRepo = new Repository(stockTransactionSchema, connStockTx);
+const userRepo = new Repository(userSchema, connUser);
+const walletTxRepo = new Repository(walletTransactionSchema, connWalletTx);
 
 const db = {
   ownedStockRepo,
@@ -42,4 +46,4 @@ await Promise.all(
   })
 );
 
-export { db, connA, connB };
+export { db, connOwnedStock, connStock, connStockTx, connUser, connWalletTx };

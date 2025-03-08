@@ -1,29 +1,6 @@
-import { Repository } from "redis-om";
-import { RedisInstance } from "shared-models/RedisInstance";
-import {
-  ownedStockSchema,
-  type Stock,
-  type StockOwned,
-  stockSchema,
-  type StockTransaction,
-  stockTransactionSchema,
-} from "shared-models/redisSchema";
+import { type Stock, type StockOwned } from "shared-models/redisSchema";
 
 import { db } from "shared-models/newDb";
-// Creating connection here due to the implementation of RedisInstance.ts
-// This is probably NOT good - causes multiple connection creation?
-// let redisConnection: RedisInstance = new RedisInstance();
-// try {
-//   redisConnection.connect();
-// } catch (error) {
-//   throw new Error("Error starting database server");
-// }
-// const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
-// const ownedStockRepository: Repository<StockOwned> = await redisConnection.createRepository(
-//   ownedStockSchema
-// );
-// const stockTransactionRepository: Repository<StockTransaction> =
-//   await redisConnection.createRepository(stockTransactionSchema);
 
 const stockService = {
   async createStock(stock_name: string) {

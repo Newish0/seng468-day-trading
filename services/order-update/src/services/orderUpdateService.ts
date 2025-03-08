@@ -1,6 +1,5 @@
 import { createAddQtyToOwnedStock } from "@/utils/portfolio";
-import { EntityId, Repository } from "redis-om";
-import { RedisInstance } from "shared-models/RedisInstance";
+import { EntityId } from "redis-om";
 import { type StockTransaction, type User } from "shared-models/redisSchema";
 import {
   unlockUserWallet,
@@ -9,7 +8,7 @@ import {
 } from "shared-models/redisRepositoryHelper";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 
-import { db, connA, connB } from "shared-models/newDb";
+import { db, connOwnedStock, connWalletTx, connUser } from "shared-models/newDb";
 
 export default {
   handleSaleUpdate: async ({
@@ -130,7 +129,7 @@ export default {
 
       if (!user) throw new Error("Error finding user (updateSales)");
 
-      const success = await userWalletAtomicUpdate(connA, user[EntityId]!, amount);
+      const success = await userWalletAtomicUpdate(connUser, user[EntityId]!, amount);
 
       if (!success)
         throw new Error("Error updating the wallet of the limit sell user (updateSales)");
@@ -215,7 +214,7 @@ export default {
       quantity,
       db.ownedStockRepo,
       db.stockRepo,
-      connA
+      connOwnedStock
     );
 
     const user = await (async () => {
@@ -239,7 +238,7 @@ export default {
     //       we are forced to perform the deduct and unlock in one atomic operation.
     const walletAndUnlockSuccess = await (async () => {
       try {
-        return await userWalletDeductAndUnlockAtomicUpdate(connA, user[EntityId]!, price_total);
+        return await userWalletDeductAndUnlockAtomicUpdate(connUser, user[EntityId]!, price_total);
       } catch (error) {
         throw new Error(
           "Error updating buyer wallet or unlock for buy order(handleBuyCompletion)",
@@ -343,7 +342,7 @@ export default {
       cur_quantity,
       db.ownedStockRepo,
       db.stockRepo,
-      connA
+      connOwnedStock
     );
   },
 };

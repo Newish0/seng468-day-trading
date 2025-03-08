@@ -1,13 +1,7 @@
-import { EntityId, Repository } from "redis-om";
-import { RedisInstance } from "shared-models/RedisInstance";
-import type { Stock, StockOwned, StockTransaction, User } from "shared-models/redisSchema";
+import { EntityId } from "redis-om";
+import type { StockOwned, StockTransaction, User } from "shared-models/redisSchema";
 import { lockUserWallet, ownedStockAtomicUpdate } from "shared-models/redisRepositoryHelper";
-import {
-  ownedStockSchema,
-  stockTransactionSchema,
-  userSchema,
-  stockSchema,
-} from "shared-models/redisSchema";
+
 import type {
   CancelSellRequest,
   LimitSellOrderRequest,
@@ -16,25 +10,11 @@ import type {
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import { publishToQueue } from "./rabbitMQService";
 import { getStockName } from "@/utils/stock";
-import { db, connA, connB } from "shared-models/newDb";
+import { db, connOwnedStock, connUser } from "shared-models/newDb";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
 const CANCEL_SELL_ROUTING_KEY = "order.limit_sell_cancellation";
-
-// const redisConnection: RedisInstance = new RedisInstance();
-// redisConnection.connect();
-
-// const stockTransactionRepository: Repository<StockTransaction> =
-//   await redisConnection.createRepository(stockTransactionSchema);
-
-// const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
-
-// const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
-//   ownedStockSchema
-// );
-
-// const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -149,7 +129,7 @@ const service = {
     if (ownedStock.current_quantity - quantity >= 0) {
       const success = await (async () => {
         try {
-          return await ownedStockAtomicUpdate(connA, ownedStock[EntityId]!, -quantity);
+          return await ownedStockAtomicUpdate(connOwnedStock, ownedStock[EntityId]!, -quantity);
         } catch (err) {
           await cleanupOptimistic();
           throw new Error("Error updating owned stock quantity in database", { cause: err });
@@ -197,7 +177,7 @@ const service = {
 
       const isFundLockSuccess = await (() => {
         try {
-          return lockUserWallet(connA, userData[EntityId]!);
+          return lockUserWallet(connUser, userData[EntityId]!);
         } catch (err) {
           throw new Error("Error locking user wallet (placeMarketBuyOrder)", {
             cause: err,

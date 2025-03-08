@@ -8,11 +8,34 @@ import {
   walletTransactionSchema,
 } from "./redisSchema";
 
-const connOwnedStock = createClient({ url: "redis://redis1:6379" });
-const connStock = createClient({ url: "redis://redis2:6379" });
-const connStockTx = createClient({ url: "redis://redis3:6379" });
-const connUser = createClient({ url: "redis://redis4:6379" });
-const connWalletTx = createClient({ url: "redis://redis5:6379" });
+const connectionOptions = {
+  socket: {
+    reconnectStrategy: (retries: number) => Math.min(retries * 50, 2000),
+  },
+  maxRetriesPerRequest: 5,
+  maxConnections: 50,
+};
+
+const connOwnedStock = createClient({
+  ...connectionOptions,
+  url: "redis://redis1:6379",
+});
+const connStock = createClient({
+  ...connectionOptions,
+  url: "redis://redis2:6379",
+});
+const connStockTx = createClient({
+  ...connectionOptions,
+  url: "redis://redis3:6379",
+});
+const connUser = createClient({
+  ...connectionOptions,
+  url: "redis://redis4:6379",
+});
+const connWalletTx = createClient({
+  ...connectionOptions,
+  url: "redis://redis5:6379",
+});
 
 await Promise.all([
   connOwnedStock.connect(),

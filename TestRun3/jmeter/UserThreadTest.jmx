@@ -11,7 +11,7 @@
           </elementProp>
           <elementProp name="BASE_PORT" elementType="Argument">
             <stringProp name="Argument.name">BASE_PORT</stringProp>
-            <stringProp name="Argument.value">8888</stringProp>
+            <stringProp name="Argument.value">8080</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="register" elementType="Argument">
@@ -86,12 +86,12 @@
           </elementProp>
           <elementProp name="stockFile" elementType="Argument">
             <stringProp name="Argument.name">stockFile</stringProp>
-            <stringProp name="Argument.value">/home/howielo/project/seng468-day-trading/TestRun3/jmeter/Config/stockIds.csv</stringProp>
+            <stringProp name="Argument.value">/home/trumangao/seng468-day-trading/TestRun3/jmeter/Config/stockIds.csv</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="userFile" elementType="Argument">
             <stringProp name="Argument.name">userFile</stringProp>
-            <stringProp name="Argument.value">/home/howielo/project/seng468-day-trading/TestRun3/jmeter/UserFiles/UserCreds_10000.csv</stringProp>
+            <stringProp name="Argument.value">/home/trumangao/seng468-day-trading/TestRun3/jmeter/UserFiles/UserCreds_10000.csv</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="numUsers" elementType="Argument">

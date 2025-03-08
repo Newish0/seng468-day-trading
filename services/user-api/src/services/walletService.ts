@@ -1,19 +1,27 @@
 import userService from "./userService";
-import { db } from "shared-models/newDb";
+import { db, connUser } from "shared-models/newDb";
+import { userWalletAtomicUpdate } from "shared-models/redisRepositoryHelper";
+import { EntityId } from "redis-om";
 
 const walletService = {
   addMoneyToWallet: async (userId: string, amount: number) => {
     if (amount < 0) {
       throw new Error("Amount cannot be negative");
     }
-    try {
-      const user = await userService.getUserFromId(userId);
-      const currentBalance = user.wallet_balance;
-      const newBalance = currentBalance + amount;
+    const user = await (async () => {
+      try {
+        return await userService.getUserFromId(userId);
+      } catch (e) {
+        throw new Error("Failed to get user");
+      }
+    })();
 
-      await db.userRepo!.save({ ...user, wallet_balance: newBalance });
-    } catch (e) {
-      throw new Error("User not found");
+    if (!user) throw new Error("User not found");
+
+    const success = await userWalletAtomicUpdate(connUser, user[EntityId]!, amount);
+
+    if (!success) {
+      throw new Error("Failed to add money to wallet");
     }
   },
   async getUserWalletTransactions(userId: string) {

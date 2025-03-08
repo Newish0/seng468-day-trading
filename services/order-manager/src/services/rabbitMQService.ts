@@ -13,7 +13,7 @@ export async function initializeRabbitMQ(RABBITMQ_URL: string) {
   try {
     const connection = await amqp.connect(RABBITMQ_URL);
     channel = await connection.createChannel();
-    await channel.assertExchange(ORDER_EXCHANGE, "topic", { durable: true });
+    await channel.assertExchange(ORDER_EXCHANGE, "topic", { durable: false });
   } catch (error) {
     throw error;
   }

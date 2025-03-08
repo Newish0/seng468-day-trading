@@ -25,7 +25,7 @@ rm -rf ./jmeter/results
 
 # --- 3. Flush Redis data ---
 echo "Flushing Redis..."
-redis-cli flushall
+docker exec -it seng468-day-trading-redis-1 redis-cli flushall
 
 # --- 4. Restart containers ---
 echo "Restarting Docker containers..."

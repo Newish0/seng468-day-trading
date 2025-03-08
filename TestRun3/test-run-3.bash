@@ -43,7 +43,7 @@ jmeter -n \
 echo "Running UserThreadTest.jmx..."
 jmeter -n \
   -t ./jmeter/UserThreadTest.jmx \
-  -l ./jmeter/user_test_results.log \
+  -l ./jmeter/10k_results.log \
   -e -o ./jmeter/results
 
 echo "Test run complete."

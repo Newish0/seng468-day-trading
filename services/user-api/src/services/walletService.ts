@@ -1,5 +1,6 @@
-import { Repository } from "redis-om";
+import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
+import { userWalletAtomicUpdate } from "shared-models/redisRepositoryHelper";
 import {
   userSchema,
   walletTransactionSchema,
@@ -25,14 +26,24 @@ const walletService = {
     if (amount < 0) {
       throw new Error("Amount cannot be negative");
     }
-    try {
-      const user = await userService.getUserFromId(userId);
-      const currentBalance = user.wallet_balance;
-      const newBalance = currentBalance + amount;
+    const user = await (async () => {
+      try {
+        return await userService.getUserFromId(userId);
+      } catch (e) {
+        throw new Error("Failed to get user");
+      }
+    })();
 
-      await userRepository!.save({ ...user, wallet_balance: newBalance });
-    } catch (e) {
-      throw new Error("User not found");
+    if (!user) throw new Error("User not found");
+
+    const success = await userWalletAtomicUpdate(
+      redisConnection.getClient(),
+      user[EntityId]!,
+      amount
+    );
+
+    if (!success) {
+      throw new Error("Failed to add money to wallet");
     }
   },
   async getUserWalletTransactions(userId: string) {

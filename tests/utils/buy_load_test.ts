@@ -2,11 +2,11 @@ import { apiRequest, createUniqueUser, withAuth } from "./index";
 
 // Configuration
 const config = {
-  numberOfBuyUsers: 100, // Controllable parameter n
+  numberOfBuyUsers: 10000, // Controllable parameter n
   sharesPerStock: 50000000, // 50 million shares
   stockPrice: 1, // $1 per share
   userFundingAmount: 2000000, // $2 million per user
-  verificationDelay: 750, // ms to wait before checking transaction status
+  verificationDelay: 500, // ms to wait before checking transaction status
 };
 
 // Helper functions
@@ -154,7 +154,7 @@ async function runTradingSimulation() {
             console.log(`Funded wallet for user ${userOrderInfo.userId}`);
 
             // We'll measure response time just for the buy order
-            const startBuyTime = Date.now();
+            const buyStartTime = Date.now();
 
             // Step 6c: Perform buy order
             const buyOrderPayload = {
@@ -171,8 +171,8 @@ async function runTradingSimulation() {
               withAuth(user.token)
             );
 
-            const endTime = Date.now();
-            const responseTime = endTime - startBuyTime;
+            const buyEndTime = Date.now();
+            const responseTime = buyEndTime - buyStartTime;
 
             // Update statistics
             responseTimes.push(responseTime);
@@ -184,6 +184,9 @@ async function runTradingSimulation() {
 
             // Step 6d: Wait for transaction processing
             await delay(config.verificationDelay);
+
+            const checkTime = Date.now();
+            const waitTimeBeforeCheck = checkTime - buyEndTime;
 
             // Step 6e: Get user's stock transactions
             const txResponse = await apiRequest(
@@ -209,6 +212,10 @@ async function runTradingSimulation() {
                 transactionCompleted = true;
                 completedMarketTransactions++;
                 console.log(`User ${userOrderInfo.userId} has a completed market transaction`);
+              } else {
+                console.log(
+                  `User ${userOrderInfo.userId} market transaction status is ${txResponse.data[0]?.order_status}  ${waitTimeBeforeCheck}ms after order init`
+                );
               }
             }
 

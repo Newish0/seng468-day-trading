@@ -1,0 +1,15 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1741391515349,41,1 Register Request,400,Bad Request,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",219,267,1,1,http://localhost:8888/authentication/register,37,0,23
+1741391515923,11,2 Register Request,400,Bad Request,Initial Setup 1-1,text,false,,219,266,1,1,http://localhost:8888/authentication/register,11,0,0
+1741391516436,9,3 Failed Login Request,400,Bad Request,Initial Setup 1-1,text,false,,221,240,1,1,http://localhost:8888/authentication/login,8,0,0
+1741391516947,9,4 Login Request,200,OK,Initial Setup 1-1,text,true,,362,239,1,1,http://localhost:8888/authentication/login,9,0,0
+1741391517462,10,5 Create Google Stock Request,500,Internal Server Error,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",230,389,1,1,http://localhost:8888/setup/createStock,10,0,0
+1741391517975,8,6 Add Google Stock Request,500,Internal Server Error,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",269,411,1,1,http://localhost:8888/setup/addStockToUser,8,0,0
+1741391518486,8,7 Create Apple Stock Request,500,Internal Server Error,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",230,388,1,1,http://localhost:8888/setup/createStock,8,0,0
+1741391519638,8,8 Add Apple Stock Request,500,Internal Server Error,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",269,411,1,1,http://localhost:8888/setup/addStockToUser,8,0,0
+1741391520149,8,9 Get Stock Portfolio Request,200,OK,Initial Setup 1-1,text,false,,180,357,1,1,http://localhost:8888/transaction/getStockPortfolio,8,0,0
+1741391520664,7,10 Place Stock Order Request,400,Bad Request,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",221,462,1,1,http://localhost:8888/engine/placeStockOrder,7,0,0
+1741391521173,11,11 Place Stock Order Request,400,Bad Request,Initial Setup 1-1,text,false,"Value in json path '$.success' expected to match regexp 'true', but it did not match: 'false'",221,462,1,1,http://localhost:8888/engine/placeStockOrder,11,0,0
+1741391521686,10,12 Get Stock Portfolio Request,200,OK,Initial Setup 1-1,text,true,,180,357,1,1,http://localhost:8888/transaction/getStockPortfolio,9,0,0
+1741391522198,11,13 Get Stock Transactions Request,200,OK,Initial Setup 1-1,text,false,,774,360,1,1,http://localhost:8888/transaction/getStockTransactions,11,0,0
+1741391522226,3,Debug Sampler,200,OK,Initial Setup 1-1,text,true,,1323,0,1,1,null,0,0,0

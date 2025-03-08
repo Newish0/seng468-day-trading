@@ -11,7 +11,7 @@
           </elementProp>
           <elementProp name="BASE_PORT" elementType="Argument">
             <stringProp name="Argument.name">BASE_PORT</stringProp>
-            <stringProp name="Argument.value">9090</stringProp>
+            <stringProp name="Argument.value">8888</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="register" elementType="Argument">

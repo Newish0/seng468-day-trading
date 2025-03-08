@@ -15,7 +15,7 @@ FROM nginx:alpine
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
 # Copy custom Nginx configuration
-COPY ./services/gateway/nginx.conf /etc/nginx/conf.d
+COPY ./services/gateway/nginx.conf /etc/nginx/nginx.conf
 
 # Copy built assets from the ui-builder stage
 COPY --from=ui-builder /app/services/web-ui/dist /usr/share/nginx/html

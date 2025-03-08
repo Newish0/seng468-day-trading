@@ -15,7 +15,7 @@ services:
       context: . # Need the entire services folder as context to copy from web-ui
       dockerfile: ./services/gateway/Dockerfile
     ports:
-      - "9090:80"
+      - "8888:80"
     depends_on:
       - user-api
       - auth
@@ -46,8 +46,8 @@ services:
   redis:
     image: redis/redis-stack:latest
     ports:
-      - "46379:6379"
-      - "48001:8001"
+      - "8887:6379"
+      - "8886:8001"
     networks:
       - day-trading-network
     volumes:
@@ -64,8 +64,8 @@ services:
     networks:
       - day-trading-network
     ports:
-      - "45672:5672" # AMQP protocol port
-      - "46672:15672" # Management interface port
+      - "8885:5672" # AMQP protocol port
+      - "8884:15672" # Management interface port
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest

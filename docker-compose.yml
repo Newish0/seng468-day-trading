@@ -4,10 +4,6 @@ networks:
   day-trading-network:
     driver: bridge
 
-volumes:
-  redis-data:
-
-
 services:
   # Frontend and reverse proxy api gateway
   gateway:
@@ -50,7 +46,6 @@ services:
       redis5:
         condition: service_healthy
 
-
   # Redis Database
   redis1:
     image: redis/redis-stack:latest
@@ -59,8 +54,6 @@ services:
       - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -75,8 +68,6 @@ services:
       - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -91,8 +82,6 @@ services:
       - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -107,8 +96,6 @@ services:
       - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -123,8 +110,6 @@ services:
       - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -204,7 +189,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 3
+      replicas: 4
 
   # Order Update Service
   order-update:
@@ -235,7 +220,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 3
+      replicas: 4
 
   # Matching Engine (Rust)
   matching-engine-shard0:

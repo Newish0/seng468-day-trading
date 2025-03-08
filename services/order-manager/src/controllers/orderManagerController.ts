@@ -28,6 +28,7 @@ const controller = {
 
     try {
       await service.placeMarketBuyOrder(stock_id, quantity, user_name);
+      await Bun.sleep(250);
       return c.json({ success: true, data: null }, 201);
     } catch (error) {
       return handleError(c, error, "An unknown error has occurred with market buy");

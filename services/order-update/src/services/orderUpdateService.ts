@@ -1,18 +1,7 @@
 import { createAddQtyToOwnedStock } from "@/utils/portfolio";
 import { EntityId, Repository } from "redis-om";
 import { RedisInstance } from "shared-models/RedisInstance";
-import {
-  ownedStockSchema,
-  stockSchema,
-  stockTransactionSchema,
-  userSchema,
-  walletTransactionSchema,
-  type Stock,
-  type StockOwned,
-  type StockTransaction,
-  type User,
-  type WalletTransaction,
-} from "shared-models/redisSchema";
+import { type StockTransaction, type User } from "shared-models/redisSchema";
 import {
   unlockUserWallet,
   userWalletAtomicUpdate,
@@ -20,19 +9,7 @@ import {
 } from "shared-models/redisRepositoryHelper";
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 
-const redisConn = new RedisInstance();
-await redisConn.connect();
-
-const stockTxRepo: Repository<StockTransaction> = await redisConn.createRepository(
-  stockTransactionSchema
-);
-const userRepo: Repository<User> = await redisConn.createRepository(userSchema);
-const walletTxRepo: Repository<WalletTransaction> = await redisConn.createRepository(
-  walletTransactionSchema
-);
-const stockOwnedRepo: Repository<StockOwned> = await redisConn.createRepository(ownedStockSchema);
-
-const stockRepo: Repository<Stock> = await redisConn.createRepository(stockSchema);
+import { db, connA, connB } from "shared-models/newDb";
 
 export default {
   handleSaleUpdate: async ({
@@ -52,7 +29,7 @@ export default {
   }) => {
     let parentTransaction: StockTransaction | null;
     try {
-      parentTransaction = await stockTxRepo
+      parentTransaction = await db.stockTxRepo
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
@@ -78,7 +55,7 @@ export default {
 
       // Creates a new transaction with the parent_stock_tx_id linking to the original limit sell transaction with status COMPLETED
       try {
-        committedPartialSellTx = await stockTxRepo.save({
+        committedPartialSellTx = await db.stockTxRepo.save({
           stock_tx_id: partialSellTxId,
           parent_tx_id: stock_tx_id,
           stock_id: stock_id,
@@ -109,7 +86,7 @@ export default {
 
     // Update the parent transaction
     try {
-      await stockTxRepo.save(parentTransaction);
+      await db.stockTxRepo.save(parentTransaction);
     } catch (error) {
       throw new Error("Error updating parent transaction (updateSales)", {
         cause: error,
@@ -121,7 +98,7 @@ export default {
     const relatedStockTx = isPartial ? committedPartialSellTx! : parentTransaction;
     const amount: number = price * sold_quantity; // amount not provided by the matching-engine
     try {
-      await walletTxRepo.save({
+      await db.walletTxRepo.save({
         wallet_tx_id: walletTxId,
         stock_tx_id: relatedStockTx.stock_tx_id,
         is_debit: false,
@@ -132,7 +109,7 @@ export default {
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction
       try {
-        stockTxRepo.save({ ...relatedStockTx, wallet_tx_id: null });
+        db.stockTxRepo.save({ ...relatedStockTx, wallet_tx_id: null });
       } catch (err) {
         throw new Error(
           `Failed to rollback optimistic wallet ID in stock transaction ${relatedStockTx.stock_tx_id}`,
@@ -145,7 +122,7 @@ export default {
 
     // Updates the seller's wallet to match the latest wallet transaction
     try {
-      const user: User | null = await userRepo
+      const user: User | null = await db.userRepo
         .search()
         .where("user_name")
         .equals(user_name)
@@ -153,7 +130,7 @@ export default {
 
       if (!user) throw new Error("Error finding user (updateSales)");
 
-      const success = await userWalletAtomicUpdate(redisConn.getClient(), user[EntityId]!, amount);
+      const success = await userWalletAtomicUpdate(connA, user[EntityId]!, amount);
 
       if (!success)
         throw new Error("Error updating the wallet of the limit sell user (updateSales)");
@@ -178,7 +155,7 @@ export default {
     // Find the original stock order transaction
     let oriStockTx: StockTransaction | null = null;
     try {
-      oriStockTx = await stockTxRepo
+      oriStockTx = await db.stockTxRepo
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
@@ -198,7 +175,7 @@ export default {
     // Create wallet transaction for buyer for the fund deduction
     const walletTxId = crypto.randomUUID();
     try {
-      await walletTxRepo.save({
+      await db.walletTxRepo.save({
         wallet_tx_id: walletTxId,
         stock_tx_id: stock_tx_id,
         is_debit: true,
@@ -214,7 +191,7 @@ export default {
 
     // Update the original stock transaction to mark as completed with latest data
     try {
-      oriStockTx = await stockTxRepo.save({
+      oriStockTx = await db.stockTxRepo.save({
         ...oriStockTx,
         order_status: ORDER_STATUS.COMPLETED,
         stock_price: price_total / quantity, // Avg price per share
@@ -236,14 +213,14 @@ export default {
       oriStockTx.stock_id,
       oriStockTx.user_name,
       quantity,
-      stockOwnedRepo,
-      stockRepo,
-      redisConn
+      db.ownedStockRepo,
+      db.stockRepo,
+      connA
     );
 
     const user = await (async () => {
       try {
-        const user = await userRepo
+        const user = await db.userRepo
           .search()
           .where("user_name")
           .equals(oriStockTx.user_name)
@@ -262,11 +239,7 @@ export default {
     //       we are forced to perform the deduct and unlock in one atomic operation.
     const walletAndUnlockSuccess = await (async () => {
       try {
-        return await userWalletDeductAndUnlockAtomicUpdate(
-          redisConn.getClient(),
-          user[EntityId]!,
-          price_total
-        );
+        return await userWalletDeductAndUnlockAtomicUpdate(connA, user[EntityId]!, price_total);
       } catch (error) {
         throw new Error(
           "Error updating buyer wallet or unlock for buy order(handleBuyCompletion)",
@@ -286,7 +259,7 @@ export default {
     // Find the original stock order transaction
     let oriStockTx: StockTransaction | null = null;
     try {
-      oriStockTx = await stockTxRepo
+      oriStockTx = await db.stockTxRepo
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
@@ -307,12 +280,12 @@ export default {
     }
 
     // Update the original stock transaction to mark as failed
-    stockTxRepo.save({
+    db.stockTxRepo.save({
       ...oriStockTx,
       order_status: ORDER_STATUS.FAILED,
     });
 
-    const user = await userRepo
+    const user = await db.userRepo
       .search()
       .where("user_name")
       .equals(oriStockTx.user_name)
@@ -322,7 +295,7 @@ export default {
       throw new Error("Error finding user (handleFailedBuyCompletion)");
     }
 
-    await unlockUserWallet(userRepo, user[EntityId]!);
+    await unlockUserWallet(db.userRepo, user[EntityId]!);
   },
 
   handleCancellation: async ({
@@ -334,7 +307,7 @@ export default {
   }) => {
     let transaction: StockTransaction | null = null;
     try {
-      transaction = await stockTxRepo
+      transaction = await db.stockTxRepo
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
@@ -353,7 +326,7 @@ export default {
 
     // Modify the cancelled limit sell transaction to status="CANCELLED"
     try {
-      transaction = await stockTxRepo.save({
+      transaction = await db.stockTxRepo.save({
         ...transaction,
         order_status: ORDER_STATUS.CANCELLED,
       });
@@ -368,9 +341,9 @@ export default {
       transaction.stock_id,
       transaction.user_name,
       cur_quantity,
-      stockOwnedRepo,
-      stockRepo,
-      redisConn
+      db.ownedStockRepo,
+      db.stockRepo,
+      connA
     );
   },
 };

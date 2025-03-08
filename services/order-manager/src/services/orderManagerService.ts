@@ -16,24 +16,25 @@ import type {
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import { publishToQueue } from "./rabbitMQService";
 import { getStockName } from "@/utils/stock";
+import { db, connA, connB } from "shared-models/newDb";
 
 const LIMIT_SELL_ROUTING_KEY = "order.limit_sell";
 const MARKET_BUY_ROUTING_KEY = "order.market_buy";
 const CANCEL_SELL_ROUTING_KEY = "order.limit_sell_cancellation";
 
-const redisConnection: RedisInstance = new RedisInstance();
-redisConnection.connect();
+// const redisConnection: RedisInstance = new RedisInstance();
+// redisConnection.connect();
 
-const stockTransactionRepository: Repository<StockTransaction> =
-  await redisConnection.createRepository(stockTransactionSchema);
+// const stockTransactionRepository: Repository<StockTransaction> =
+//   await redisConnection.createRepository(stockTransactionSchema);
 
-const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
+// const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 
-const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
-  ownedStockSchema
-);
+// const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
+//   ownedStockSchema
+// );
 
-const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
+// const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -58,14 +59,14 @@ const service = {
     let ownedStock: StockOwned | null;
     const txId = crypto.randomUUID();
     try {
-      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      userData = await db.userRepo.search().where("user_name").equals(user_name).returnFirst();
       if (!userData) throw new Error("Error finding user (placeLimitSellOrder)");
     } catch (err) {
       throw new Error("Error fetching user data from database (Limit Sell Order)");
     }
 
     try {
-      stock_name = await getStockName(stock_id, stockRepository);
+      stock_name = await getStockName(stock_id, db.stockRepo);
     } catch (err) {
       throw new Error("Error fetching stock name (placeLimitSellOrder)");
     }
@@ -97,7 +98,7 @@ const service = {
 
     // Saves limit sell order to the database
     try {
-      transaction = await stockTransactionRepository.save(transaction);
+      transaction = await db.stockTxRepo.save(transaction);
     } catch (err) {
       throw new Error("Error saving limit sell transaction into database");
     }
@@ -105,7 +106,7 @@ const service = {
     const cleanupOptimistic = async () => {
       const transactionEntityId = transaction[EntityId];
       try {
-        if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+        if (transactionEntityId) await db.stockTxRepo.remove(transactionEntityId);
       } catch (err) {
         throw new Error(
           "Error removing transaction from database during cleanupOptimistic (placeLimitSellOrder)"
@@ -114,7 +115,7 @@ const service = {
     };
 
     try {
-      ownedStock = await stockOwnedRepository
+      ownedStock = await db.ownedStockRepo
         .search()
         .where("stock_id")
         .equals(stock_id)
@@ -148,11 +149,7 @@ const service = {
     if (ownedStock.current_quantity - quantity >= 0) {
       const success = await (async () => {
         try {
-          return await ownedStockAtomicUpdate(
-            redisConnection.getClient(),
-            ownedStock[EntityId]!,
-            -quantity
-          );
+          return await ownedStockAtomicUpdate(connA, ownedStock[EntityId]!, -quantity);
         } catch (err) {
           await cleanupOptimistic();
           throw new Error("Error updating owned stock quantity in database", { cause: err });
@@ -183,7 +180,7 @@ const service = {
 
     // The specs expects an outright success false HTTP response if an invalid stock ID is provided
     try {
-      await getStockName(stock_id, stockRepository);
+      await getStockName(stock_id, db.stockRepo);
     } catch (err) {
       throw new Error("Error checking if stock_id is valid  (placeMarketBuyOrder)");
     }
@@ -191,7 +188,7 @@ const service = {
     // Fetches the buyer's user data (required for matching-engine) and wait until lock acquired
     while (!userData || userData.is_locked) {
       try {
-        userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+        userData = await db.userRepo.search().where("user_name").equals(user_name).returnFirst();
 
         if (!userData) throw new Error("Error finding user (placeMarketOrder)");
       } catch (err) {
@@ -200,7 +197,7 @@ const service = {
 
       const isFundLockSuccess = await (() => {
         try {
-          return lockUserWallet(redisConnection.getClient(), userData[EntityId]!);
+          return lockUserWallet(connA, userData[EntityId]!);
         } catch (err) {
           throw new Error("Error locking user wallet (placeMarketBuyOrder)", {
             cause: err,
@@ -233,7 +230,7 @@ const service = {
 
     // Stores new transaction before approval by M.E
     try {
-      new_user_transaction = await stockTransactionRepository.save(new_user_transaction);
+      new_user_transaction = await db.stockTxRepo.save(new_user_transaction);
     } catch (error) {
       throw new Error("Error storing new_user_transaction for buyer (placeMarketBuyOrder)");
     }
@@ -269,7 +266,7 @@ const service = {
     try {
       // Get root most transaction
       while (true) {
-        transaction = await stockTransactionRepository
+        transaction = await db.stockTxRepo
           .search()
           .where("stock_tx_id")
           .equals(stock_tx_id)

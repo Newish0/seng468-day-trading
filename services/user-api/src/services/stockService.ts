@@ -9,24 +9,25 @@ import {
   stockTransactionSchema,
 } from "shared-models/redisSchema";
 
+import { db } from "shared-models/newDb";
 // Creating connection here due to the implementation of RedisInstance.ts
 // This is probably NOT good - causes multiple connection creation?
-let redisConnection: RedisInstance = new RedisInstance();
-try {
-  redisConnection.connect();
-} catch (error) {
-  throw new Error("Error starting database server");
-}
-const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
-const ownedStockRepository: Repository<StockOwned> = await redisConnection.createRepository(
-  ownedStockSchema
-);
-const stockTransactionRepository: Repository<StockTransaction> =
-  await redisConnection.createRepository(stockTransactionSchema);
+// let redisConnection: RedisInstance = new RedisInstance();
+// try {
+//   redisConnection.connect();
+// } catch (error) {
+//   throw new Error("Error starting database server");
+// }
+// const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
+// const ownedStockRepository: Repository<StockOwned> = await redisConnection.createRepository(
+//   ownedStockSchema
+// );
+// const stockTransactionRepository: Repository<StockTransaction> =
+//   await redisConnection.createRepository(stockTransactionSchema);
 
 const stockService = {
   async createStock(stock_name: string) {
-    const existingStock = await stockRepository
+    const existingStock = await db.stockRepo
       .search()
       .where("stock_name")
       .equals(stock_name)
@@ -38,14 +39,14 @@ const stockService = {
       stock_id: crypto.randomUUID(),
       stock_name,
     };
-    const saved_stock = await stockRepository!.save(stock);
+    const saved_stock = await db.stockRepo!.save(stock);
     return saved_stock.stock_id;
   },
 
   async addStockToUser(userName: string, stockId: string, qty: number) {
     let existingOwnedStock: StockOwned | null;
     try {
-      existingOwnedStock = await ownedStockRepository
+      existingOwnedStock = await db.ownedStockRepo
         .search()
         .where("stock_id")
         .equals(stockId)
@@ -64,11 +65,7 @@ const stockService = {
     } else {
       let existingStock: Stock | null = null;
       try {
-        existingStock = await stockRepository
-          .search()
-          .where("stock_id")
-          .equals(stockId)
-          .returnFirst();
+        existingStock = await db.stockRepo.search().where("stock_id").equals(stockId).returnFirst();
       } catch (err) {
         throw new Error(`Failed to get stock "${stockId}"`, {
           cause: err,
@@ -83,7 +80,7 @@ const stockService = {
     const newQty = (existingOwnedStock?.current_quantity ?? 0) + qty;
 
     try {
-      await ownedStockRepository.save({
+      await db.ownedStockRepo.save({
         ...existingOwnedStock, // Make this an update if it already exists
         user_name: userName,
         current_quantity: newQty,
@@ -98,7 +95,7 @@ const stockService = {
   },
   async getUserStockPortfolio(userName: string) {
     try {
-      const userStocks = await ownedStockRepository
+      const userStocks = await db.ownedStockRepo
         .search()
         .where("user_name")
         .equals(userName)
@@ -110,7 +107,7 @@ const stockService = {
   },
   async getUserStockTransactions(userName: string) {
     try {
-      const userStockTransactions = await stockTransactionRepository
+      const userStockTransactions = await db.stockTxRepo
         .search()
         .where("user_name")
         .equals(userName)

@@ -29,7 +29,9 @@ redis-cli flushall
 
 # --- 4. Restart containers ---
 echo "Restarting Docker containers..."
-docker compose restart
+docker compose down
+
+docker compose up -d
 
 # --- 5. Run initial setup JMeter test ---
 echo "Running InitialSetup.jmx..."

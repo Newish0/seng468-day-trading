@@ -12,8 +12,6 @@ const connectionOptions = {
   socket: {
     reconnectStrategy: (retries: number) => Math.min(retries * 50, 2000),
   },
-  maxRetriesPerRequest: 5,
-  maxConnections: 50,
 };
 
 const connOwnedStock = createClient({

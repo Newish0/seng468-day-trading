@@ -4,10 +4,6 @@ networks:
   day-trading-network:
     driver: bridge
 
-volumes:
-  redis-data:
-
-
 services:
   # Frontend and reverse proxy api gateway
   gateway:
@@ -30,7 +26,7 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - ORDER_SERVICE_HOST=http://order-manager:3002
     networks:
       - day-trading-network
@@ -39,19 +35,81 @@ services:
     depends_on:
       order-manager:
         condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
 
   # Redis Database
-  redis:
+  redis1:
     image: redis/redis-stack:latest
     ports:
-      - "6379:6379"
-      - "8001:8001"
+      - ":6379"
+      - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis2:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis3:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis4:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis5:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -82,9 +140,17 @@ services:
       dockerfile: ./services/auth/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
     depends_on:
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
     networks:
       - day-trading-network
@@ -99,7 +165,7 @@ services:
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - RABBIT_PORT=5672
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest
@@ -108,14 +174,22 @@ services:
     depends_on:
       # matching-engine:
       #   condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - day-trading-network
     deploy:
-      replicas: 3
+      replicas: 4
 
   # Order Update Service
   order-update:
@@ -123,7 +197,7 @@ services:
       context: . # Use the project root as the build context for packages to work
       dockerfile: ./services/order-update/Dockerfile
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - RABBIT_PORT=5672
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest
@@ -131,14 +205,22 @@ services:
     depends_on:
       # matching-engine:
       #   condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     networks:
       - day-trading-network
     deploy:
-      replicas: 3
+      replicas: 4
 
   # Matching Engine (Rust)
   matching-engine-shard0:

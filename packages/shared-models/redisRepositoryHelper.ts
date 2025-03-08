@@ -1,6 +1,7 @@
 import type { RedisClientType } from "redis";
 import type { Entity } from "redis-om";
 import { EntityId, Repository } from "redis-om";
+import { createClient } from "redis";
 
 /**
  * Takes the given repository, and adds the data into it. The Repository and data passed to it need to have a matching schema in order to work
@@ -64,7 +65,7 @@ export async function getKeyFromEntity(entity: Entity): Promise<string> {
  * @returns {Promise<boolean>} - Returns true if the stock was successfully updated, false if the stock would be decremented below 0 or had a error
  */
 export async function ownedStockAtomicUpdate(
-  redisInstance: RedisClientType,
+  redisInstance: ReturnType<typeof createClient>,
   stockOwnedKey: string,
   amountToChange: number
 ): Promise<boolean> {
@@ -110,7 +111,7 @@ export async function ownedStockAtomicUpdate(
  * @returns {Promise<boolean>} - Returns true if the wallet was successfully updated, false if the wallet would be decremented below 0, is locked and we are subtracting, or had a error
  */
 export async function userWalletAtomicUpdate(
-  redisInstance: RedisClientType,
+  redisInstance: ReturnType<typeof createClient>,
   userKey: string,
   amountToChange: number
 ): Promise<boolean> {
@@ -154,10 +155,10 @@ export async function userWalletAtomicUpdate(
  *
  * NOTE: This function will succeed even if the wallet is locked - it's specifically designed to
  * perform the deduction and unlock in one atomic operation.
- * 
- * This function is needed because withdrawals are not allowed if the wallet is locked. But, 
- * the moment we unlock the user's wallet, they can buy more stocks. However, we need to 
- * update the user wallet before they are allowed to buy more stocks (to avoid race conditions). 
+ *
+ * This function is needed because withdrawals are not allowed if the wallet is locked. But,
+ * the moment we unlock the user's wallet, they can buy more stocks. However, we need to
+ * update the user wallet before they are allowed to buy more stocks (to avoid race conditions).
  * So, we need to do the deduction and unlock in one atomic operation.
  *
  * @param redisInstance - The redis client instance
@@ -166,7 +167,7 @@ export async function userWalletAtomicUpdate(
  * @returns {Promise<boolean>} - Returns true if the deduction and unlock was successful, false if the wallet would be decremented below 0 or had an error
  */
 export async function userWalletDeductAndUnlockAtomicUpdate(
-  redisInstance: RedisClientType,
+  redisInstance: ReturnType<typeof createClient>,
   userKey: string,
   amountToDeduct: number
 ): Promise<boolean> {
@@ -220,7 +221,7 @@ export async function userWalletDeductAndUnlockAtomicUpdate(
  * @returns {Promise<boolean>} - Returns true if the user was successfully locked, false if the user was already locked or had a error
  */
 export async function lockUserWallet(
-  redisInstance: RedisClientType,
+  redisInstance: ReturnType<typeof createClient>,
   user_key: string
 ): Promise<boolean> {
   // If a true is returned its actually a 1, if false its null

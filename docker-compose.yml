@@ -4,21 +4,20 @@ networks:
   day-trading-network:
     driver: bridge
 
-volumes:
-  redis-data:
-
-
 services:
-  # Frontend and reverse proxy api gateway
-  gateway:
-    build:
-      context: . # Need the entire services folder as context to copy from web-ui
-      dockerfile: ./services/gateway/Dockerfile
-    ports:
-      - "8080:80"
+
+  # Reverse proxy
+  nginx:
+    image: nginx:latest
+    container_name: trade_nginx
+    restart: always
     depends_on:
       - user-api
       - auth
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - day-trading-network
 
@@ -29,29 +28,45 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis1:6379
       - ORDER_SERVICE_HOST=http://order:3002
     container_name: user-api
     networks:
       - day-trading-network
     ports:
       - "3000"
+    deploy:
+      replicas: 16
     depends_on:
       order:
         condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
         condition: service_healthy
 
   # Redis Database
-  redis:
+  redis1:
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
       - "8001:8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  redis2:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -66,9 +81,13 @@ services:
       dockerfile: ./services/auth/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis1:6379
+    deploy:
+      replicas: 16
     depends_on:
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
         condition: service_healthy
     networks:
       - day-trading-network
@@ -80,11 +99,15 @@ services:
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis2:6379
+    deploy:
+      replicas: 16
     depends_on:
       matching-engine:
         condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
         condition: service_healthy
     networks:
       - day-trading-network

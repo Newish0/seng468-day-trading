@@ -6,11 +6,12 @@ pub struct SellOrder {
     pub stock_id: String,
     pub stock_tx_id: String,
     pub partially_sold: bool,
-    pub ori_quantity: u32,
-    pub cur_quantity: u32,
+    pub ori_quantity: u64, // Changed to u64
+    pub cur_quantity: u64, // Changed to u64
     pub price: f64,
-    pub user_name: String, 
+    pub user_name: String,
 }
+
 
 impl Eq for SellOrder {}
 
@@ -36,6 +37,7 @@ impl Default for StockMatchingPriorityQueue {
         Self::new()
     }
 }
+
 
 impl StockMatchingPriorityQueue {
     pub fn new() -> Self {
@@ -96,10 +98,8 @@ impl StockMatchingPriorityQueue {
         self.stock_queues.remove(stock_id);
     }
 
-    /* TODO: Removal is O(nlog(n)) due to rebuilding. This is one spot we can optimize later.  */
     pub fn remove_order(&mut self, stock_id: &str, stock_tx_id: &str) -> Option<SellOrder> {
         if let Some(queue) = self.stock_queues.get_mut(stock_id) {
-            // Find the order and remove it
             let mut temp_queue = BinaryHeap::new();
             let mut removed_order = None;
 
@@ -111,7 +111,6 @@ impl StockMatchingPriorityQueue {
                 }
             }
 
-            // Replace the original queue with our filtered queue
             *queue = temp_queue;
             removed_order
         } else {
@@ -119,3 +118,4 @@ impl StockMatchingPriorityQueue {
         }
     }
 }
+

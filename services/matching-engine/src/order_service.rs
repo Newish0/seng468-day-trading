@@ -6,8 +6,8 @@ use tokio::time::{sleep, Duration};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrderUpdate {
     pub stock_id: String,
-    pub sold_quantity: u32,
-    pub remaining_quantity: u32,
+    pub sold_quantity: u64, // Changed to u64
+    pub remaining_quantity: u64, // Changed to u64
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String,
@@ -16,8 +16,8 @@ pub struct OrderUpdate {
 #[derive(Debug)]
 pub struct OrderServiceConfig {
     pub base_url: String,
-    pub max_retries: u32,
-    pub base_retry_delay_secs: u64,
+    pub max_retries: u32, // Kept as u32 since it represents a count of retries
+    pub base_retry_delay_secs: u64, // Kept as u64 for time delay
 }
 
 #[derive(Debug)]

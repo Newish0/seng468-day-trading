@@ -17,7 +17,7 @@ pub struct StockPricesResponse {
 #[derive(Deserialize)]
 pub struct MarketBuyRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64, // Changed to u64
     pub stock_tx_id: String,
     pub budget: f64,
     pub user_name: String, 
@@ -33,7 +33,7 @@ pub struct MarketBuyResponse {
 pub struct MarketBuyData {
     pub stock_id: String,
     pub stock_tx_id: String,
-    pub quantity: u32,
+    pub quantity: u64, // Changed to u64
     pub price_total: f64,
 }
 
@@ -41,15 +41,16 @@ pub struct MarketBuyData {
 #[derive(Deserialize)]
 pub struct LimitSellRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64, // Changed to u64
     pub price: f64,
     pub stock_tx_id: String,
     pub user_name: String, 
 }
+
 #[derive(Deserialize, Debug)]
 pub struct LimitSellCancelRequest {
     pub stock_id: String,
-    pub quantity: u32,
+    pub quantity: u64, // Changed to u64
     pub price: f64,
     pub stock_tx_id: String,
 }
@@ -70,8 +71,8 @@ pub struct LimitSellCancelData {
     pub stock_id: String,
     pub stock_tx_id: String,
     pub partially_sold: bool,
-    pub ori_quantity: u32,
-    pub cur_quantity: u32,
-    pub sold_quantity: u32,
+    pub ori_quantity: u64, // Changed to u64
+    pub cur_quantity: u64, // Changed to u64
+    pub sold_quantity: u64, // Changed to u64
     pub price: f64,
 }

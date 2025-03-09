@@ -55,16 +55,19 @@ pub async fn market_buy(
     let mut state = state.write().await;
 
     // Total number of shares on sale excluding those from the user requesting the buy order.
-    let available_shares: u32 = state
-        .matching_pq
-        .get_all_orders(&payload.stock_id)
-        .iter()
-        .filter(|sell_order| sell_order.user_name != payload.user_name)
-        .map(|sell_order| sell_order.cur_quantity)
-        .sum();
+    let available_shares: u64 = state
+    .matching_pq
+    .get_all_orders(&payload.stock_id)
+    .iter()
+    .filter(|sell_order| sell_order.user_name != payload.user_name)
+    .map(|sell_order| sell_order.cur_quantity as u64) // Cast to u64
+    .sum();
+
 
     // Check available shares
-    let mut shares_to_buy = payload.quantity;
+    let mut shares_to_buy = payload.quantity as u64; // Cast to u64
+    let remaining_dry = shares_to_buy; // make copy
+
     if shares_to_buy > available_shares {
         return Json(MarketBuyResponse {
             success: false,
@@ -125,14 +128,15 @@ pub async fn market_buy(
             continue;
         }
 
-        let purchase_all = shares_to_buy >= top_sell_order.cur_quantity;
+        let purchase_all = shares_to_buy >= top_sell_order.cur_quantity as u64; // Cast to u64
+
 
         // Complete the top sell order or perform partial sell on the top sell order
         let order_update = if purchase_all {
-            total_price += top_sell_order.cur_quantity as f64 * top_sell_order.price;
-            shares_bought += top_sell_order.cur_quantity;
+            total_price += top_sell_order.cur_quantity as f64 * top_sell_order.price; // Cast to f64
+            shares_bought += top_sell_order.cur_quantity as u64; // Cast to u64
+            shares_to_buy -= top_sell_order.cur_quantity as u64; // Cast to u64
 
-            shares_to_buy -= top_sell_order.cur_quantity;
 
             let sold_qty = top_sell_order.cur_quantity; // make copy
             top_sell_order.cur_quantity = 0;
@@ -140,11 +144,12 @@ pub async fn market_buy(
             OrderUpdate {
                 stock_id: top_sell_order.stock_id.clone(),
                 price: top_sell_order.price,
-                remaining_quantity: top_sell_order.cur_quantity,
-                sold_quantity: sold_qty,
+                remaining_quantity: top_sell_order.cur_quantity as u64, // Cast to u64
+                sold_quantity: sold_qty as u64, // Cast to u64
                 stock_tx_id: top_sell_order.stock_tx_id.clone(),
                 user_name: top_sell_order.user_name.clone(),
             }
+
         } else {
             total_price += shares_to_buy as f64 * top_sell_order.price;
             shares_bought += shares_to_buy;
@@ -200,11 +205,12 @@ pub async fn market_buy(
     Json(MarketBuyResponse {
         success: true,
         data: Some(MarketBuyData {
-            stock_id: payload.stock_id,
-            stock_tx_id: payload.stock_tx_id,
-            quantity: shares_bought,
-            price_total: total_price,
-        }),
+    stock_id: payload.stock_id,
+    stock_tx_id: payload.stock_tx_id,
+    quantity: shares_bought as u64, // Cast to u64
+    price_total: total_price,
+}
+),
     })
 }
 
@@ -212,15 +218,16 @@ pub async fn limit_sell(
     State(state): State<Arc<RwLock<AppState>>>,
     Json(payload): Json<LimitSellRequest>,
 ) -> Json<LimitSellResponse> {
-    let sell_order = SellOrder {
-        stock_id: payload.stock_id,
-        stock_tx_id: payload.stock_tx_id,
-        price: payload.price,
-        partially_sold: false,
-        ori_quantity: payload.quantity,
-        cur_quantity: payload.quantity,
-        user_name: payload.user_name,
-    };
+let sell_order = SellOrder {
+    stock_id: payload.stock_id,
+    stock_tx_id: payload.stock_tx_id,
+    price: payload.price,
+    partially_sold: false,
+    ori_quantity: payload.quantity as u64, // Cast to u64
+    cur_quantity: payload.quantity as u64, // Cast to u64
+    user_name: payload.user_name,
+};
+
 
     {
         let mut state = state.write().await;

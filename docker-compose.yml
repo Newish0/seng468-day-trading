@@ -39,8 +39,8 @@ services:
         condition: service_healthy
       redis2:
         condition: service_healthy
-    deploy:
-      replicas: 10
+    # deploy:
+    #   replicas: 10
 
   # Redis Database
   redis1:
@@ -90,8 +90,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
-    deploy:
-      replicas: 10
+    # deploy:
+    #   replicas: 10
 
   # Order Service
   order:
@@ -111,8 +111,8 @@ services:
         condition: service_healthy
     networks:
       - day-trading-network
-    deploy:
-      replicas: 10
+    # deploy:
+    #   replicas: 10
 
   # Matching Engine (Rust)
   matching-engine:

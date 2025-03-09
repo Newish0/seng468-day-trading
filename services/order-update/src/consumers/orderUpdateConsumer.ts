@@ -89,20 +89,20 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
           totalProcessingTime += processingTime;
           messageCount++;
           
-          // Calculate performance stats
-          const avgTime = totalProcessingTime / messageCount;
-          const minTime = Math.min(...processingTimes);
-          const maxTime = Math.max(...processingTimes);
+          // // Calculate performance stats
+          // const avgTime = totalProcessingTime / messageCount;
+          // const minTime = Math.min(...processingTimes);
+          // const maxTime = Math.max(...processingTimes);
           
-          // Calculate throughput (messages per second over the last THROUGHPUT_WINDOW_MS)
-          const throughput = (recentMessageTimes.length / THROUGHPUT_WINDOW_MS) * 1000;
+          // // Calculate throughput (messages per second over the last THROUGHPUT_WINDOW_MS)
+          // const throughput = (recentMessageTimes.length / THROUGHPUT_WINDOW_MS) * 1000;
           
-          logger.info(
-            `Message processed in ${processingTime.toFixed(2)}ms | ` +
-            `Avg: ${avgTime.toFixed(2)}ms | Min: ${minTime.toFixed(2)}ms | ` +
-            `Max: ${maxTime.toFixed(2)}ms | Throughput: ${throughput.toFixed(2)} msg/sec | ` +
-            `Total messages: ${messageCount}`
-          );
+          // logger.info(
+          //   `Message processed in ${processingTime.toFixed(2)}ms | ` +
+          //   `Avg: ${avgTime.toFixed(2)}ms | Min: ${minTime.toFixed(2)}ms | ` +
+          //   `Max: ${maxTime.toFixed(2)}ms | Throughput: ${throughput.toFixed(2)} msg/sec | ` +
+          //   `Total messages: ${messageCount}`
+          // );
           
         } catch (error) {
           // Calculate processing time even for failed messages
@@ -136,7 +136,7 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
           `Max time: ${maxTime.toFixed(2)}ms | Current throughput: ${throughput.toFixed(2)} msg/sec`
         );
       }
-    }, 60 * 1000);
+    }, 1 * 1000);
 
     // Graceful shutdown
     process.once("SIGINT", async () => {

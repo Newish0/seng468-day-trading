@@ -86,17 +86,17 @@
           </elementProp>
           <elementProp name="stockFile" elementType="Argument">
             <stringProp name="Argument.name">stockFile</stringProp>
-            <stringProp name="Argument.value">E:/Users/Administrator/Downloads/load_test_run2/TestRun3/Config/stockIds.csv</stringProp>
+            <stringProp name="Argument.value">/home/saibannur/seng468-day-trading/TestRun3/Config/stockIds.csv</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="userFile" elementType="Argument">
             <stringProp name="Argument.name">userFile</stringProp>
-            <stringProp name="Argument.value">E:/Users/Administrator/Downloads/load_test_run2/TestRun3/UserFiles/UserCreds_10000.csv</stringProp>
+            <stringProp name="Argument.value">/home/saibannur/seng468-day-trading/TestRun3/UserFiles/UserCreds_10000.csv</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="numUsers" elementType="Argument">
             <stringProp name="Argument.name">numUsers</stringProp>
-            <stringProp name="Argument.value">1000</stringProp>
+            <stringProp name="Argument.value">10000</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="reqTimeout" elementType="Argument">

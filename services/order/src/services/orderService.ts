@@ -131,7 +131,7 @@ const service = {
         `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
       );
     }
-
+    await Bun.sleep(250);
     const limitSellResponse = await matEngSvc.placeLimitSellOrder(limitSellRequest);
 
     if (!limitSellResponse.success) {
@@ -209,7 +209,7 @@ const service = {
       budget: userData.wallet_balance,
       user_name,
     };
-
+    await Bun.sleep(250);
     const result = await matEngSvc.placeMarketBuyOrder(marketBuyRequest);
 
     // Create wallet transaction for buyer. (Before new_user_transaction stored into db)
@@ -293,6 +293,7 @@ const service = {
    */
   getStockPrices: async () => {
     try {
+      await Bun.sleep(250);
       const stockPrices = await matEngSvc.getStockPrices();
 
       const stockDataWithNames = await Promise.all(
@@ -365,7 +366,7 @@ const service = {
       price: transaction.stock_price,
       stock_tx_id: transaction.stock_tx_id,
     };
-
+    await Bun.sleep(250);
     // Query the matching engine to cancel the limit order
     const sellRes = await matEngSvc.cancelSellOrder(cancelSellRequest);
 

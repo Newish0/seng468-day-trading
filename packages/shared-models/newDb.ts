@@ -10,14 +10,14 @@ import {
   WalletTransactionSchema,
 } from "./redisSchema";
 
-const connA = createClient({ url: "redis://redis1:6379" });
+const connA = createClient({ url: "redis://redis:6379" });
 const connB = createClient({ url: "redis://redis2:6379" });
 
-await Promise.all([connA.connect(), connB.connect()]);
+await Promise.all([connA.connect()]);
 
 const ownedStockRepo = new Repository(ownedStockSchema, connA);
 const stockRepo = new Repository(stockSchema, connA);
-const stockTxRepo = new Repository(StockTransactionSchema, connB);
+const stockTxRepo = new Repository(StockTransactionSchema, connA);
 const userRepo = new Repository(userSchema, connA);
 const walletTxRepo = new Repository(WalletTransactionSchema, connA);
 

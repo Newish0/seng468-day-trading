@@ -35,15 +35,15 @@ services:
     depends_on:
       order:
         condition: service_started
-      redis1:
+      redis:
         condition: service_healthy
-      redis2:
-        condition: service_healthy
-    # deploy:
-    #   replicas: 10
+      # redis2:
+      #   condition: service_healthy
+    deploy:
+      replicas: 4
 
   # Redis Database
-  redis1:
+  redis:
     image: redis/redis-stack:latest
     ports:
       - "6379"
@@ -59,21 +59,21 @@ services:
       retries: 3
       start_period: 5s
 
-  redis2:
-    image: redis/redis-stack:latest
-    ports:
-      - "6379"
-      - "8001"
-    networks:
-      - day-trading-network
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
+  # redis2:
+  #   image: redis/redis-stack:latest
+  #   ports:
+  #     - "6379"
+  #     - "8001"
+  #   networks:
+  #     - day-trading-network
+  #   volumes:
+  #     - redis-data:/data
+  #   healthcheck:
+  #     test: [ "CMD", "redis-cli", "ping" ]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 3
+  #     start_period: 5s
 
   # Auth Service
   auth:
@@ -84,14 +84,14 @@ services:
       - PORT=3000
       - REDIS_URL=redis://redis:6379
     depends_on:
-      redis1:
+      redis:
         condition: service_healthy
-      redis2:
-        condition: service_healthy
+      # redis2:
+      #   condition: service_healthy
     networks:
       - day-trading-network
-    # deploy:
-    #   replicas: 10
+    deploy:
+      replicas: 4
 
   # Order Service
   order:
@@ -105,14 +105,14 @@ services:
     depends_on:
       matching-engine:
         condition: service_started
-      redis1:
+      redis:
         condition: service_healthy
-      redis2:
-        condition: service_healthy
+      # redis2:
+      #   condition: service_healthy
     networks:
       - day-trading-network
-    # deploy:
-    #   replicas: 10
+    deploy:
+      replicas: 4
 
   # Matching Engine (Rust)
   matching-engine:

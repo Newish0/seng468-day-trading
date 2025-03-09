@@ -60,6 +60,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis2:
     image: redis/redis-stack:latest
@@ -74,6 +78,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis3:
     image: redis/redis-stack:latest
@@ -88,6 +96,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis4:
     image: redis/redis-stack:latest
@@ -102,6 +114,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis5:
     image: redis/redis-stack:latest
@@ -116,6 +132,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   rabbitmq:
     image: rabbitmq:management
@@ -132,6 +152,10 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   # Auth Service
   auth:
@@ -221,6 +245,9 @@ services:
       - day-trading-network
     deploy:
       replicas: 1
+      resources:
+        reservations:
+          cpus: '1'
 
   # Matching Engine (Rust)
   matching-engine-shard0:

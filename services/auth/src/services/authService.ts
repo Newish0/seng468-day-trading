@@ -2,19 +2,13 @@ import { sign } from "hono/jwt";
 import { userSchema, type User } from "shared-models/redisSchema";
 import { RedisInstance } from "shared-models/RedisInstance";
 import { Repository } from "redis-om";
+import db from "shared-models/newDb";
 
 const JWT_SECRET = Bun.env.JWT_SECRET || "secret"; // TODO: Remove 'secret' in prod
 const SALT_ROUNDS = 10;
 
 // Creating connection here due to the implementation of RedisInstance.ts
 // This is probably NOT good - causes multiple connection creation?
-let redisConnection: RedisInstance = new RedisInstance();
-try {
-  redisConnection.connect();
-} catch (error) {
-  throw new Error("Error starting database server");
-}
-const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 
 const service = {
   /**
@@ -27,29 +21,22 @@ const service = {
   register: async (username: string, password: string, name: string): Promise<void> => {
     let existingUser: User | null;
     try {
-      existingUser = await userRepository
-        .search()
-        .where("user_name")
-        .equals(username)
-        .returnFirst();
+      existingUser = await db.userRepo.search().where("user_name").equals(username).returnFirst();
     } catch (error) {
       throw new Error("Failed to check if user exists");
     }
     if (existingUser) {
       throw new Error("User already exists");
     }
-    const hashedPassword = await Bun.password.hash(password, {
-      algorithm: "bcrypt",
-      cost: SALT_ROUNDS,
-    });
+
     const newUser: User = {
       user_name: username,
-      password: hashedPassword,
+      password,
       name,
       wallet_balance: 0,
     };
     try {
-      await userRepository.save(newUser);
+      await db.userRepo.save(newUser);
     } catch (error) {
       throw new Error("Failed to register user");
     }
@@ -66,7 +53,7 @@ const service = {
     let user: User | null;
 
     try {
-      user = await userRepository.search().where("user_name").equals(username).returnFirst();
+      user = await db.userRepo.search().where("user_name").equals(username).returnFirst();
     } catch (error) {
       throw new Error("Failed to retrieve user data");
     }
@@ -76,7 +63,7 @@ const service = {
     }
     let isPasswordValid;
     try {
-      isPasswordValid = await Bun.password.verify(password, user.password);
+      isPasswordValid = password == user.password;
     } catch (error) {
       throw new Error("An error has occured validating passwords");
     }

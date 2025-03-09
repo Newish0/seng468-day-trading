@@ -22,27 +22,27 @@ import type {
 import { ORDER_STATUS, ORDER_TYPE } from "shared-types/transactions";
 import type { User } from "shared-types/user";
 import { MatchingEngineService } from "./matchingEngineService";
-
+import db from "shared-models/newDb";
 const matEngSvc = new MatchingEngineService(
   Bun.env.MATCHING_ENGINE_HOST || "http://matching-engine:3000"
 );
 
-const redisConnection: RedisInstance = new RedisInstance();
-redisConnection.connect();
+// const redisConnection: RedisInstance = new RedisInstance();
+// redisConnection.connect();
 
-const stockTransactionRepository: Repository<StockTransaction> =
-  await redisConnection.createRepository(StockTransactionSchema);
+// const stockTransactionRepository: Repository<StockTransaction> =
+//   await redisConnection.createRepository(StockTransactionSchema);
 
-const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
+// const userRepository: Repository<User> = await redisConnection.createRepository(userSchema);
 
-const walletTransactionRepository: Repository<WalletTransaction> =
-  await redisConnection.createRepository(WalletTransactionSchema);
+// const walletTransactionRepository: Repository<WalletTransaction> =
+//   await redisConnection.createRepository(WalletTransactionSchema);
 
-const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
-  ownedStockSchema
-);
+// const stockOwnedRepository: Repository<StockOwned> = await redisConnection.createRepository(
+//   ownedStockSchema
+// );
 
-const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
+// const stockRepository: Repository<Stock> = await redisConnection.createRepository(stockSchema);
 
 const service = {
   /**
@@ -66,7 +66,12 @@ const service = {
 
     let userData: User | null; // contains user info from database
     try {
-      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      let userData: User | null = (await db.userRepo
+        .search()
+        .where("user_name")
+        .equals(user_name)
+        .returnFirst()) as User | null;
+
       if (!userData) throw new Error("Error finding user (placeLimitSellOrder)");
     } catch (err) {
       throw new Error("Error fetching user data from database (Limit Sell Order)");
@@ -100,14 +105,14 @@ const service = {
 
     // Saves limit sell order to the database
     try {
-      transaction = await stockTransactionRepository.save(transaction);
+      transaction = await db.stockTxRepo.save(transaction);
     } catch (err) {
       throw new Error("Error saving limit sell transaction into database");
     }
 
     let ownedStock: StockOwned | null;
     try {
-      ownedStock = await stockOwnedRepository
+      ownedStock = await db.ownedStockRepo
         .search()
         .where("stock_id")
         .equals(stock_id)
@@ -121,7 +126,7 @@ const service = {
 
     if (ownedStock.current_quantity < quantity) {
       const transactionEntityId = transaction[EntityId];
-      if (transactionEntityId) await stockTransactionRepository.remove(transactionEntityId);
+      if (transactionEntityId) await db.stockTxRepo.remove(transactionEntityId);
       throw new Error(
         `Insufficient shares. You currently own ${ownedStock.current_quantity} shares, but attempted to sell ${quantity} shares. (placeLimitSellOrder)`
       );
@@ -138,7 +143,7 @@ const service = {
 
       // If the quantity to sell equals the owned quantity, delete the record
       try {
-        if (ownedStockEntityId) await stockOwnedRepository.remove(ownedStockEntityId);
+        if (ownedStockEntityId) await db.ownedStockRepo.remove(ownedStockEntityId);
       } catch (err) {
         throw new Error("Error deleting owned stock record from database");
       }
@@ -146,7 +151,7 @@ const service = {
       // If there's more stock left, just decrease the quantity
       ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity - quantity };
       try {
-        await stockOwnedRepository.save(ownedStock);
+        await db.ownedStockRepo.save(ownedStock);
       } catch (err) {
         throw new Error("Error updating owned stock quantity in database");
       }
@@ -169,7 +174,11 @@ const service = {
 
     // Fetches the buyer's user_balance (required for matching-engine)
     try {
-      userData = await userRepository.search().where("user_name").equals(user_name).returnFirst();
+      userData = (await db.userRepo
+        .search()
+        .where("user_name")
+        .equals(user_name)
+        .returnFirst()) as User | null;
 
       if (!userData) throw new Error("Error finding user (placeMarketOrder)");
     } catch (err) {
@@ -215,7 +224,7 @@ const service = {
         time_stamp: new Date(),
         user_name,
       };
-      new_wallet_transaction = await walletTransactionRepository.save(new_wallet_transaction);
+      new_wallet_transaction = await db.walletTxRepo.save(new_wallet_transaction);
     } catch (error) {
       throw new Error("Error creating new wallet transaction (Market Buy");
     }
@@ -229,7 +238,7 @@ const service = {
         stock_price: result.data.price_total / result.data.quantity,
         wallet_tx_id: new_wallet_transaction.wallet_tx_id,
       };
-      new_user_transaction = await stockTransactionRepository.save(new_user_transaction);
+      new_user_transaction = await db.stockTxRepo.save(new_user_transaction);
     } catch (error) {
       throw new Error("Error storing new_user_transaction for buyer (placeMarketBuyOrder)");
     }
@@ -237,7 +246,7 @@ const service = {
     // update the user balance for buyer (updates the user fetched at the start of method)
     try {
       userData.wallet_balance = userData.wallet_balance - result.data.price_total;
-      userData = await userRepository.save(userData);
+      userData = (await db.userRepo.save(userData as any)) as any; // hack
     } catch (error) {
       throw new Error("Error updating buyer information for buy order(placeMarketBuyOrder)");
     }
@@ -245,7 +254,7 @@ const service = {
     // TODO: Move into separate function as same func in cancelTransaction
     try {
       // Check if user owns stock already
-      let ownedStock: StockOwned | null = await stockOwnedRepository
+      let ownedStock: StockOwned | null = await db.ownedStockRepo
         .search()
         .where("stock_id")
         .equals(stock_id)
@@ -255,19 +264,15 @@ const service = {
 
       if (ownedStock) {
         ownedStock = { ...ownedStock, current_quantity: ownedStock.current_quantity + quantity };
-        await stockOwnedRepository.save(ownedStock);
+        await db.ownedStockRepo.save(ownedStock);
       } else {
-        const stock = await stockRepository
-          .search()
-          .where("stock_id")
-          .equals(stock_id)
-          .returnFirst();
+        const stock = await db.stockRepo.search().where("stock_id").equals(stock_id).returnFirst();
         if (!stock) {
           throw new Error("Error fetching stock record (placeMarketBuyOrder)");
         }
 
         // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        await stockOwnedRepository.save({
+        await db.ownedStockRepo.save({
           stock_id,
           user_name,
           stock_name: stock.stock_name,
@@ -293,7 +298,7 @@ const service = {
       const stockDataWithNames = await Promise.all(
         stockPrices.map(async (stock: StockPricesResponse) => {
           // Query Redis to get the stock_name for the stock_id
-          const stockRecord = await stockRepository
+          const stockRecord = await db.stockRepo
             .search()
             .where("stock_id")
             .eq(stock.stock_id)
@@ -334,7 +339,7 @@ const service = {
     try {
       // Get root most transaction
       while (true) {
-        transaction = await stockTransactionRepository
+        transaction = await db.stockTxRepo
           .search()
           .where("stock_tx_id")
           .equals(stock_tx_id)
@@ -367,7 +372,7 @@ const service = {
     // Modify the cancelled limit sell transaction to status="CANCELLED" (reuses the entry fetched at start of method)
     try {
       transaction = { ...transaction, order_status: ORDER_STATUS.CANCELLED };
-      transaction = await stockTransactionRepository.save(transaction);
+      transaction = await db.stockTxRepo.save(transaction);
     } catch (error) {
       throw new Error(
         "Error with updating limit sell order's status to CANCELLED (callStockTransaction)"
@@ -376,7 +381,7 @@ const service = {
 
     try {
       // Check if user owns stock already
-      let ownedStock: StockOwned | null = await stockOwnedRepository
+      let ownedStock: StockOwned | null = await db.ownedStockRepo
         .search()
         .where("stock_id")
         .equals(transaction.stock_id)
@@ -391,9 +396,9 @@ const service = {
           // Return the quantity that has NOT been sold back to the user
           current_quantity: ownedStock.current_quantity + sellRes.cur_quantity,
         };
-        await stockOwnedRepository.save(ownedStock);
+        await db.ownedStockRepo.save(ownedStock);
       } else {
-        const stock = await stockRepository
+        const stock = await db.stockRepo
           .search()
           .where("stock_id")
           .equals(transaction.stock_id)
@@ -403,7 +408,7 @@ const service = {
         }
 
         // If the user does not currently have the stock in portfolio (b/c when you create a sellOrder it removed it from portfolio)
-        await stockOwnedRepository.save({
+        await db.ownedStockRepo.save({
           stock_id: transaction.stock_id,
           user_name,
           stock_name: stock.stock_name,
@@ -445,7 +450,7 @@ const service = {
   ) => {
     let parentTransaction: StockTransaction | null;
     try {
-      parentTransaction = await stockTransactionRepository
+      parentTransaction = await db.stockTxRepo
         .search()
         .where("stock_tx_id")
         .equals(stock_tx_id)
@@ -469,7 +474,7 @@ const service = {
 
       // Creates a new transaction with the parent_stock_tx_id linking to the original limit sell transaction with status COMPLETED
       try {
-        committedPartialSellTx = await stockTransactionRepository.save({
+        committedPartialSellTx = await db.stockTxRepo.save({
           stock_tx_id: partialSellTxId,
           parent_tx_id: stock_tx_id,
           stock_id: stock_id,
@@ -497,7 +502,7 @@ const service = {
 
     // Update the parent transaction
     try {
-      await stockTransactionRepository.save(parentTransaction);
+      await db.stockTxRepo.save(parentTransaction);
     } catch (error) {
       throw new Error("Error updating parent transaction (updateSales)");
     }
@@ -507,7 +512,7 @@ const service = {
     const relatedStockTx = isPartial ? committedPartialSellTx! : parentTransaction;
     const amount: number = price * sold_quantity; // amount not provided by the matching-engine
     try {
-      await walletTransactionRepository.save({
+      await db.walletTxRepo.save({
         wallet_tx_id: walletTxId,
         stock_tx_id: relatedStockTx.stock_tx_id,
         is_debit: false,
@@ -518,7 +523,7 @@ const service = {
     } catch (error) {
       // Rollback the optimistic wallet tx ID in the new stock transaction
       try {
-        stockTransactionRepository.save({ ...relatedStockTx, wallet_tx_id: null });
+        db.stockTxRepo.save({ ...relatedStockTx, wallet_tx_id: null });
       } catch (err) {
         throw new Error(
           `Failed to rollback optimistic wallet ID in stock transaction ${relatedStockTx.stock_tx_id}`
@@ -528,16 +533,16 @@ const service = {
 
     // Updates the seller's wallet to match the latest wallet transaction
     try {
-      const user: User | null = await userRepository
+      const user: User | null = (await db.userRepo
         .search()
         .where("user_name")
         .equals(user_name)
-        .returnFirst();
+        .returnFirst()) as User | null;
 
       if (!user) throw new Error("Error finding user (updateSales)");
 
       user.wallet_balance += amount;
-      await userRepository.save(user);
+      await db.userRepo.save(user as any);
     } catch (error) {
       throw new Error("Error updating the wallet of the limit sell user (updateSales)");
     }

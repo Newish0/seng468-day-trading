@@ -220,7 +220,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 4
+      replicas: 1
 
   # Matching Engine (Rust)
   matching-engine-shard0:

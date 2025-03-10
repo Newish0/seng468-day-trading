@@ -63,14 +63,14 @@ impl RabbitMQClient {
         // Declare exchanges
         // Exchange for receiving orders
         let order_exchange_args = ExchangeDeclareArguments::new("order_exchange", "topic")
-            .durable(true)
+            .durable(false)
             .finish();
         channel.exchange_declare(order_exchange_args).await?;
 
         // Exchange for sending order updates
         let order_update_exchange_args =
             ExchangeDeclareArguments::new("order_update_exchange", "direct")
-                .durable(true)
+                .durable(false)
                 .finish();
         channel.exchange_declare(order_update_exchange_args).await?;
 
@@ -95,7 +95,7 @@ impl RabbitMQClient {
         let shard_id = self.config.shard_id;
 
         // Declare queue for market buy orders specific to this shard
-        let market_buy_queue = QueueDeclareArguments::durable_client_named(&format!(
+        let market_buy_queue = QueueDeclareArguments::new(&format!(
             "market_buy_queue_shard_{}",
             shard_id
         ));
@@ -112,7 +112,7 @@ impl RabbitMQClient {
             .await?;
 
         // Declare queue for limit sell orders specific to this shard
-        let limit_sell_queue = QueueDeclareArguments::durable_client_named(&format!(
+        let limit_sell_queue = QueueDeclareArguments::new(&format!(
             "limit_sell_queue_shard_{}",
             shard_id
         ));
@@ -129,7 +129,7 @@ impl RabbitMQClient {
             .await?;
 
         // Declare queue for sell cancellations specific to this shard
-        let cancel_sell_queue = QueueDeclareArguments::durable_client_named(&format!(
+        let cancel_sell_queue = QueueDeclareArguments::new(&format!(
             "cancel_sell_queue_shard_{}",
             shard_id
         ));

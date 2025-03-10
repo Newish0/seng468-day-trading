@@ -22,8 +22,8 @@ export async function startOrderUpdateConsumer(rabbitMQUrl = DEFAULT_RABBITMQ_UR
     const channel = await connection.createChannel();
 
     // Set up exchange and queue
-    await channel.assertExchange(EXCHANGE_NAME, "direct", { durable: true });
-    await channel.assertQueue(QUEUE_NAME, { durable: true });
+    await channel.assertExchange(EXCHANGE_NAME, "direct", { durable: false });
+    await channel.assertQueue(QUEUE_NAME, { durable: false });
 
     // Bind queue to exchange for all routing keys
     for (const routingKey of ROUTING_KEYS) {

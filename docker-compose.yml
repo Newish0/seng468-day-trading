@@ -11,7 +11,7 @@ services:
       context: . # Need the entire services folder as context to copy from web-ui
       dockerfile: ./services/gateway/Dockerfile
     ports:
-      - "8080:80"
+      - "7706:80"
     depends_on:
       - user-api
       - auth
@@ -146,8 +146,8 @@ services:
     networks:
       - day-trading-network
     ports:
-      - "5672:5672" # AMQP protocol port
-      - "15672:15672" # Management interface port
+      - "7705:5672" # AMQP protocol port
+      - "7704:15672" # Management interface port
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest

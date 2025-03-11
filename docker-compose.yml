@@ -30,7 +30,6 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - ORDER_SERVICE_HOST=http://order-manager:3002
     networks:
       - day-trading-network
@@ -169,7 +168,6 @@ services:
       dockerfile: ./services/auth/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
     depends_on:
       redis1:
         condition: service_healthy
@@ -197,7 +195,6 @@ services:
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
-      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - RABBIT_PORT=5672
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest
@@ -229,7 +226,6 @@ services:
       context: . # Use the project root as the build context for packages to work
       dockerfile: ./services/order-update/Dockerfile
     environment:
-      - REDIS_URL=redis://redis:6379 # TODO: This probably needs to change
       - RABBIT_PORT=5672
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest

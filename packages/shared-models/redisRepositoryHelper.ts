@@ -59,13 +59,13 @@ export async function getKeyFromEntity(entity: Entity): Promise<string> {
 
 /**
  * This function updates a user's stock owned quantity atomically. This is done by adding the amountToChange to the current_quantity of the stock owned object.
- * @param redisInstance - The redis client instance
+ * @param redisClient - The redis client instance
  * @param stockOwnedKey - The key of the stock owned object we want to update
  * @param amountToChange - The amount we want to change the current_quantity by
  * @returns {Promise<boolean>} - Returns true if the stock was successfully updated, false if the stock would be decremented below 0 or had a error
  */
 export async function ownedStockAtomicUpdate(
-  redisInstance: ReturnType<typeof createClient>,
+  redisClient: ReturnType<typeof createClient>,
   stockOwnedKey: string,
   amountToChange: number
 ): Promise<boolean> {
@@ -87,7 +87,7 @@ export async function ownedStockAtomicUpdate(
   try {
     //Not sure if I can remove any, also gotta add users: because redis-om adds it
     // This is a finnecky thing, but it works and does it atomically
-    const result = await redisInstance.eval(luaScript, {
+    const result = await redisClient.eval(luaScript, {
       keys: ["owned_stocks:" + stockOwnedKey],
       arguments: [amountToChange.toString()],
     } as any); // Args need to be passed as strings
@@ -105,13 +105,13 @@ export async function ownedStockAtomicUpdate(
  *
  * NOTE: Withdrawals are not allowed if the wallet is locked. See `userWalletDeductAndUnlockAtomicUpdate` for a function that allows withdrawals when the wallet is locked.
  *
- * @param redisInstance - The redis client instance
+ * @param redisClient - The redis client instance
  * @param userKey - The key of the user object we want to update
  * @param amountToChange - The amount we want to change the wallet balance by
  * @returns {Promise<boolean>} - Returns true if the wallet was successfully updated, false if the wallet would be decremented below 0, is locked and we are subtracting, or had a error
  */
 export async function userWalletAtomicUpdate(
-  redisInstance: ReturnType<typeof createClient>,
+  redisClient: ReturnType<typeof createClient>,
   userKey: string,
   amountToChange: number
 ): Promise<boolean> {
@@ -136,7 +136,7 @@ export async function userWalletAtomicUpdate(
 
   try {
     // Redis-OM prefixes keys with "users:", so we add it to the key
-    const result = await redisInstance.eval(luaScript, {
+    const result = await redisClient.eval(luaScript, {
       keys: ["users:" + userKey],
       arguments: [amountToChange.toString()],
     });
@@ -161,13 +161,13 @@ export async function userWalletAtomicUpdate(
  * update the user wallet before they are allowed to buy more stocks (to avoid race conditions).
  * So, we need to do the deduction and unlock in one atomic operation.
  *
- * @param redisInstance - The redis client instance
+ * @param redisClient - The redis client instance
  * @param userKey - The key of the user object we want to update
  * @param amountToDeduct - The amount we want to deduct from the wallet balance (should be positive)
  * @returns {Promise<boolean>} - Returns true if the deduction and unlock was successful, false if the wallet would be decremented below 0 or had an error
  */
 export async function userWalletDeductAndUnlockAtomicUpdate(
-  redisInstance: ReturnType<typeof createClient>,
+  redisClient: ReturnType<typeof createClient>,
   userKey: string,
   amountToDeduct: number
 ): Promise<boolean> {
@@ -200,7 +200,7 @@ export async function userWalletDeductAndUnlockAtomicUpdate(
 
   try {
     // Redis-OM prefixes keys with "users:", so we add it to the key
-    const result = await redisInstance.eval(luaScript, {
+    const result = await redisClient.eval(luaScript, {
       keys: ["users:" + userKey],
       arguments: [amountToDeduct.toString()],
     });
@@ -216,12 +216,12 @@ export async function userWalletDeductAndUnlockAtomicUpdate(
 /**
  * This function locks a user's wallet, letting a user know no subtraction operations should be performed on it.
  * This is done by setting the is_locked field to true in the user object.
- * @param redisInstance - The redis client instance
+ * @param redisClient - The redis client instance
  * @param user_key - The key of the user we want to lock
  * @returns {Promise<boolean>} - Returns true if the user was successfully locked, false if the user was already locked or had a error
  */
 export async function lockUserWallet(
-  redisInstance: ReturnType<typeof createClient>,
+  redisClient: ReturnType<typeof createClient>,
   user_key: string
 ): Promise<boolean> {
   // If a true is returned its actually a 1, if false its null
@@ -241,7 +241,7 @@ export async function lockUserWallet(
   try {
     // Not sure if I can remove any, also gotta add users: because redis-om adds it
     // This is a finnecky thing, but it works and does it atomically
-    const result = await redisInstance.eval(luaScript, {
+    const result = await redisClient.eval(luaScript, {
       keys: ["users:" + user_key],
       arguments: [],
     } as any);

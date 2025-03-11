@@ -8,11 +8,17 @@ import {
   walletTransactionSchema,
 } from "./redisSchema";
 
-const connOwnedStock = createClient({ url: "redis://redis1:6379" });
-const connStock = createClient({ url: "redis://redis2:6379" });
-const connStockTx = createClient({ url: "redis://redis3:6379" });
-const connUser = createClient({ url: "redis://redis4:6379" });
-const connWalletTx = createClient({ url: "redis://redis5:6379" });
+const DB1_URL = Bun.env.REDIS1_URL || "redis://redis1:6379";
+const DB2_URL = Bun.env.REDIS2_URL || "redis://redis2:6379";
+const DB3_URL = Bun.env.REDIS3_URL || "redis://redis3:6379";
+const DB4_URL = Bun.env.REDIS4_URL || "redis://redis4:6379";
+const DB5_URL = Bun.env.REDIS5_URL || "redis://redis5:6379";
+
+const connOwnedStock = createClient({ url: DB1_URL });
+const connStock = createClient({ url: DB2_URL });
+const connStockTx = createClient({ url: DB3_URL });
+const connUser = createClient({ url: DB4_URL });
+const connWalletTx = createClient({ url: DB5_URL });
 
 await Promise.all([
   connOwnedStock.connect(),

@@ -4,10 +4,11 @@ use std::collections::{BinaryHeap, HashMap};
 #[derive(Debug, Clone, PartialEq)]
 pub struct SellOrder {
     pub stock_id: String,
+    pub stock_name: String,
     pub stock_tx_id: String,
     pub partially_sold: bool,
-    pub ori_quantity: u32,
-    pub cur_quantity: u32,
+    pub ori_quantity: u64,
+    pub cur_quantity: u64,
     pub price: f64,
     pub user_name: String, 
 }

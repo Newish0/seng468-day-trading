@@ -14,8 +14,11 @@ FROM nginx:alpine
 # Remove default Nginx configuration
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
-# Copy custom Nginx configuration
-COPY ./services/gateway/nginx.conf /etc/nginx/conf.d
+# Copy global Nginx config to the correct place
+COPY ./services/gateway/nginx.conf /etc/nginx/nginx.conf
+
+# Copy per-site/server configs 
+COPY ./services/gateway/app.conf /etc/nginx/conf.d/app.conf
 
 # Copy built assets from the ui-builder stage
 COPY --from=ui-builder /app/services/web-ui/dist /usr/share/nginx/html

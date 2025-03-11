@@ -4,10 +4,6 @@ networks:
   day-trading-network:
     driver: bridge
 
-volumes:
-  redis-data:
-
-
 services:
   # Frontend and reverse proxy api gateway
   gateway:
@@ -19,8 +15,13 @@ services:
     depends_on:
       - user-api
       - auth
+      - stock-price
     networks:
       - day-trading-network
+    deploy:
+      resources:
+        reservations:
+          cpus: '2'
 
   # User API
   user-api:
@@ -29,35 +30,136 @@ services:
       dockerfile: ./services/user-api/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
-      - ORDER_SERVICE_HOST=http://order:3002
-    container_name: user-api
+      - ORDER_SERVICE_HOST=http://order-manager:3002
     networks:
       - day-trading-network
-    ports:
-      - "3000"
+    deploy:
+      replicas: 1
     depends_on:
-      order:
+      order-manager:
         condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
 
   # Redis Database
-  redis:
+  redis1:
     image: redis/redis-stack:latest
     ports:
-      - "6379:6379"
-      - "8001:8001"
+      - ":6379"
+      - ":8001"
     networks:
       - day-trading-network
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  redis2:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  redis3:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  redis4:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  redis5:
+    image: redis/redis-stack:latest
+    ports:
+      - ":6379"
+      - ":8001"
+    networks:
+      - day-trading-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  rabbitmq:
+    image: rabbitmq:management
+    networks:
+      - day-trading-network
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # Management interface port
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK_ABSOLUTE=1024MB
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   # Auth Service
   auth:
@@ -66,36 +168,121 @@ services:
       dockerfile: ./services/auth/Dockerfile
     environment:
       - PORT=3000
-      - REDIS_URL=redis://redis:6379
     depends_on:
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
         condition: service_healthy
     networks:
       - day-trading-network
-  # Order Service
-  order:
+    deploy:
+      replicas: 1
+      resources:
+        reservations:
+          cpus: '0.5'
+
+  # Order Placement/Cancellation Service
+  order-manager:
     build:
       context: . # Use the project root as the build context for packages to work
-      dockerfile: ./services/order/Dockerfile
+      dockerfile: ./services/order-manager/Dockerfile
     environment:
       - PORT=3002
       - MATCHING_ENGINE_HOST=http://matching-engine:3003
-      - REDIS_URL=redis://redis:6379
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+      - ME_INSTANCES=1
     depends_on:
-      matching-engine:
+      matching-engine-shard0:
         condition: service_started
-      redis:
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - day-trading-network
+    deploy:
+      replicas: 1
+
+  # Order Update Service
+  order-update:
+    build:
+      context: . # Use the project root as the build context for packages to work
+      dockerfile: ./services/order-update/Dockerfile
+    environment:
+      - RABBIT_PORT=5672
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_USER=guest
+      - RABBIT_PASSWORD=guest
+    depends_on:
+      matching-engine-shard0:
+        condition: service_started
+      redis1:
+        condition: service_healthy
+      redis2:
+        condition: service_healthy
+      redis3:
+        condition: service_healthy
+      redis4:
+        condition: service_healthy
+      redis5:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - day-trading-network
+    deploy:
+      replicas: 1
+      resources:
+        reservations:
+          cpus: '1'
 
   # Matching Engine (Rust)
-  matching-engine:
+  matching-engine-shard0:
     build:
       context: ./services/matching-engine
       dockerfile: Dockerfile
+    networks:
+      - day-trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
-      - PORT=3003
-      - ORDER_SERVICE_HOST=http://order:3002
+      - SHARD_ID=0
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+
+  stock-price:
+    build:
+      context: ./services/stock-price
+      dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+    depends_on:
+      matching-engine-shard0:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     networks:
       - day-trading-network

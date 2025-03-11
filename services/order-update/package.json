@@ -1,0 +1,26 @@
+{
+  "name": "order-update-service",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "cross-env LOG_LEVEL=info bun run src/index.ts",
+    "dev": "cross-env LOG_LEVEL=debug bun --watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/amqplib": "^0.10.6",
+    "@types/bun": "latest",
+    "cross-env": "^7.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.5",
+    "redis": "^4.7.0",
+    "redis-om": "^0.4.7",
+    "shared-models": "workspace:*",
+    "shared-types": "workspace:*",
+    "shared-utils": "workspace:*",
+    "winston": "^3.17.0"
+  }
+}

@@ -6,7 +6,6 @@ import walletController from "../controllers/walletController";
 
 const transactionRoutes = new Hono();
 
-transactionRoutes.get("/getStockPrices", stockController.getStockPrices);
 transactionRoutes.get("/getStockPortfolio", stockController.getStockPortfolio);
 transactionRoutes.get(
   "/getStockTransactions",

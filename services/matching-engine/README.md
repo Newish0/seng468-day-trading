@@ -18,120 +18,105 @@ cargo watch -x run
 cargo build --release
 ```
 
-## API Specs
+## Message Specs As Consumer 
+These outlines the message body sent from the Order Placement/Cancellation Service -> M.E. 
 
-The API endpoints are intentionally named slight different from the endpoints that will be exposed to the client to differentiate between them. These internal API endpoints are meant to be used by the Order Service (and maybe the Main User API for `/stockPrices`).
+The exchange is `order_exchange`.
 
-### `/stockPrices`
+### Routing Key `order.market_buy.shard_<shard_id>`
+```rs
+pub struct MarketBuyRequest {
+    pub stock_id: String,
+    pub quantity: u64,
+    pub stock_tx_id: String,
+    pub budget: f64,
+    pub user_name: String,
+}
+```
 
--   Method: GET
--   Request Body: None
--   Response:
-    ```ts
-    {
-        success: boolean,
-        data?: ({
-            stock_id: string,
-            current_price: number,
-        })[]
-    }
-    ```
+### Routing Key `order.limit_sell.shard_<shard_id>`
+```rs
+pub struct LimitSellRequest {
+    pub stock_id: String,
+    pub stock_name: String,
+    pub quantity: u64,
+    pub price: f64,
+    pub stock_tx_id: String,
+    pub user_name: String,
+}
+```
 
-### `/marketBuy`
 
-Placing a market buy order.
+### Routing Key `order.limit_sell_cancellation.shard_<shard_id>`
+```rs
+pub struct LimitSellCancelRequest {
+    pub stock_id: String,
+    pub quantity: u64,
+    pub price: f64,
+    pub stock_tx_id: String,
+}
+```
 
--   Method: POST
--   Request Body:
-    ```ts
-    {
-        stock_id: string,
-        quantity: number,
-        stock_tx_id: string,
-        budget: number,
-        user_name: string
-    }
-    ```
--   Response:
-    ```ts
-    {
-        success: boolean,
-        data?: {
-            stock_id: string,
-            stock_tx_id: string,
-            quantity: number,
-            price_total: number,
-        }
-    }
-    ```
+## Order Related Message Specs As Producer
+These outlines the message body sent from the M.E. -> Order Update Service.
 
-### `/limitSell`
+The exchange is `order_update_exchange`.
 
-Placing a limit sell order.
+## Routing Key `order.buy_completed`
+```rs
+pub struct MarketBuyResponse {
+    pub success: bool,
+    pub data: MarketBuyData,
+}
 
--   Method: POST
--   Request Body:
-    ```ts
-    {
-        stock_id: string,
-        quantity: number,
-        price: number,
-        stock_tx_id: string,
-        user_name: string
-    }
-    ```
--   Response:
-    ```ts
-    {
-        success: boolean,
-    }
-    ```
+pub struct MarketBuyData {
+    pub stock_id: String,
+    pub stock_tx_id: String,
+    pub quantity: Option<u64>, // None if success is false
+    pub price_total: Option<f64>, // None if success is false
+}
+```
 
-Cancelling a limit sell order.
+## Routing Key `order.cancelled`
+```rs
 
--   Method: DELETE
--   Request Body:
-    ```ts
-    {
-        stock_id: string,
-        quantity: number,
-        price: number,
-        stock_tx_id: string,
-    }
-    ```
--   Response:
-    ```ts
-    {
-        success: boolean,
-        data?: {
-            stock_id: string,
-            stock_tx_id: string,
-            partially_sold: boolean,
-            ori_quantity: number,
-            cur_quantity: number,
-            sold_quantity: number,
-            price: number,
-        }
-    }
-    ```
+pub struct LimitSellCancelResponse {
+    pub success: bool,
+    pub data: Option<LimitSellCancelData>,
+}
 
-## Expected API Specs of the Order Service
+pub struct LimitSellCancelData {
+    pub stock_id: String,
+    pub stock_tx_id: String,
+    pub partially_sold: bool,
+    pub ori_quantity: u64,
+    pub cur_quantity: u64,
+    pub sold_quantity: u64,
+    pub price: f64,
+}
+```
 
-### Sale Update
+### Routing Key `order.sale_update`
+```rs
+pub struct OrderUpdate {
+    pub stock_id: String,
+    pub sold_quantity: u64,
+    pub remaining_quantity: u64,
+    pub price: f64,
+    pub stock_tx_id: String,
+    pub user_name: String,
+}
+```
 
--   Route: `http://order_svc/updateSale`
--   Method: `POST`
--   Request Body:
+## Stock Price Message Specs As Producer
+These outlines the message body sent from the M.E. -> Stock Price Service.
 
-    ```ts
-    {
-        stock_id: string,
-        sold_quantity: number, // Number of shares sold at this time
-        remaining_quantity: number, // Number of shares remaining in the Matching Engine
-        price: number, // Price it was sold at; should be the same as the requested price
-        stock_tx_id: string, / The original root tx_id
-        user_name: string, // the user_name of the user who created the limit sell
-    }
-    ```
+The exchange is `stock_prices_exchange`.
 
-NOTE: the `stock_tx_id` will always be the initial transaction ID. That is, all subsequent partial sells will use the root transaction ID.
+### Routing Key `stock.price.<stock_id>`
+```rs
+pub struct StockPrice {
+    pub stock_id: String,
+    pub stock_name: Option<String>, // None/null if stock is no longer available
+    pub current_price: Option<f64>, // None/null if stock is no longer available
+}

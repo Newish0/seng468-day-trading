@@ -18,6 +18,10 @@ services:
       - stock-price
     networks:
       - day-trading-network
+    deploy:
+      resources:
+        reservations:
+          cpus: '2'
 
   # User API
   user-api:
@@ -31,7 +35,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 4
+      replicas: 1
     depends_on:
       order-manager:
         condition: service_started
@@ -60,6 +64,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis2:
     image: redis/redis-stack:latest
@@ -74,6 +82,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis3:
     image: redis/redis-stack:latest
@@ -88,6 +100,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis4:
     image: redis/redis-stack:latest
@@ -102,6 +118,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   redis5:
     image: redis/redis-stack:latest
@@ -116,6 +136,10 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   rabbitmq:
     image: rabbitmq:management
@@ -127,11 +151,16 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_VM_MEMORY_HIGH_WATERMARK_ABSOLUTE=1024MB
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
       interval: 5s
       timeout: 3s
       retries: 5
+    deploy:
+      resources:
+        reservations:
+          cpus: '0.5'
 
   # Auth Service
   auth:
@@ -155,7 +184,10 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 4
+      replicas: 1
+      resources:
+        reservations:
+          cpus: '0.5'
 
   # Order Placement/Cancellation Service
   order-manager:
@@ -170,7 +202,7 @@ services:
       - RABBIT_HOST=rabbitmq
       - RABBIT_USER=guest
       - RABBIT_PASSWORD=guest
-      - ME_INSTANCES=3
+      - ME_INSTANCES=1
     depends_on:
       # matching-engine:
       #   condition: service_started
@@ -189,7 +221,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 4
+      replicas: 1
 
   # Order Update Service
   order-update:
@@ -220,7 +252,10 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 4
+      replicas: 1
+      resources:
+        reservations:
+          cpus: '1'
 
   # Matching Engine (Rust)
   matching-engine-shard0:
@@ -239,36 +274,21 @@ services:
       - RABBITMQ_USERNAME=guest
       - RABBITMQ_PASSWORD=guest
 
-  matching-engine-shard1:
-    build:
-      context: ./services/matching-engine
-      dockerfile: Dockerfile
-    networks:
-      - day-trading-network
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - SHARD_ID=1
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
-  matching-engine-shard2:
-    build:
-      context: ./services/matching-engine
-      dockerfile: Dockerfile
-    networks:
-      - day-trading-network
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - SHARD_ID=2
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USERNAME=guest
-      - RABBITMQ_PASSWORD=guest
+  # matching-engine-shard1:
+  #   build:
+  #     context: ./services/matching-engine
+  #     dockerfile: Dockerfile
+  #   networks:
+  #     - day-trading-network
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   environment:
+  #     - SHARD_ID=1
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USERNAME=guest
+  #     - RABBITMQ_PASSWORD=guest
 
   stock-price:
     build:

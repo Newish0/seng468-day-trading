@@ -34,7 +34,7 @@ services:
     networks:
       - day-trading-network
     deploy:
-      replicas: 1
+      replicas: 4
     depends_on:
       order-manager:
         condition: service_started

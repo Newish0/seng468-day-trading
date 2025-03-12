@@ -185,7 +185,7 @@ const service = {
         }
       })();
 
-      if (!isFundLockSuccess) await new Promise((resolve) => setTimeout(resolve, 200)); // wait 200ms
+      if (!isFundLockSuccess) await Bun.sleep(200);
     } // while
 
     if (userData.wallet_balance <= 0)
@@ -229,6 +229,39 @@ const service = {
       console.error("Failed to publish market buy order:", error); // for debug
       throw error;
     }
+
+    return buyTxId;
+  },
+
+  waitForBuyCompletion: async (stock_tx_id: string, checkInterval = 250, maxWaitTime = 20000) => {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitTime) {
+      let transaction: StockTransaction | null = null;
+      try {
+        transaction = await db.stockTxRepo
+          .search()
+          .where("stock_tx_id")
+          .equals(stock_tx_id)
+          .returnFirst();
+      } catch (err) {
+        throw new Error("Error querying for the transaction (waitForBuyCompletion)");
+      }
+
+      if (!transaction) throw new Error("Transaction not found (waitForBuyCompletion)");
+
+      if (transaction.order_status === ORDER_STATUS.FAILED) {
+        throw new Error("Transaction failed (waitForBuyCompletion)");
+      }
+
+      if (transaction.order_status === ORDER_STATUS.COMPLETED) {
+        return;
+      }
+
+      await Bun.sleep(checkInterval);
+    }
+
+    throw new Error("Transaction timed out (waitForBuyCompletion)");
   },
 
   /**
